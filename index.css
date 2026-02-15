@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 222 47% 6%;
+        --foreground: 210 40% 98%;
+        --card: 222 47% 8%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 47% 8%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 142 70% 45%;
+        --primary-foreground: 222 47% 6%;
+        --secondary: 217 33% 17%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217 33% 17%;
+        --muted-foreground: 215 20% 55%;
+        --accent: 217 33% 17%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 0 62% 50%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217 33% 17%;
+        --input: 217 33% 17%;
+        --ring: 142 70% 45%;
+        --radius: 0.75rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+}
+
+/* Smooth page transitions */
+.page-enter {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+.page-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 200ms ease, transform 200ms ease;
+}

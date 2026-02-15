@@ -37,10 +37,10 @@ export default function Navbar() {
                     </div>
                 </Link>
                 {session && (
-                    <div className="hidden md:flex items-center gap-1 ml-4 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 border border-green-500/20">
+                    <Link to="/admin" className="hidden md:flex items-center gap-1 ml-4 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-colors">
                         <ShieldCheck className="h-3 w-3" />
                         <span>Admin</span>
-                    </div>
+                    </Link>
                 )}
 
                 {/* Desktop Nav */}

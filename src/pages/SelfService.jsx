@@ -26,6 +26,7 @@ const X_AXIS_OPTIONS = [
     { id: 'home_coach', label: 'Entrenador Local' },
     { id: 'away_coach', label: 'Entrenador Visitante' },
     { id: 'day_of_week', label: 'Día de la Semana' },
+    { id: 'minute_interval', label: 'Minuto de Juego (Intervalo 5m)' },
 ]
 
 const Y_AXIS_OPTIONS = [
@@ -98,7 +99,80 @@ export default function SelfService() {
         })
 
         // 2. Map / Derive Values
-        // Flatten nested objects (like team names) and calculate derived metrics
+        // Special Case: Minute Interval (Goals Aggregation)
+        if (xAxis === 'minute_interval') {
+            // Initialize buckets
+            const buckets = {}
+            // 0-5, 6-10 ... 86-90, 90+
+            for (let i = 0; i < 90; i += 5) {
+                const label = `${i}-${i + 5}`
+                buckets[label] = {
+                    [xAxis]: label,
+                    count: 0,
+                    total_goals: 0,
+                    home_goals: 0,
+                    away_goals: 0,
+                    // Other metrics 0
+                    ...Object.fromEntries(Y_AXIS_OPTIONS.filter(o => !['total_goals', 'home_goals', 'away_goals'].includes(o.id)).map(opt => [opt.id, 0]))
+                }
+            }
+            buckets['90+'] = {
+                [xAxis]: '90+',
+                count: 0,
+                total_goals: 0,
+                home_goals: 0,
+                away_goals: 0,
+                ...Object.fromEntries(Y_AXIS_OPTIONS.filter(o => !['total_goals', 'home_goals', 'away_goals'].includes(o.id)).map(opt => [opt.id, 0]))
+            }
+
+            // Iterate Matches
+            filtered.forEach(m => {
+                // Process Home Goals
+                if (Array.isArray(m.home_goal_minutes)) {
+                    m.home_goal_minutes.forEach(minStr => {
+                        const min = parseInt(minStr)
+                        if (!isNaN(min)) {
+                            let bucketKey = '90+'
+                            if (min < 90) {
+                                const start = Math.floor(min / 5) * 5
+                                // Handle 0-5 bucket logic if match minute is 5, usually 5 is inclusive in 0-5 or 5-10? 
+                                // Let's stick to 0-4, 5-9 style OR 1-5 style.
+                                // But my buckets are 0-5.
+                                // Simple logic: key = floor(min/5)*5.
+                                bucketKey = `${start}-${start + 5}`
+                            }
+                            if (buckets[bucketKey]) {
+                                buckets[bucketKey].total_goals++
+                                buckets[bucketKey].home_goals++
+                                buckets[bucketKey].count++ // Count of events
+                            }
+                        }
+                    })
+                }
+                // Process Away Goals
+                if (Array.isArray(m.away_goal_minutes)) {
+                    m.away_goal_minutes.forEach(minStr => {
+                        const min = parseInt(minStr)
+                        if (!isNaN(min)) {
+                            let bucketKey = '90+'
+                            if (min < 90) {
+                                const start = Math.floor(min / 5) * 5
+                                bucketKey = `${start}-${start + 5}`
+                            }
+                            if (buckets[bucketKey]) {
+                                buckets[bucketKey].total_goals++
+                                buckets[bucketKey].away_goals++
+                                buckets[bucketKey].count++
+                            }
+                        }
+                    })
+                }
+            })
+
+            return Object.values(buckets)
+        }
+
+        // Standard Logic (Match Level)
         let mapped = filtered.map(m => {
             const item = { ...m }
 

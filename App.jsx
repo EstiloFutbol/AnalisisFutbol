@@ -10,6 +10,7 @@ import Statistics from '@/pages/Statistics'
 import SelfService from '@/pages/SelfService'
 import DataImport from '@/pages/DataImport'
 import Login from '@/pages/Login'
+import Admin from '@/pages/Admin'
 
 import { AuthProvider } from '@/context/AuthContext'
 
@@ -29,6 +30,7 @@ function App() {
                                 <Route path="/self-service" element={<SelfService />} />
                                 <Route path="/import" element={<DataImport />} />
                                 <Route path="/login" element={<Login />} />
+                                <Route path="/admin" element={<Admin />} />
                             </Routes>
                         </main>
                     </div>

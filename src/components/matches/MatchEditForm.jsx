@@ -63,6 +63,9 @@ export default function MatchEditForm({ match, onClose }) {
                     stadium: formData.stadium,
                     attendance: formData.attendance,
                     matchday: formData.matchday,
+                    home_odds: formData.home_odds,
+                    draw_odds: formData.draw_odds,
+                    away_odds: formData.away_odds,
                     home_goal_minutes: parseMinutes(formData.home_goal_minutes_text || JSON.stringify(formData.home_goal_minutes || [])),
                     away_goal_minutes: parseMinutes(formData.away_goal_minutes_text || JSON.stringify(formData.away_goal_minutes || [])),
                 })
@@ -244,6 +247,25 @@ export default function MatchEditForm({ match, onClose }) {
                             {/* Attendance removed as per user request "I dont need the assistenace" but I will keeping it in state just in case, or remove from UI? User said "I dont need the assistenace". I will remove from UI. */}
                         </div>
                     </div>
+
+                    {/* Odds */}
+                    <div className="space-y-4 border-t pt-4">
+                        <Label className="font-semibold block mb-2">Cuotas (Odds)</Label>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label>Local (1)</Label>
+                                <Input type="number" step="0.01" name="home_odds" value={formData.home_odds || ''} onChange={handleChange} placeholder="Ej: 1.50" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Empate (X)</Label>
+                                <Input type="number" step="0.01" name="draw_odds" value={formData.draw_odds || ''} onChange={handleChange} placeholder="Ej: 3.20" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Visitante (2)</Label>
+                                <Input type="number" step="0.01" name="away_odds" value={formData.away_odds || ''} onChange={handleChange} placeholder="Ej: 2.80" />
+                            </div>
+                        </div>
+                    </div>
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
@@ -254,6 +276,6 @@ export default function MatchEditForm({ match, onClose }) {
                     </Button>
                 </CardFooter>
             </form>
-        </Card>
+        </Card >
     )
 }

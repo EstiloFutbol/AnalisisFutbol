@@ -8,6 +8,7 @@ import MatchDetail from '@/pages/MatchDetail'
 import Statistics from '@/pages/Statistics'
 
 import SelfService from '@/pages/SelfService'
+import DataImport from '@/pages/DataImport'
 
 function App() {
     return (
@@ -22,6 +23,7 @@ function App() {
                             <Route path="/matches/:matchId" element={<MatchDetail />} />
                             <Route path="/statistics" element={<Statistics />} />
                             <Route path="/self-service" element={<SelfService />} />
+                            <Route path="/import" element={<DataImport />} />
                         </Routes>
                     </main>
                 </div>

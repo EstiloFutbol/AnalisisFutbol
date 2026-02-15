@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp, Upload } from 'lucide-react'
 
 const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/matches', label: 'Partidos', icon: CalendarDays },
     { path: '/statistics', label: 'Estadísticas', icon: TrendingUp },
     { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
+    { path: '/import', label: 'Importar', icon: Upload }, // Using Upload icon for now, need to import it
 ]
 
 export default function Navbar() {

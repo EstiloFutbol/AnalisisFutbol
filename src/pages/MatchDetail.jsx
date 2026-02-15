@@ -1,13 +1,19 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMatch } from '@/hooks/useMatches'
+import { useAuth } from '@/context/AuthContext'
+import MatchEditForm from '@/components/matches/MatchEditForm'
 import StatBar from '@/components/matches/StatBar'
 import GoalTimeline from '@/components/matches/GoalTimeline'
-import { ArrowLeft, Calendar, MapPin, User, Users, Shield } from 'lucide-react'
+import { ArrowLeft, Calendar, MapPin, User, Users, Shield, Edit } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function MatchDetail() {
     const { matchId } = useParams()
     const { data: match, isLoading, error } = useMatch(matchId)
+    const { session } = useAuth()
+    const [isEditing, setIsEditing] = useState(false)
 
     if (isLoading) {
         return (
@@ -24,6 +30,14 @@ export default function MatchDetail() {
                 <Link to="/matches" className="mt-4 inline-block text-sm text-primary hover:underline">
                     ← Volver a partidos
                 </Link>
+            </div>
+        )
+    }
+
+    if (isEditing) {
+        return (
+            <div className="max-w-2xl mx-auto py-10">
+                <MatchEditForm match={match} onClose={() => setIsEditing(false)} />
             </div>
         )
     }
@@ -48,14 +62,23 @@ export default function MatchDetail() {
             animate={{ opacity: 1 }}
             className="space-y-6"
         >
-            {/* Back link */}
-            <Link
-                to="/matches"
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ArrowLeft className="h-4 w-4" />
-                Volver a partidos
-            </Link>
+            {/* Header Actions */}
+            <div className="flex justify-between items-center">
+                <Link
+                    to="/matches"
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Volver a partidos
+                </Link>
+
+                {session && (
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar Partido
+                    </Button>
+                )}
+            </div>
 
             {/* Match header — scoreboard */}
             <div className="rounded-2xl border border-border/50 bg-gradient-to-b from-card to-background p-6 sm:p-8">

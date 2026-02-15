@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp, Upload } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp, Upload, ShieldCheck } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,6 +15,7 @@ const navItems = [
 export default function Navbar() {
     const location = useLocation()
     const [mobileOpen, setMobileOpen] = useState(false)
+    const { session } = useAuth()
 
     return (
         <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -34,6 +36,12 @@ export default function Navbar() {
                         </span>
                     </div>
                 </Link>
+                {session && (
+                    <div className="hidden md:flex items-center gap-1 ml-4 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 border border-green-500/20">
+                        <ShieldCheck className="h-3 w-3" />
+                        <span>Admin</span>
+                    </div>
+                )}
 
                 {/* Desktop Nav */}
                 <nav className="hidden items-center gap-1 md:flex">

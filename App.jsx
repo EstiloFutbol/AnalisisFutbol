@@ -11,25 +11,29 @@ import SelfService from '@/pages/SelfService'
 import DataImport from '@/pages/DataImport'
 import Login from '@/pages/Login'
 
+import { AuthProvider } from '@/context/AuthContext'
+
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
-                <div className="min-h-screen bg-background">
-                    <Navbar />
-                    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                        <Routes>
-                            <Route path="/" element={<Dashboard />} />
-                            <Route path="/matches" element={<Matches />} />
-                            <Route path="/matches/:matchId" element={<MatchDetail />} />
-                            <Route path="/statistics" element={<Statistics />} />
-                            <Route path="/self-service" element={<SelfService />} />
-                            <Route path="/import" element={<DataImport />} />
-                            <Route path="/login" element={<Login />} />
-                        </Routes>
-                    </main>
-                </div>
-            </BrowserRouter>
+            <AuthProvider>
+                <BrowserRouter>
+                    <div className="min-h-screen bg-background">
+                        <Navbar />
+                        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                            <Routes>
+                                <Route path="/" element={<Dashboard />} />
+                                <Route path="/matches" element={<Matches />} />
+                                <Route path="/matches/:matchId" element={<MatchDetail />} />
+                                <Route path="/statistics" element={<Statistics />} />
+                                <Route path="/self-service" element={<SelfService />} />
+                                <Route path="/import" element={<DataImport />} />
+                                <Route path="/login" element={<Login />} />
+                            </Routes>
+                        </main>
+                    </div>
+                </BrowserRouter>
+            </AuthProvider>
         </QueryClientProvider>
     )
 }

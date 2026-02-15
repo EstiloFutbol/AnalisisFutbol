@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useMatches, useSeasons } from '@/hooks/useMatches'
-import { Trophy, Goal, Target, Users, TrendingUp, Activity, PieChart, BarChart3, Clock } from 'lucide-react'
+import { Trophy, Goal, Target, Users, TrendingUp, Activity, PieChart, BarChart3, Clock, Shield, CreditCard, AlertTriangle } from 'lucide-react'
 import GoalTimeChart from '@/components/charts/GoalTimeChart'
 import CornerHalfChart from '@/components/charts/CornerHalfChart'
 import StatDistributionChart from '@/components/charts/StatDistributionChart'
@@ -47,23 +47,54 @@ export default function Dashboard() {
         if (!matches.length) return null
 
         const totalMatches = matches.length
+
+        // Goals
         const totalGoals = matches.reduce((acc, m) => acc + (m.home_goals || 0) + (m.away_goals || 0), 0)
-        const avgGoals = totalGoals / totalMatches
+        const avgGoals = totalMatches ? (totalGoals / totalMatches).toFixed(2) : 0
+        const bttsCount = matches.filter(m => m.home_goals > 0 && m.away_goals > 0).length
+        const bttsPercent = totalMatches ? ((bttsCount / totalMatches) * 100).toFixed(0) : 0
+        const over25Count = matches.filter(m => (m.home_goals + m.away_goals) > 2.5).length
+        const over25Percent = totalMatches ? ((over25Count / totalMatches) * 100).toFixed(0) : 0
+
+        // First Half Goals (approximation if we assume we might parse minutes, but for now let's just use total goals logic if we had 1H/2H split... 
+        // We actually only have 'home_corners_1h' etc, but not explicitly 1H goals in the main columns unless we parse 'home_goal_minutes'.
+        // Let's stick to simple reliable stats first. 
+        // Wait, we can count 0-0 draws to infer "No Goals".
+        const cleanSheetHome = matches.filter(m => m.away_goals === 0).length
+        const cleanSheetAway = matches.filter(m => m.home_goals === 0).length
+
+        // Results
         const homeWins = matches.filter(m => m.home_goals > m.away_goals).length
         const draws = matches.filter(m => m.home_goals === m.away_goals).length
         const awayWins = matches.filter(m => m.away_goals > m.home_goals).length
-        const bttsCount = matches.filter(m => m.home_goals > 0 && m.away_goals > 0).length
+
+        // Discipline & Corners
+        const totalCorners = matches.reduce((acc, m) => acc + (m.total_corners || 0), 0)
+        const avgCorners = totalMatches ? (totalCorners / totalMatches).toFixed(2) : 0
+
+        const totalCards = matches.reduce((acc, m) => acc + (m.home_cards || 0) + (m.away_cards || 0), 0)
+        const avgCards = totalMatches ? (totalCards / totalMatches).toFixed(2) : 0
+
         const avgAttendance = matches.reduce((acc, m) => acc + (m.attendance || 0), 0) / matches.filter(m => m.attendance).length || 0
 
         return {
             totalMatches,
             totalGoals,
-            avgGoals: avgGoals.toFixed(2),
+            avgGoals,
             homeWins,
             draws,
             awayWins,
+            homeWinPercent: totalMatches ? ((homeWins / totalMatches) * 100).toFixed(0) : 0,
+            drawPercent: totalMatches ? ((draws / totalMatches) * 100).toFixed(0) : 0,
+            awayWinPercent: totalMatches ? ((awayWins / totalMatches) * 100).toFixed(0) : 0,
             bttsCount,
-            bttsPercent: ((bttsCount / totalMatches) * 100).toFixed(0),
+            bttsPercent,
+            over25Count,
+            over25Percent,
+            cleanSheetHome,
+            cleanSheetAway,
+            avgCorners,
+            avgCards,
             avgAttendance: avgAttendance > 0 ? Math.round(avgAttendance).toLocaleString('es-ES') : 'N/D',
         }
     }, [matches])
@@ -77,7 +108,7 @@ export default function Dashboard() {
                         Dashboard
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Análisis avanzado de la temporada
+                        Insights y tendencias para apuestas
                     </p>
                 </div>
 
@@ -104,21 +135,51 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* Stats grid */}
+            {/* Betting Stats Grid */}
             {stats && (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-                    <StatCard icon={Trophy} label="Partidos" value={stats.totalMatches} />
-                    <StatCard icon={Goal} label="Goles" value={stats.totalGoals} sublabel={`${stats.avgGoals} por partido`} />
-                    <StatCard icon={TrendingUp} label="Victoria Local" value={stats.homeWins} sublabel={`${((stats.homeWins / stats.totalMatches) * 100).toFixed(0)}%`} />
-                    <StatCard icon={Activity} label="Empates" value={stats.draws} sublabel={`${((stats.draws / stats.totalMatches) * 100).toFixed(0)}%`} />
-                    <StatCard icon={Target} label="BTTS" value={`${stats.bttsPercent}%`} sublabel={`${stats.bttsCount} partidos`} />
-                    <StatCard icon={Users} label="Asistencia" value={stats.avgAttendance} sublabel="media" />
+                <div className="space-y-6">
+                    {/* Section 1: Result Markets */}
+                    <div>
+                        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <Trophy className="h-4 w-4" /> Mercados de Resultado
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                            <StatCard icon={Trophy} label="Partidos" value={stats.totalMatches} sublabel="Jugados" />
+                            <StatCard icon={TrendingUp} label="Gana Local" value={`${stats.homeWinPercent}%`} sublabel={`${stats.homeWins} partidos`} color="green-500" />
+                            <StatCard icon={Activity} label="Empate" value={`${stats.drawPercent}%`} sublabel={`${stats.draws} partidos`} color="orange-500" />
+                            <StatCard icon={TrendingUp} label="Gana Visitante" value={`${stats.awayWinPercent}%`} sublabel={`${stats.awayWins} partidos`} color="blue-500" />
+                        </div>
+                    </div>
+
+                    {/* Section 2: Goals Markets */}
+                    <div>
+                        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <Goal className="h-4 w-4" /> Mercados de Goles
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                            <StatCard icon={Goal} label="Promedio Goles" value={stats.avgGoals} sublabel="por partido" />
+                            <StatCard icon={Target} label="Más de 2.5" value={`${stats.over25Percent}%`} sublabel={`${stats.over25Count} partidos`} color="emerald-500" />
+                            <StatCard icon={PieChart} label="Ambos Marcan" value={`${stats.bttsPercent}%`} sublabel={`${stats.bttsCount} partidos`} color="violet-500" />
+                            <StatCard icon={Shield} label="Portería a 0 (L)" value={stats.cleanSheetHome} sublabel="Local Imbatido" color="indigo-500" />
+                        </div>
+                    </div>
+
+                    {/* Section 3: Props & Stats */}
+                    <div>
+                        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4" /> Córners y Tarjetas
+                        </h3>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                            <StatCard icon={CreditCard} label="Promedio Córners" value={stats.avgCorners} sublabel="Total por partido" color="indigo-500" />
+                            <StatCard icon={AlertTriangle} label="Promedio Tarjetas" value={stats.avgCards} sublabel="Total por partido" color="yellow-500" />
+                        </div>
+                    </div>
                 </div>
             )}
 
             {/* Charts Section */}
             {matches.length > 0 && (
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 pt-4">
 
                     {/* Full width: Goals Timeline */}
                     <div className="md:col-span-2 lg:col-span-2">

@@ -19,7 +19,7 @@ export default function Navbar() {
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-3 group">
                     <img
-                        src="/src/frontend/assets/Logo_web/Logo.png"
+                        src="/logo.png"
                         alt="Análisis Fútbol"
                         className="h-9 w-9 rounded-lg object-contain transition-transform group-hover:scale-110"
                     />
@@ -42,8 +42,8 @@ export default function Navbar() {
                                 key={path}
                                 to={path}
                                 className={`relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isActive
-                                        ? 'text-primary'
-                                        : 'text-muted-foreground hover:text-foreground'
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground hover:text-foreground'
                                     }`}
                             >
                                 <Icon className="h-4 w-4" />
@@ -88,8 +88,8 @@ export default function Navbar() {
                                         to={path}
                                         onClick={() => setMobileOpen(false)}
                                         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            ? 'bg-primary/10 text-primary'
+                                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                                             }`}
                                     >
                                         <Icon className="h-4 w-4" />

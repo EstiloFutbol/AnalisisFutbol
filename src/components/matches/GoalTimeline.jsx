@@ -2,15 +2,20 @@ export default function GoalTimeline({ homeGoalMinutes = [], awayGoalMinutes = [
     // Parse goal minute arrays (could be JSON strings or arrays)
     const parseMinutes = (mins) => {
         if (!mins) return []
+        let parsed = mins;
         if (typeof mins === 'string') {
             try {
-                mins = JSON.parse(mins)
+                parsed = JSON.parse(mins)
             } catch {
-                return []
+                // If parse fails, maybe it's a comma separated string?
+                parsed = mins.split(',').map(m => m.trim())
             }
         }
-        if (!Array.isArray(mins)) return []
-        return mins.filter(m => m != null && m !== 'NULL' && m !== '').map(m => String(m))
+        if (!Array.isArray(parsed)) return []
+
+        return parsed
+            .map(m => String(m).replace(/['"\[\]]/g, '').trim()) // Remove quotes and brackets
+            .filter(m => m !== '' && m !== 'NULL' && !isNaN(parseInt(m))) // Must be number-ish
     }
 
     const homeGoals = parseMinutes(homeGoalMinutes)

@@ -6,8 +6,8 @@
 
 DO $$
 DECLARE
-    -- REPLACE THIS WITH YOUR ACTUAL BASE URL
-    base_url TEXT := 'https://[YOUR_PROJECT_ID].supabase.co/storage/v1/object/public/logos/';
+    -- CORRECTED PUBLIC URL FORMAT
+    base_url TEXT := 'https://uchaeyxgymzmgmujrivi.supabase.co/storage/v1/object/public/logos/';
 BEGIN
     -- Standardize names (remove accents/special chars manually mapped if needed)
     

@@ -7,6 +7,7 @@ const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/matches', label: 'Partidos', icon: CalendarDays },
     { path: '/statistics', label: 'Estadísticas', icon: TrendingUp },
+    { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
 ]
 
 export default function Navbar() {

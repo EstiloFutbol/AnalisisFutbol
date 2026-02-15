@@ -7,6 +7,8 @@ import Matches from '@/pages/Matches'
 import MatchDetail from '@/pages/MatchDetail'
 import Statistics from '@/pages/Statistics'
 
+import SelfService from '@/pages/SelfService'
+
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
@@ -19,6 +21,7 @@ function App() {
                             <Route path="/matches" element={<Matches />} />
                             <Route path="/matches/:matchId" element={<MatchDetail />} />
                             <Route path="/statistics" element={<Statistics />} />
+                            <Route path="/self-service" element={<SelfService />} />
                         </Routes>
                     </main>
                 </div>

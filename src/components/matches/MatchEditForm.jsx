@@ -43,6 +43,7 @@ export default function MatchEditForm({ match, onClose }) {
                     referee: formData.referee,
                     stadium: formData.stadium,
                     attendance: formData.attendance,
+                    matchday: formData.matchday,
                     home_odds: formData.home_odds,
                     draw_odds: formData.draw_odds,
                     away_odds: formData.away_odds
@@ -119,8 +120,12 @@ export default function MatchEditForm({ match, onClose }) {
                     </div>
 
                     {/* Details */}
-                    <div className="space-y-2 border-t pt-4">
+                    <div className="space-y-4 border-t pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Jornada</Label>
+                                <Input type="number" name="matchday" value={formData.matchday || ''} onChange={handleChange} />
+                            </div>
                             <div className="space-y-2">
                                 <Label>Estadio</Label>
                                 <Input name="stadium" value={formData.stadium || ''} onChange={handleChange} />

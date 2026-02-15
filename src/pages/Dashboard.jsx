@@ -5,6 +5,8 @@ import { Trophy, Goal, Target, Users, TrendingUp, Activity, PieChart, BarChart3,
 import GoalTimeChart from '@/components/charts/GoalTimeChart'
 import CornerHalfChart from '@/components/charts/CornerHalfChart'
 import StatDistributionChart from '@/components/charts/StatDistributionChart'
+import OddsCorrelationChart from '@/components/charts/OddsCorrelationChart'
+import MatchCard from '@/components/matches/MatchCard'
 
 function StatCard({ icon: Icon, label, value, sublabel = null, color = 'primary' }) {
     return (
@@ -135,26 +137,31 @@ export default function Dashboard() {
                         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                             <StatDistributionChart
                                 matches={matches}
-                                dataKey="total_corners"
+                                homeKey="total_corners"
                                 title="Córners Totales"
                                 description="Frecuencia de córners por partido"
                                 color="#3b82f6"
                             />
                             <StatDistributionChart
                                 matches={matches}
-                                dataKey="home_fouls"
-                                title="Faltas (Local)"
-                                description="Faltas habituales equipo local"
-                                color="#f97316"
+                                homeKey="home_fouls"
+                                awayKey="away_fouls"
+                                title="Faltas"
+                                description="Distribución de faltas (Local vs Visitante)"
                             />
                             <StatDistributionChart
                                 matches={matches}
-                                dataKey="home_cards"
-                                title="Tarjetas Amarillas (Local)"
-                                description="Tarjetas mostradas al local"
-                                color="#eab308"
+                                homeKey="home_cards"
+                                awayKey="away_cards"
+                                title="Tarjetas Amarillas"
+                                description="Distribución de tarjetas (Local vs Visitante)"
                             />
                         </div>
+                    </div>
+
+                    {/* New Row: Odds Analysis */}
+                    <div className="md:col-span-2 lg:col-span-3">
+                        <OddsCorrelationChart matches={matches} />
                     </div>
                 </div>
             )}

@@ -4,45 +4,59 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export default function CornerHalfChart({ matches }) {
     const data = useMemo(() => {
-        if (!matches) return []
+        if (!matches || matches.length === 0) return []
 
-        let total1H = 0
-        let total2H = 0
+        const distribution = {}
+        let min = 0
+        let max = 0
 
         matches.forEach(match => {
-            total1H += (match.home_corners_1h || 0) + (match.away_corners_1h || 0)
-            total2H += (match.home_corners_2h || 0) + (match.away_corners_2h || 0)
+            // Count distribution for 1st Half
+            const c1 = (match.home_corners_1h || 0) + (match.away_corners_1h || 0)
+            if (!distribution[c1]) distribution[c1] = { corners: c1, half1: 0, half2: 0 }
+            distribution[c1].half1++
+            if (c1 > max) max = c1
+
+            // Count distribution for 2nd Half
+            const c2 = (match.home_corners_2h || 0) + (match.away_corners_2h || 0)
+            if (!distribution[c2]) distribution[c2] = { corners: c2, half1: 0, half2: 0 }
+            distribution[c2].half2++
+            if (c2 > max) max = c2
         })
 
-        const avg1H = matches.length ? (total1H / matches.length).toFixed(1) : 0
-        const avg2H = matches.length ? (total2H / matches.length).toFixed(1) : 0
+        // Fill gaps
+        const chartData = []
+        for (let i = 0; i <= max; i++) {
+            chartData.push(distribution[i] || { corners: i, half1: 0, half2: 0 })
+        }
 
-        return [
-            { name: '1ª Parte', corners: Number(avg1H), fill: '#3b82f6' }, // Blue
-            { name: '2ª Parte', corners: Number(avg2H), fill: '#f59e0b' }  // Amber
-        ]
+        return chartData
     }, [matches])
 
     return (
-        <Card className="col-span-1">
+        <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
-                <CardTitle>Córners por Parte</CardTitle>
-                <CardDescription>Promedio de córners en 1ª vs 2ª parte</CardDescription>
+                <CardTitle>Distribución de Córners (Por Parte)</CardTitle>
+                <CardDescription>Frecuencia de número de córners en 1ª vs 2ª parte</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="h-[200px] w-full">
+                <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--muted-foreground)/0.2)" />
-                            <XAxis type="number" hide />
-                            <YAxis
-                                dataKey="name"
-                                type="category"
+                        <BarChart data={data}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground)/0.2)" />
+                            <XAxis
+                                dataKey="corners"
                                 stroke="hsl(var(--muted-foreground))"
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
-                                width={60}
+                                label={{ value: 'Nº Córners', position: 'insideBottom', offset: -5 }}
+                            />
+                            <YAxis
+                                stroke="hsl(var(--muted-foreground))"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
                             />
                             <Tooltip
                                 cursor={{ fill: 'hsl(var(--muted)/0.3)' }}
@@ -53,9 +67,9 @@ export default function CornerHalfChart({ matches }) {
                                     color: 'hsl(var(--foreground))',
                                 }}
                             />
-                            <Bar dataKey="corners" radius={[0, 4, 4, 0]} barSize={32}>
-                                {/* Fill color comes from data payload */}
-                            </Bar>
+                            <Legend />
+                            <Bar dataKey="half1" name="1ª Parte" stackId="a" fill="#3b82f6" radius={[0, 0, 4, 4]} />
+                            <Bar dataKey="half2" name="2ª Parte" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

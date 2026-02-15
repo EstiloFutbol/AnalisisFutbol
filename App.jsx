@@ -9,6 +9,7 @@ import Statistics from '@/pages/Statistics'
 
 import SelfService from '@/pages/SelfService'
 import DataImport from '@/pages/DataImport'
+import Login from '@/pages/Login'
 
 function App() {
     return (
@@ -24,6 +25,7 @@ function App() {
                             <Route path="/statistics" element={<Statistics />} />
                             <Route path="/self-service" element={<SelfService />} />
                             <Route path="/import" element={<DataImport />} />
+                            <Route path="/login" element={<Login />} />
                         </Routes>
                     </main>
                 </div>

@@ -1,13 +1,41 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { parseMatchesCSV } from '@/lib/csvParser'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Upload, CheckCircle, AlertCircle, FileSpreadsheet } from 'lucide-react'
+import { Upload, CheckCircle, AlertCircle, FileSpreadsheet, LogOut, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export default function DataImport() {
     const [status, setStatus] = useState('idle') // idle, parsing, uploading, success, error
     const [message, setMessage] = useState('')
     const [stats, setStats] = useState({ total: 0, imported: 0, errors: 0 })
+    const [session, setSession] = useState(null)
+    const [loadingSession, setLoadingSession] = useState(true)
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) {
+                navigate('/login')
+            } else {
+                setSession(session)
+            }
+            setLoadingSession(false)
+        }
+        checkSession()
+    }, [navigate])
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        navigate('/login')
+    }
+
+    if (loadingSession) {
+        return <div className="flex justify-center items-center min-h-[50vh]"><Loader2 className="h-8 w-8 animate-spin" /></div>
+    }
+
+    if (!session) return null // Should redirect
 
     const handleFileUpload = async (e) => {
         const file = e.target.files[0]
@@ -81,7 +109,12 @@ export default function DataImport() {
     return (
         <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500">
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-white">Importar Datos</h1>
+                <div className="flex justify-between items-center">
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Importar Datos</h1>
+                    <button onClick={handleLogout} className="text-sm flex items-center gap-1 text-red-400 hover:text-red-300">
+                        <LogOut className="h-4 w-4" /> Salir
+                    </button>
+                </div>
                 <p className="text-muted-foreground">
                     Sube tu archivo CSV (formato <code>af_th_partidos.csv</code>) para actualizar la base de datos.
                 </p>
@@ -112,9 +145,9 @@ export default function DataImport() {
 
                     {status !== 'idle' && (
                         <div className={`p-4 rounded-md border ${status === 'success' ? 'bg-green-900/20 border-green-900 text-green-200' :
-                                status === 'error' ? 'bg-red-900/20 border-red-900 text-red-200' :
-                                    status === 'warning' ? 'bg-yellow-900/20 border-yellow-900 text-yellow-200' :
-                                        'bg-blue-900/20 border-blue-900 text-blue-200'
+                            status === 'error' ? 'bg-red-900/20 border-red-900 text-red-200' :
+                                status === 'warning' ? 'bg-yellow-900/20 border-yellow-900 text-yellow-200' :
+                                    'bg-blue-900/20 border-blue-900 text-blue-200'
                             }`}>
                             <div className="flex items-center gap-2 mb-2">
                                 {status === 'success' ? <CheckCircle className="h-5 w-5" /> :

@@ -1,8 +1,31 @@
--- Script to update logo_urls for teams using Supabase Storage
--- Bucket: logos
--- Filename assumption: [short_name].png (e.g. ATH.png, RMA.png)
--- Check your bucket if extensions are .jpg or names are different!
+-- =============================================================
+-- Update Team Logos (Supabase Storage)
+-- =============================================================
+-- REPLACE [YOUR_PROJECT_ID] with your Supabase project ID (found in your URL: https://[project-id].supabase.co)
+-- ASSUMPTION: You have a public bucket named 'logos' and files are named exactly like team names (e.g. "Athletic Club.png")
 
-UPDATE teams 
-SET logo_url = 'https://uchaeyxgymzmgmujrivi.supabase.co/storage/v1/object/public/logos/' || short_name || '.png'
-WHERE short_name IS NOT NULL;
+DO $$
+DECLARE
+    base_url TEXT := 'https://[YOUR_PROJECT_ID].supabase.co/storage/v1/object/public/logos/';
+BEGIN
+    UPDATE teams SET logo_url = base_url || 'Athletic Club.png' WHERE name = 'Athletic Club';
+    UPDATE teams SET logo_url = base_url || 'Getafe.png' WHERE name = 'Getafe';
+    UPDATE teams SET logo_url = base_url || 'Real Betis.png' WHERE name = 'Real Betis';
+    UPDATE teams SET logo_url = base_url || 'Girona.png' WHERE name = 'Girona';
+    UPDATE teams SET logo_url = base_url || 'Celta Vigo.png' WHERE name = 'Celta Vigo';
+    UPDATE teams SET logo_url = base_url || 'Alavés.png' WHERE name = 'Alavés';
+    UPDATE teams SET logo_url = base_url || 'Las Palmas.png' WHERE name = 'Las Palmas';
+    UPDATE teams SET logo_url = base_url || 'Sevilla.png' WHERE name = 'Sevilla';
+    UPDATE teams SET logo_url = base_url || 'Osasuna.png' WHERE name = 'Osasuna';
+    UPDATE teams SET logo_url = base_url || 'Leganés.png' WHERE name = 'Leganés';
+    UPDATE teams SET logo_url = base_url || 'Valencia.png' WHERE name = 'Valencia';
+    UPDATE teams SET logo_url = base_url || 'Barcelona.png' WHERE name = 'Barcelona';
+    UPDATE teams SET logo_url = base_url || 'Real Sociedad.png' WHERE name = 'Real Sociedad';
+    UPDATE teams SET logo_url = base_url || 'Rayo Vallecano.png' WHERE name = 'Rayo Vallecano';
+    UPDATE teams SET logo_url = base_url || 'Mallorca.png' WHERE name = 'Mallorca';
+    UPDATE teams SET logo_url = base_url || 'Real Madrid.png' WHERE name = 'Real Madrid';
+    UPDATE teams SET logo_url = base_url || 'Valladolid.png' WHERE name = 'Valladolid';
+    UPDATE teams SET logo_url = base_url || 'Espanyol.png' WHERE name = 'Espanyol';
+    UPDATE teams SET logo_url = base_url || 'Villarreal.png' WHERE name = 'Villarreal';
+    UPDATE teams SET logo_url = base_url || 'Atlético Madrid.png' WHERE name = 'Atlético Madrid';
+END $$;

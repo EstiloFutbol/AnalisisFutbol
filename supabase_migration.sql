@@ -102,6 +102,15 @@ CREATE INDEX IF NOT EXISTS idx_matches_away_team ON matches(away_team_id);
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies to allow re-running the script
+DROP POLICY IF EXISTS "Allow public read access on teams" ON teams;
+DROP POLICY IF EXISTS "Allow authenticated insert on teams" ON teams;
+DROP POLICY IF EXISTS "Allow authenticated update on teams" ON teams;
+
+DROP POLICY IF EXISTS "Allow public read access on matches" ON matches;
+DROP POLICY IF EXISTS "Allow authenticated insert on matches" ON matches;
+DROP POLICY IF EXISTS "Allow authenticated update on matches" ON matches;
+
 -- Public read access for both tables
 CREATE POLICY "Allow public read access on teams" ON teams
     FOR SELECT USING (true);
@@ -132,6 +141,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_matches_updated_at ON matches;
 CREATE TRIGGER update_matches_updated_at
     BEFORE UPDATE ON matches
     FOR EACH ROW

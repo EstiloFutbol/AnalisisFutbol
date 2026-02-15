@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useMatches, useSeasons } from '@/hooks/useMatches'
-import { Trophy, Goal, Target, Users, TrendingUp, Activity } from 'lucide-react'
-import MatchCard from '@/components/matches/MatchCard'
+import { Trophy, Goal, Target, Users, TrendingUp, Activity, PieChart, BarChart3, Clock } from 'lucide-react'
+import GoalTimeChart from '@/components/charts/GoalTimeChart'
+import CornerHalfChart from '@/components/charts/CornerHalfChart'
+import StatDistributionChart from '@/components/charts/StatDistributionChart'
 
-function StatCard({ icon: Icon, label, value, sublabel, color = 'primary' }) {
+function StatCard({ icon: Icon, label, value, sublabel = null, color = 'primary' }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -64,11 +66,8 @@ export default function Dashboard() {
         }
     }, [matches])
 
-    // Latest matches for quick view
-    const latestMatches = matches.slice(0, 6)
-
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="space-y-8 animate-fade-in pb-10">
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -76,7 +75,7 @@ export default function Dashboard() {
                         Dashboard
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Resumen de la temporada
+                        Análisis avanzado de la temporada
                     </p>
                 </div>
 
@@ -115,14 +114,47 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {/* Latest Matches */}
-            {latestMatches.length > 0 && (
-                <div>
-                    <h2 className="mb-4 text-lg font-bold text-foreground">Últimos Partidos</h2>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {latestMatches.map((match, i) => (
-                            <MatchCard key={match.id} match={match} index={i} />
-                        ))}
+            {/* Charts Section */}
+            {matches.length > 0 && (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+                    {/* Full width: Goals Timeline */}
+                    <div className="md:col-span-2 lg:col-span-2">
+                        <GoalTimeChart matches={matches} />
+                    </div>
+
+                    {/* Side: Corner Halves */}
+                    <CornerHalfChart matches={matches} />
+
+                    {/* Row: Distributions */}
+                    <div className="md:col-span-2 lg:col-span-3">
+                        <h2 className="mb-4 mt-2 text-xl font-bold text-foreground flex items-center gap-2">
+                            <BarChart3 className="h-5 w-5 text-primary" />
+                            Distribución de Estadísticas
+                        </h2>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <StatDistributionChart
+                                matches={matches}
+                                dataKey="total_corners"
+                                title="Córners Totales"
+                                description="Frecuencia de córners por partido"
+                                color="#3b82f6"
+                            />
+                            <StatDistributionChart
+                                matches={matches}
+                                dataKey="home_fouls"
+                                title="Faltas (Local)"
+                                description="Faltas habituales equipo local"
+                                color="#f97316"
+                            />
+                            <StatDistributionChart
+                                matches={matches}
+                                dataKey="home_cards"
+                                title="Tarjetas Amarillas (Local)"
+                                description="Tarjetas mostradas al local"
+                                color="#eab308"
+                            />
+                        </div>
                     </div>
                 </div>
             )}

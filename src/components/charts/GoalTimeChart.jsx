@@ -53,11 +53,22 @@ export default function GoalTimeChart({ matches }) {
             let awayGoals = match.away_goal_minutes
 
             if (typeof homeGoals === 'string') {
-                try { homeGoals = JSON.parse(homeGoals) } catch (e) { homeGoals = [] }
+                try {
+                    homeGoals = JSON.parse(homeGoals)
+                } catch (e) {
+                    homeGoals = homeGoals.split(',')
+                }
             }
+            if (homeGoals && !Array.isArray(homeGoals)) homeGoals = [homeGoals]
+
             if (typeof awayGoals === 'string') {
-                try { awayGoals = JSON.parse(awayGoals) } catch (e) { awayGoals = [] }
+                try {
+                    awayGoals = JSON.parse(awayGoals)
+                } catch (e) {
+                    awayGoals = awayGoals.split(',')
+                }
             }
+            if (awayGoals && !Array.isArray(awayGoals)) awayGoals = [awayGoals]
 
             processGoals(homeGoals)
             processGoals(awayGoals)

@@ -30,7 +30,14 @@ export default function MatchEditForm({ match, onClose }) {
                 if (!str) return []
                 // If it's already an array (from initial load), verify it matches
                 if (Array.isArray(str)) return str
-                return str.split(',').map(m => m.trim().replace(/'|"/g, '')).filter(Boolean)
+
+                // Clean input string
+                const cleanStr = str.replace(/[\[\]'"]/g, '').trim()
+                if (!cleanStr) return []
+
+                return cleanStr.split(',')
+                    .map(m => m.trim())
+                    .filter(m => m !== '' && !isNaN(parseInt(m)))
             }
 
             const { error } = await supabase
@@ -89,8 +96,20 @@ export default function MatchEditForm({ match, onClose }) {
     // Helper to format array to string for input
     const formatMinutes = (minutes) => {
         if (!minutes) return ''
-        if (typeof minutes === 'string') return minutes // already editing
-        if (Array.isArray(minutes)) return minutes.join(', ')
+        if (typeof minutes === 'string') {
+            // Handle case where DB returned stringified array or '[]'
+            const clean = minutes.replace(/[\[\]'"]/g, '').trim()
+            return clean === '' ? '' : clean
+        }
+        if (Array.isArray(minutes)) {
+            // Filter garbage like '[]' or empty strings within the array
+            const clean = minutes
+                .map(m => String(m).replace(/[\[\]'"]/g, '').trim())
+                .filter(m => m !== '' && m !== 'NULL')
+
+            if (clean.length === 0) return ''
+            return clean.join(', ')
+        }
         return String(minutes)
     }
 

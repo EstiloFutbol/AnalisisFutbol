@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMatch } from '@/hooks/useMatches'
 import { useAuth } from '@/context/AuthContext'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 
 export default function MatchDetail() {
     const { matchId } = useParams()
+    const navigate = useNavigate()
     const { data: match, isLoading, error } = useMatch(matchId)
     const { session } = useAuth()
     const [isEditing, setIsEditing] = useState(false)
@@ -27,9 +28,9 @@ export default function MatchDetail() {
         return (
             <div className="py-20 text-center">
                 <p className="text-muted-foreground">Partido no encontrado</p>
-                <Link to="/matches" className="mt-4 inline-block text-sm text-primary hover:underline">
+                <button onClick={() => navigate('/matches')} className="mt-4 inline-block text-sm text-primary hover:underline">
                     ← Volver a partidos
-                </Link>
+                </button>
             </div>
         )
     }
@@ -64,13 +65,13 @@ export default function MatchDetail() {
         >
             {/* Header Actions */}
             <div className="flex justify-between items-center">
-                <Link
-                    to="/matches"
+                <button
+                    onClick={() => navigate(-1)}
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Volver a partidos
-                </Link>
+                </button>
 
                 {session && (
                     <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>

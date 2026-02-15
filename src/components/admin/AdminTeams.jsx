@@ -27,7 +27,16 @@ export default function AdminTeams() {
         e.preventDefault()
         setLoading(true)
         try {
-            const { error } = await supabase.from('teams').insert([formData])
+            // Workaround for sequence sync issue: Calculate next ID manually
+            const { data: maxIdData } = await supabase
+                .from('teams')
+                .select('id')
+                .order('id', { ascending: false })
+                .limit(1)
+
+            const nextId = (maxIdData?.[0]?.id || 0) + 1
+
+            const { error } = await supabase.from('teams').insert([{ ...formData, id: nextId }])
             if (error) throw error
             alert('Equipo creado exitosamente')
             setIsCreating(false)

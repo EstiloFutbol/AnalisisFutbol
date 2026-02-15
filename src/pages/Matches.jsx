@@ -1,17 +1,39 @@
-import { useState, useMemo } from 'react'
-import { useMatches, useSeasons, useMatchdays } from '@/hooks/useMatches'
+import { useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useMatches, useSeasons } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
 import { Search, Filter, CalendarDays } from 'lucide-react'
 
 export default function Matches() {
+    const [searchParams, setSearchParams] = useSearchParams()
     const { data: seasons = [] } = useSeasons()
-    const [selectedSeason, setSelectedSeason] = useState(null)
-    const [selectedMatchday, setSelectedMatchday] = useState(null)
-    const [searchTerm, setSearchTerm] = useState('')
 
-    const activeSeason = selectedSeason || seasons[0]
+    // Get filter values from URL params
+    const selectedSeason = searchParams.get('season')
+    const selectedMatchday = searchParams.get('matchday')
+    const searchTerm = searchParams.get('q') || ''
+
+    // Determine active season (URL param > first available season)
+    // We only set default if seasons are loaded and no param is present
+    const activeSeason = selectedSeason || (seasons.length > 0 ? seasons[0] : null)
+
+    // Sync default season to URL if not present
+    useEffect(() => {
+        if (!selectedSeason && seasons.length > 0) {
+            setSearchParams(prev => {
+                prev.set('season', seasons[0])
+                return prev
+            }, { replace: true })
+        }
+    }, [selectedSeason, seasons, setSearchParams])
+
     const { data: matches = [], isLoading } = useMatches(activeSeason)
-    const { data: matchdays = [] } = useMatchdays(activeSeason)
+
+    // Calculate available matchdays from the fetched matches
+    const availableMatchdays = useMemo(() => {
+        const mds = new Set(matches.map(m => m.matchday).filter(Boolean))
+        return Array.from(mds).sort((a, b) => a - b)
+    }, [matches])
 
     const filteredMatches = useMemo(() => {
         let filtered = matches
@@ -33,16 +55,49 @@ export default function Matches() {
         return filtered
     }, [matches, selectedMatchday, searchTerm])
 
-    // Group matches by matchday
+    // Handlers for updating URL params
+    const handleSeasonChange = (season) => {
+        setSearchParams(prev => {
+            prev.set('season', season)
+            prev.delete('matchday') // Reset matchday on season change
+            return prev
+        })
+    }
+
+    const handleMatchdayChange = (matchday) => {
+        setSearchParams(prev => {
+            if (matchday) prev.set('matchday', matchday)
+            else prev.delete('matchday')
+            return prev
+        })
+    }
+
+    const handleSearchChange = (term) => {
+        setSearchParams(prev => {
+            if (term) prev.set('q', term)
+            else prev.delete('q')
+            return prev
+        }, { replace: true }) // Replace history for search typing
+    }
+
+
+    // Group matches by matchday (for display)
     const matchesByMatchday = useMemo(() => {
         const groups = {}
-        filteredMatches.forEach(match => {
-            const md = match.matchday || 'Otra'
+        const sorted = [...filteredMatches].sort((a, b) => {
+            // If filtered by specific matchday, sort by date? 
+            // Default sort by matchday desc
+            if (b.matchday !== a.matchday) return Number(b.matchday || 0) - Number(a.matchday || 0)
+            return new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+        })
+
+        sorted.forEach(match => {
+            const md = match.matchday || 'Pendiente'
             if (!groups[md]) groups[md] = []
             groups[md].push(match)
         })
-        // Sort matchday keys numerically
-        return Object.entries(groups).sort(([a], [b]) => Number(b) - Number(a))
+
+        return Object.entries(groups)
     }, [filteredMatches])
 
     return (
@@ -66,7 +121,7 @@ export default function Matches() {
                         type="text"
                         placeholder="Buscar equipo, estadio, árbitro..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         className="w-full rounded-lg border border-border bg-card py-2 pl-10 pr-4 text-sm text-foreground placeholder-muted-foreground/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                 </div>
@@ -75,10 +130,7 @@ export default function Matches() {
                 {seasons.length > 0 && (
                     <select
                         value={activeSeason || ''}
-                        onChange={(e) => {
-                            setSelectedSeason(e.target.value)
-                            setSelectedMatchday(null)
-                        }}
+                        onChange={(e) => handleSeasonChange(e.target.value)}
                         className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                         {seasons.map((season) => (
@@ -90,23 +142,23 @@ export default function Matches() {
                 {/* Matchday selector */}
                 <select
                     value={selectedMatchday || ''}
-                    onChange={(e) => setSelectedMatchday(e.target.value || null)}
+                    onChange={(e) => handleMatchdayChange(e.target.value)}
                     className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                     <option value="">Todas las jornadas</option>
-                    {matchdays.map((md) => (
+                    {availableMatchdays.map((md) => (
                         <option key={md} value={md}>Jornada {md}</option>
                     ))}
                 </select>
             </div>
 
-            {/* Matchday chips (horizontal scroll) */}
-            {matchdays.length > 0 && !selectedMatchday && (
+            {/* Matchday chips (horizontal scroll) - only show if no specific matchday selected */}
+            {!selectedMatchday && availableMatchdays.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {matchdays.map((md) => (
+                    {availableMatchdays.map((md) => (
                         <button
                             key={md}
-                            onClick={() => setSelectedMatchday(String(md))}
+                            onClick={() => handleMatchdayChange(String(md))}
                             className="flex-none rounded-full border border-border/50 bg-card px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
                         >
                             J{md}

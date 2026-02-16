@@ -18,7 +18,35 @@ export default function AdminMatches({ onClose }) {
         away_team_id: '',
         referee_id: '',
         home_goals: 0,
-        away_goals: 0
+        away_goals: 0,
+        attendance: null,
+        home_possession: null,
+        away_possession: null,
+        home_shots: null,
+        away_shots: null,
+        home_shots_on_target: null,
+        away_shots_on_target: null,
+        home_corners_1h: null,
+        home_corners_2h: null,
+        away_corners_1h: null,
+        away_corners_2h: null,
+        home_fouls: null,
+        away_fouls: null,
+        home_yellow_cards: null,
+        away_yellow_cards: null,
+        home_red_cards: null,
+        away_red_cards: null,
+        home_offsides: null,
+        away_offsides: null,
+        home_passes: null,
+        away_passes: null,
+        home_pass_accuracy: null,
+        away_pass_accuracy: null,
+        home_odds: null,
+        draw_odds: null,
+        away_odds: null,
+        home_goal_minutes: [],
+        away_goal_minutes: []
     })
     const [loading, setLoading] = useState(false)
     const queryClient = useQueryClient()
@@ -110,7 +138,35 @@ export default function AdminMatches({ onClose }) {
                 away_team_id: '',
                 referee_id: '',
                 home_goals: 0,
-                away_goals: 0
+                away_goals: 0,
+                attendance: null,
+                home_possession: null,
+                away_possession: null,
+                home_shots: null,
+                away_shots: null,
+                home_shots_on_target: null,
+                away_shots_on_target: null,
+                home_corners_1h: null,
+                home_corners_2h: null,
+                away_corners_1h: null,
+                away_corners_2h: null,
+                home_fouls: null,
+                away_fouls: null,
+                home_yellow_cards: null,
+                away_yellow_cards: null,
+                home_red_cards: null,
+                away_red_cards: null,
+                home_offsides: null,
+                away_offsides: null,
+                home_passes: null,
+                away_passes: null,
+                home_pass_accuracy: null,
+                away_pass_accuracy: null,
+                home_odds: null,
+                draw_odds: null,
+                away_odds: null,
+                home_goal_minutes: [],
+                away_goal_minutes: []
             })
             queryClient.invalidateQueries(['matches'])
         } catch (error) {
@@ -233,16 +289,160 @@ export default function AdminMatches({ onClose }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Goles Local</Label>
-                            <Input type="number" name="home_goals" value={formData.home_goals} onChange={handleChange} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Goles Visitante</Label>
-                            <Input type="number" name="away_goals" value={formData.away_goals} onChange={handleChange} />
+                    {/* Resultado */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Resultado</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Goles Local</Label>
+                                <Input type="number" name="home_goals" value={formData.home_goals} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Goles Visitante</Label>
+                                <Input type="number" name="away_goals" value={formData.away_goals} onChange={handleChange} />
+                            </div>
                         </div>
                     </div>
+
+                    {/* Jornada */}
+                    <div className="space-y-2">
+                        <Label>Jornada</Label>
+                        <Input type="number" name="matchday" value={formData.matchday} onChange={handleChange} required />
+                    </div>
+
+                    {/* Cuotas de Apuestas */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Cuotas de Apuestas</Label>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label>Local</Label>
+                                <Input type="number" step="0.01" name="home_odds" value={formData.home_odds || ''} onChange={handleChange} placeholder="Ej: 1.85" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Empate</Label>
+                                <Input type="number" step="0.01" name="draw_odds" value={formData.draw_odds || ''} onChange={handleChange} placeholder="Ej: 3.40" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Visitante</Label>
+                                <Input type="number" step="0.01" name="away_odds" value={formData.away_odds || ''} onChange={handleChange} placeholder="Ej: 4.20" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Posesión */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Posesión (%)</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Local</Label>
+                                <Input type="number" name="home_possession" value={formData.home_possession || ''} onChange={handleChange} placeholder="Ej: 55" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Visitante</Label>
+                                <Input type="number" name="away_possession" value={formData.away_possession || ''} onChange={handleChange} placeholder="Ej: 45" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Tiros */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Tiros</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Tiros Local</Label>
+                                <Input type="number" name="home_shots" value={formData.home_shots || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tiros Visitante</Label>
+                                <Input type="number" name="away_shots" value={formData.away_shots || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>A Puerta Local</Label>
+                                <Input type="number" name="home_shots_on_target" value={formData.home_shots_on_target || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>A Puerta Visitante</Label>
+                                <Input type="number" name="away_shots_on_target" value={formData.away_shots_on_target || ''} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Córners */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Córners</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Local 1ª Parte</Label>
+                                <Input type="number" name="home_corners_1h" value={formData.home_corners_1h || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Visitante 1ª Parte</Label>
+                                <Input type="number" name="away_corners_1h" value={formData.away_corners_1h || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Local 2ª Parte</Label>
+                                <Input type="number" name="home_corners_2h" value={formData.home_corners_2h || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Visitante 2ª Parte</Label>
+                                <Input type="number" name="away_corners_2h" value={formData.away_corners_2h || ''} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Tarjetas */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Tarjetas</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Amarillas Local</Label>
+                                <Input type="number" name="home_yellow_cards" value={formData.home_yellow_cards || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Amarillas Visitante</Label>
+                                <Input type="number" name="away_yellow_cards" value={formData.away_yellow_cards || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Rojas Local</Label>
+                                <Input type="number" name="home_red_cards" value={formData.home_red_cards || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Rojas Visitante</Label>
+                                <Input type="number" name="away_red_cards" value={formData.away_red_cards || ''} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Faltas y Fueras de Juego */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-base font-semibold">Faltas</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Local</Label>
+                                    <Input type="number" name="home_fouls" value={formData.home_fouls || ''} onChange={handleChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Visitante</Label>
+                                    <Input type="number" name="away_fouls" value={formData.away_fouls || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-base font-semibold">Fueras de Juego</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Local</Label>
+                                    <Input type="number" name="home_offsides" value={formData.home_offsides || ''} onChange={handleChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Visitante</Label>
+                                    <Input type="number" name="away_offsides" value={formData.away_offsides || ''} onChange={handleChange} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </CardContent>
                 <CardFooter className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>

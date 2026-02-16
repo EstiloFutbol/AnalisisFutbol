@@ -1,4 +1,4 @@
-export default function StatBar({ label, homeValue, awayValue, homeLabel, awayLabel, format = 'number', highlight = 'higher' }) {
+export default function StatBar({ label, homeValue, awayValue, format = 'number', highlight = 'higher' }) {
     const hVal = Number(homeValue) || 0
     const aVal = Number(awayValue) || 0
     const total = hVal + aVal || 1

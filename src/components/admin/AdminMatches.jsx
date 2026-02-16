@@ -17,25 +17,70 @@ export default function AdminMatches({ onClose }) {
         home_team_id: '',
         away_team_id: '',
         stadium: '',
-        referee: '',
+        referee_id: '',
         home_goals: 0,
         away_goals: 0
     })
     const [loading, setLoading] = useState(false)
     const queryClient = useQueryClient()
     const [teams, setTeams] = useState([])
+    const [referees, setReferees] = useState([])
+    const [isAddingReferee, setIsAddingReferee] = useState(false)
+    const [newRefereeName, setNewRefereeName] = useState('')
 
-    // Load teams on mount
+    // Load data on mount
     useState(() => {
-        supabase.from('teams').select('*').order('name').then(({ data }) => setTeams(data || []))
+        const loadInitialData = async () => {
+            const [teamsRes, refereesRes] = await Promise.all([
+                supabase.from('teams').select('*').order('name'),
+                supabase.from('referees').select('*').order('name')
+            ])
+            setTeams(teamsRes.data || [])
+            setReferees(refereesRes.data || [])
+        }
+        loadInitialData()
     }, [])
 
     const handleChange = (e) => {
         const { name, value, type } = e.target
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value
-        }))
+        const val = type === 'number' ? (value === '' ? '' : Number(value)) : value
+
+        setFormData(prev => {
+            const newData = { ...prev, [name]: val }
+
+            // Auto-fill stadium when home team changes
+            if (name === 'home_team_id' && val) {
+                const team = teams.find(t => t.id === Number(val))
+                if (team?.stadium) {
+                    newData.stadium = team.stadium
+                }
+            }
+
+            return newData
+        })
+    }
+
+    const handleAddReferee = async () => {
+        if (!newRefereeName.trim()) return
+        setLoading(true)
+        try {
+            const { data, error } = await supabase
+                .from('referees')
+                .insert([{ name: newRefereeName.trim() }])
+                .select()
+
+            if (error) throw error
+
+            const newRef = data[0]
+            setReferees(prev => [...prev, newRef].sort((a, b) => a.name.localeCompare(b.name)))
+            setFormData(prev => ({ ...prev, referee_id: newRef.id }))
+            setNewRefereeName('')
+            setIsAddingReferee(false)
+        } catch (error) {
+            alert('Error al crear árbitro: ' + error.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -51,8 +96,14 @@ export default function AdminMatches({ onClose }) {
                 .limit(1)
 
             const nextId = (maxIdData?.[0]?.id || 0) + 1
+            const referee = referees.find(r => r.id === Number(formData.referee_id))
+            const matchToInsert = {
+                ...formData,
+                id: nextId,
+                referee: referee?.name || '' // Sync string name for backward compat
+            }
 
-            const { error } = await supabase.from('matches').insert([{ ...formData, id: nextId }])
+            const { error } = await supabase.from('matches').insert([matchToInsert])
             if (error) throw error
 
             alert('Partido creado exitosamente')
@@ -65,7 +116,7 @@ export default function AdminMatches({ onClose }) {
                 home_team_id: '',
                 away_team_id: '',
                 stadium: '',
-                referee: '',
+                referee_id: '',
                 home_goals: 0,
                 away_goals: 0
             })
@@ -147,6 +198,56 @@ export default function AdminMatches({ onClose }) {
                                 <option value="">Seleccionar...</option>
                                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Estadio</Label>
+                            <Input
+                                name="stadium"
+                                value={formData.stadium}
+                                onChange={handleChange}
+                                placeholder="Estadio del partido"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Árbitro</Label>
+                            <div className="flex gap-2">
+                                {isAddingReferee ? (
+                                    <div className="flex w-full gap-2">
+                                        <Input
+                                            value={newRefereeName}
+                                            onChange={(e) => setNewRefereeName(e.target.value)}
+                                            placeholder="Nombre del árbitro"
+                                            className="flex-1"
+                                        />
+                                        <Button type="button" size="icon" onClick={handleAddReferee} disabled={loading}>
+                                            <Save className="h-4 w-4" />
+                                        </Button>
+                                        <Button type="button" size="icon" variant="ghost" onClick={() => setIsAddingReferee(false)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <select
+                                            name="referee_id"
+                                            value={formData.referee_id}
+                                            onChange={handleChange}
+                                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm flex-1"
+                                            required
+                                        >
+                                            <option value="">Seleccionar...</option>
+                                            {referees.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                        </select>
+                                        <Button type="button" size="icon" variant="outline" onClick={() => setIsAddingReferee(true)}>
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 

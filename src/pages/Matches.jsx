@@ -48,7 +48,8 @@ export default function Matches() {
                 (m.home_team?.name || '').toLowerCase().includes(term) ||
                 (m.away_team?.name || '').toLowerCase().includes(term) ||
                 (m.stadium || '').toLowerCase().includes(term) ||
-                (m.referee || '').toLowerCase().includes(term)
+                (m.referee || '').toLowerCase().includes(term) ||
+                (m.referee_data?.name || '').toLowerCase().includes(term)
             )
         }
 

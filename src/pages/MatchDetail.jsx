@@ -157,10 +157,10 @@ export default function MatchDetail() {
                             {match.stadium}
                         </span>
                     )}
-                    {match.referee && (
+                    {(match.referee_data?.name || match.referee) && (
                         <span className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            {match.referee}
+                            {match.referee_data?.name || match.referee}
                         </span>
                     )}
                     {match.attendance && (

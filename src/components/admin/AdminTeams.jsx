@@ -10,7 +10,7 @@ import { useQueryClient } from '@tanstack/react-query'
 export default function AdminTeams() {
     const [teams, setTeams] = useState([])
     const [isCreating, setIsCreating] = useState(false)
-    const [formData, setFormData] = useState({ name: '', short_name: '', logo_url: '' })
+    const [formData, setFormData] = useState({ name: '', short_name: '', logo_url: '', stadium: '' })
     const [loading, setLoading] = useState(false)
     const queryClient = useQueryClient()
 
@@ -40,7 +40,7 @@ export default function AdminTeams() {
             if (error) throw error
             alert('Equipo creado exitosamente')
             setIsCreating(false)
-            setFormData({ name: '', short_name: '', logo_url: '' })
+            setFormData({ name: '', short_name: '', logo_url: '', stadium: '' })
             queryClient.invalidateQueries(['teams'])
             // Refresh list casually
             const { data } = await supabase.from('teams').select('*').order('name')
@@ -79,9 +79,15 @@ export default function AdminTeams() {
                                     <Input name="short_name" value={formData.short_name} onChange={handleChange} placeholder="Ej: RMA" />
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Logo URL</Label>
-                                <Input name="logo_url" value={formData.logo_url} onChange={handleChange} placeholder="https://..." />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Estadio Principal</Label>
+                                    <Input name="stadium" value={formData.stadium} onChange={handleChange} placeholder="Ej: Estadio Santiago Bernabéu" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Logo URL</Label>
+                                    <Input name="logo_url" value={formData.logo_url} onChange={handleChange} placeholder="https://..." />
+                                </div>
                             </div>
                         </CardContent>
                         <CardFooter className="flex justify-end gap-2">

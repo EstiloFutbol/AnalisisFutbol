@@ -9,8 +9,9 @@ export function useMatches(seasonId) {
                 .from('matches')
                 .select(`
                     *,
-                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url),
-                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url)
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url, stadium),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url, stadium),
+                    referee_data:referees(id, name)
                 `)
                 .order('match_date', { ascending: false })
 
@@ -34,8 +35,9 @@ export function useMatch(matchId) {
                 .from('matches')
                 .select(`
                     *,
-                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url),
-                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url)
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url, stadium),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url, stadium),
+                    referee_data:referees(id, name)
                 `)
                 .eq('id', matchId)
                 .single()

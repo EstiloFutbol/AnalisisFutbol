@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AdminMatches from '@/components/admin/AdminMatches'
 import AdminTeams from '@/components/admin/AdminTeams'
 import AdminLeagues from '@/components/admin/AdminLeagues'
-import { Shield, Database, Users, Calendar, Settings } from 'lucide-react'
+import AdminReferees from '@/components/admin/AdminReferees'
+import { Shield, Database, Users, Calendar, Settings, Gavel } from 'lucide-react'
 
 export default function Admin() {
     const { session, loading } = useAuth()
@@ -36,15 +37,16 @@ export default function Admin() {
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Panel de Administración</h1>
                     <p className="text-muted-foreground">
-                        Gestiona partidos, equipos y configuraciones del sistema.
+                        Gestiona partidos, equipos, árbitros y configuraciones del sistema.
                     </p>
                 </div>
             </div>
 
             <Tabs defaultValue="matches" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+                <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
                     <TabsTrigger value="matches">Partidos</TabsTrigger>
                     <TabsTrigger value="teams">Equipos</TabsTrigger>
+                    <TabsTrigger value="referees">Árbitros</TabsTrigger>
                     <TabsTrigger value="leagues">Ligas</TabsTrigger>
                 </TabsList>
 
@@ -54,6 +56,10 @@ export default function Admin() {
 
                 <TabsContent value="teams" className="space-y-4">
                     <AdminTeams />
+                </TabsContent>
+
+                <TabsContent value="referees" className="space-y-4">
+                    <AdminReferees />
                 </TabsContent>
 
                 <TabsContent value="leagues" className="space-y-4">

@@ -4,13 +4,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Save, X } from 'lucide-react'
+import { Loader2, Plus, Save, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 
 export default function MatchEditForm({ match, onClose }) {
     const [formData, setFormData] = useState({ ...match })
     const [loading, setLoading] = useState(false)
+    const [referees, setReferees] = useState([])
+    const [isAddingReferee, setIsAddingReferee] = useState(false)
+    const [newRefereeName, setNewRefereeName] = useState('')
     const queryClient = useQueryClient()
+
+    useEffect(() => {
+        supabase.from('referees').select('*').order('name').then(({ data }) => setReferees(data || []))
+    }, [])
 
     const handleChange = (e) => {
         const { name, value, type } = e.target
@@ -18,6 +26,28 @@ export default function MatchEditForm({ match, onClose }) {
             ...prev,
             [name]: type === 'number' ? (value === '' ? null : Number(value)) : value
         }))
+    }
+
+    const handleAddReferee = async () => {
+        if (!newRefereeName.trim()) return
+        setLoading(true)
+        try {
+            const { data, error } = await supabase
+                .from('referees')
+                .insert([{ name: newRefereeName.trim() }])
+                .select()
+                .single()
+
+            if (error) throw error
+            setReferees(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+            setFormData(prev => ({ ...prev, referee_id: data.id }))
+            setNewRefereeName('')
+            setIsAddingReferee(false)
+        } catch (error) {
+            alert('Error al añadir árbitro: ' + error.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -66,7 +96,8 @@ export default function MatchEditForm({ match, onClose }) {
                     away_corners_1h: formData.away_corners_1h,
                     away_corners_2h: formData.away_corners_2h,
                     total_corners: (Number(formData.home_corners_1h || 0) + Number(formData.home_corners_2h || 0) + Number(formData.away_corners_1h || 0) + Number(formData.away_corners_2h || 0)),
-                    referee: formData.referee,
+                    referee_id: formData.referee_id,
+                    referee: referees.find(r => r.id === Number(formData.referee_id))?.name || formData.referee,
                     stadium: formData.stadium,
                     attendance: formData.attendance,
                     matchday: formData.matchday,
@@ -261,9 +292,40 @@ export default function MatchEditForm({ match, onClose }) {
                             </div>
                             <div className="space-y-2">
                                 <Label>Árbitro</Label>
-                                <Input name="referee" value={formData.referee || ''} onChange={handleChange} />
+                                <div className="flex gap-2">
+                                    {isAddingReferee ? (
+                                        <div className="flex w-full gap-2">
+                                            <Input
+                                                value={newRefereeName}
+                                                onChange={(e) => setNewRefereeName(e.target.value)}
+                                                placeholder="Nombre del árbitro"
+                                                className="flex-1"
+                                            />
+                                            <Button type="button" size="icon" onClick={handleAddReferee} disabled={loading}>
+                                                <Save className="h-4 w-4" />
+                                            </Button>
+                                            <Button type="button" size="icon" variant="ghost" onClick={() => setIsAddingReferee(false)}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select
+                                                name="referee_id"
+                                                value={formData.referee_id || ''}
+                                                onChange={handleChange}
+                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm flex-1"
+                                            >
+                                                <option value="">Seleccionar...</option>
+                                                {referees.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                            </select>
+                                            <Button type="button" size="icon" variant="outline" onClick={() => setIsAddingReferee(true)}>
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                            {/* Attendance removed as per user request "I dont need the assistenace" but I will keeping it in state just in case, or remove from UI? User said "I dont need the assistenace". I will remove from UI. */}
                         </div>
                     </div>
 

@@ -98,7 +98,7 @@ export default function MatchEditForm({ match, onClose }) {
                     total_corners: (Number(formData.home_corners_1h || 0) + Number(formData.home_corners_2h || 0) + Number(formData.away_corners_1h || 0) + Number(formData.away_corners_2h || 0)),
                     referee_id: formData.referee_id,
                     referee: referees.find(r => r.id === Number(formData.referee_id))?.name || formData.referee,
-                    stadium: formData.stadium,
+                    stadium: match.home_team?.stadium || formData.stadium,
                     attendance: formData.attendance,
                     matchday: formData.matchday,
                     home_odds: formData.home_odds,

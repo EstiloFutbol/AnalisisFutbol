@@ -21,6 +21,8 @@ DROP POLICY IF EXISTS "Allow authenticated insert on referees" ON referees;
 CREATE POLICY "Allow authenticated insert on referees" ON referees FOR INSERT TO authenticated WITH CHECK (true);
 DROP POLICY IF EXISTS "Allow authenticated update on referees" ON referees;
 CREATE POLICY "Allow authenticated update on referees" ON referees FOR UPDATE TO authenticated USING (true);
+DROP POLICY IF EXISTS "Allow authenticated delete on referees" ON referees;
+CREATE POLICY "Allow authenticated delete on referees" ON referees FOR DELETE TO authenticated USING (true);
 
 -- 5. Build initial referees from existing match data
 INSERT INTO referees (name)

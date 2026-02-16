@@ -151,10 +151,10 @@ export default function MatchDetail() {
 
                 {/* Venue info */}
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground/60">
-                    {match.stadium && (
+                    {match.home_team?.stadium && (
                         <span className="flex items-center gap-1">
                             <MapPin className="h-3 w-3" />
-                            {match.stadium}
+                            {match.home_team.stadium}
                         </span>
                     )}
                     {(match.referee_data?.name || match.referee) && (

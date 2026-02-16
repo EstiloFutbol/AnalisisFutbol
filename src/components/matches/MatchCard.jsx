@@ -95,10 +95,10 @@ export default function MatchCard({ match, index = 0 }) {
                         <Calendar className="h-3 w-3" />
                         <span>{matchDate}</span>
                     </div>
-                    {match.stadium && (
+                    {match.home_team?.stadium && (
                         <div className="flex items-center gap-1.5">
                             <MapPin className="h-3 w-3" />
-                            <span className="truncate max-w-[140px]">{match.stadium}</span>
+                            <span className="truncate max-w-[140px]">{match.home_team.stadium}</span>
                         </div>
                     )}
                     {match.matchday && (

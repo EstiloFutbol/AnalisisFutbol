@@ -16,7 +16,6 @@ export default function AdminMatches({ onClose }) {
         match_date: new Date().toISOString().split('T')[0],
         home_team_id: '',
         away_team_id: '',
-        stadium: '',
         referee_id: '',
         home_goals: 0,
         away_goals: 0
@@ -47,14 +46,6 @@ export default function AdminMatches({ onClose }) {
 
         setFormData(prev => {
             const newData = { ...prev, [name]: val }
-
-            // Auto-fill stadium when home team changes
-            if (name === 'home_team_id' && val) {
-                const team = teams.find(t => t.id === Number(val))
-                if (team?.stadium) {
-                    newData.stadium = team.stadium
-                }
-            }
 
             return newData
         })
@@ -97,9 +88,11 @@ export default function AdminMatches({ onClose }) {
 
             const nextId = (maxIdData?.[0]?.id || 0) + 1
             const referee = referees.find(r => r.id === Number(formData.referee_id))
+            const homeTeam = teams.find(t => t.id === Number(formData.home_team_id))
             const matchToInsert = {
                 ...formData,
                 id: nextId,
+                stadium: homeTeam?.stadium || '',
                 referee: referee?.name || '' // Sync string name for backward compat
             }
 
@@ -115,7 +108,6 @@ export default function AdminMatches({ onClose }) {
                 match_date: new Date().toISOString().split('T')[0],
                 home_team_id: '',
                 away_team_id: '',
-                stadium: '',
                 referee_id: '',
                 home_goals: 0,
                 away_goals: 0
@@ -201,17 +193,7 @@ export default function AdminMatches({ onClose }) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Estadio</Label>
-                            <Input
-                                name="stadium"
-                                value={formData.stadium}
-                                onChange={handleChange}
-                                placeholder="Estadio del partido"
-                                required
-                            />
-                        </div>
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-2">
                             <Label>Árbitro</Label>
                             <div className="flex gap-2">

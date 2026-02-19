@@ -1,7 +1,7 @@
 import { useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useMatches, useSeasons } from '@/hooks/useMatches'
+import { useMatches, useLeagues } from '@/hooks/useMatches'
 import {
     Trophy, Goal, Target, Users, TrendingUp, Activity,
     PieChart, BarChart3, Clock, Shield, CreditCard,
@@ -83,18 +83,20 @@ function InsightItem({ icon: Icon, title, description, badgeValue, color = 'prim
 
 export default function Dashboard() {
     const [searchParams, setSearchParams] = useSearchParams()
-    const { data: seasons = [] } = useSeasons()
+    const { data: leagues = [] } = useLeagues()
 
-    const selectedSeason = searchParams.get('season')
-    const activeSeason = selectedSeason || (seasons.length > 0 ? seasons[0] : null)
+    const selectedLeagueId = searchParams.get('league')
+    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
+    const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
+    const activeLeague = leagues.find(l => String(l.id) === activeLeagueId)
 
     useEffect(() => {
-        if (!selectedSeason && seasons.length > 0) {
-            setSearchParams({ season: seasons[0] }, { replace: true })
+        if (!selectedLeagueId && defaultLeague) {
+            setSearchParams({ league: String(defaultLeague.id) }, { replace: true })
         }
-    }, [selectedSeason, seasons, setSearchParams])
+    }, [selectedLeagueId, defaultLeague, setSearchParams])
 
-    const { data: matches = [], isLoading } = useMatches(activeSeason)
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId)
 
     const bettingInsights = useMemo(() => {
         if (!matches.length) return []
@@ -200,15 +202,15 @@ export default function Dashboard() {
                     </p>
                 </div>
 
-                {seasons.length > 0 && (
+                {leagues.length > 0 && (
                     <div className="relative inline-block">
                         <select
-                            value={activeSeason || ''}
-                            onChange={(e) => setSearchParams({ season: e.target.value })}
+                            value={activeLeagueId || ''}
+                            onChange={(e) => setSearchParams({ league: e.target.value })}
                             className="appearance-none rounded-xl border border-border bg-card/50 px-6 py-3 pr-10 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 backdrop-blur-xl"
                         >
-                            {seasons.map((season) => (
-                                <option key={season} value={season}>{season}</option>
+                            {leagues.map((league) => (
+                                <option key={league.id} value={league.id}>{league.name} {league.season}</option>
                             ))}
                         </select>
                         <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { useMatches, useSeasons } from '@/hooks/useMatches'
+import { useMatches, useLeagues } from '@/hooks/useMatches'
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line, Legend, PieChart, Pie, Cell
@@ -24,11 +24,12 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Statistics() {
-    const { data: seasons = [] } = useSeasons()
-    const [selectedSeason, setSelectedSeason] = useState(null)
+    const { data: leagues = [] } = useLeagues()
+    const [selectedLeagueId, setSelectedLeagueId] = useState(null)
 
-    const activeSeason = selectedSeason || seasons[0]
-    const { data: matches = [], isLoading } = useMatches(activeSeason)
+    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
+    const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId)
 
     // Team statistics
     const teamStats = useMemo(() => {
@@ -121,14 +122,14 @@ export default function Statistics() {
                     <h1 className="text-3xl font-black tracking-tight text-foreground">Estadísticas</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Análisis de la temporada</p>
                 </div>
-                {seasons.length > 0 && (
+                {leagues.length > 0 && (
                     <select
-                        value={activeSeason || ''}
-                        onChange={(e) => setSelectedSeason(e.target.value)}
+                        value={activeLeagueId || ''}
+                        onChange={(e) => setSelectedLeagueId(e.target.value)}
                         className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                        {seasons.map((s) => (
-                            <option key={s} value={s}>{s}</option>
+                        {leagues.map((l) => (
+                            <option key={l.id} value={l.id}>{l.name} {l.season}</option>
                         ))}
                     </select>
                 )}

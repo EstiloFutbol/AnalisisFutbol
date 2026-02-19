@@ -6,12 +6,16 @@ import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
 import { Loader2, Save, X, Plus, Search } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useLeagues } from '@/hooks/useMatches'
 
 export default function AdminMatches({ onClose }) {
     const [matches, setMatches] = useState([]) // For listing/editing in future
     const [isCreating, setIsCreating] = useState(false)
+    const { data: leagues = [] } = useLeagues()
+    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     const [formData, setFormData] = useState({
-        season: '2024-2025',
+        league_id: '',
+        season: '2025-2026',
         matchday: 1,
         match_date: new Date().toISOString().split('T')[0],
         home_team_id: '',
@@ -38,10 +42,6 @@ export default function AdminMatches({ onClose }) {
         away_red_cards: null,
         home_offsides: null,
         away_offsides: null,
-        home_passes: null,
-        away_passes: null,
-        home_pass_accuracy: null,
-        away_pass_accuracy: null,
         home_odds: null,
         draw_odds: null,
         away_odds: null,
@@ -117,9 +117,12 @@ export default function AdminMatches({ onClose }) {
             const nextId = (maxIdData?.[0]?.id || 0) + 1
             const referee = referees.find(r => r.id === Number(formData.referee_id))
             const homeTeam = teams.find(t => t.id === Number(formData.home_team_id))
+            const selectedLeague = leagues.find(l => l.id === Number(formData.league_id))
             const matchToInsert = {
                 ...formData,
                 id: nextId,
+                season: selectedLeague?.season || formData.season,
+                league_id: Number(formData.league_id) || null,
                 stadium: homeTeam?.stadium || '',
                 referee: referee?.name || '' // Sync string name for backward compat
             }
@@ -131,7 +134,8 @@ export default function AdminMatches({ onClose }) {
             setIsCreating(false)
             // Reset form
             setFormData({
-                season: '2024-2025',
+                league_id: defaultLeague?.id || '',
+                season: '2025-2026',
                 matchday: 1,
                 match_date: new Date().toISOString().split('T')[0],
                 home_team_id: '',
@@ -158,10 +162,6 @@ export default function AdminMatches({ onClose }) {
                 away_red_cards: null,
                 home_offsides: null,
                 away_offsides: null,
-                home_passes: null,
-                away_passes: null,
-                home_pass_accuracy: null,
-                away_pass_accuracy: null,
                 home_odds: null,
                 draw_odds: null,
                 away_odds: null,
@@ -200,18 +200,20 @@ export default function AdminMatches({ onClose }) {
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Temporada</Label>
+                            <Label>Liga / Temporada</Label>
                             <select
-                                name="season"
-                                value={formData.season}
+                                name="league_id"
+                                value={formData.league_id}
                                 onChange={handleChange}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 required
                             >
-                                <option value="2025-2026">2025-2026</option>
-                                <option value="2024-2025">2024-2025</option>
-                                <option value="2023-2024">2023-2024</option>
-                                <option value="2022-2023">2022-2023</option>
+                                <option value="">Seleccionar...</option>
+                                {leagues.map(l => (
+                                    <option key={l.id} value={l.id}>
+                                        {l.name} {l.season}{l.is_default ? ' ★' : ''}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div className="space-y-2">

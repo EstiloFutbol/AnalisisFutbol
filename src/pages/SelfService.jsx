@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useMatches, useSeasons, useTeams } from '@/hooks/useMatches'
+import { useMatches, useLeagues, useTeams } from '@/hooks/useMatches'
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     ScatterChart, Scatter, AreaChart, Area, ComposedChart
@@ -50,7 +50,7 @@ const Y_AXIS_OPTIONS = [
 export default function SelfService() {
     // Queries
     const { data: matches = [], isLoading: loadingMatches } = useMatches()
-    const { data: seasons = [] } = useSeasons()
+    const { data: leagues = [] } = useLeagues()
     const { data: teams = [] } = useTeams()
 
     // State
@@ -60,7 +60,7 @@ export default function SelfService() {
     const [aggregation, setAggregation] = useState('sum') // 'sum', 'avg', 'none'
 
     // Filters State
-    const [selectedSeason, setSelectedSeason] = useState('')
+    const [selectedLeague, setSelectedLeague] = useState('')
     const [selectedTeam, setSelectedTeam] = useState('')
     const [selectedReferee, setSelectedReferee] = useState('')
     const [selectedCoach, setSelectedCoach] = useState('')
@@ -86,7 +86,10 @@ export default function SelfService() {
 
         // 1. Filter
         let filtered = matches.filter(m => {
-            if (selectedSeason && m.season !== selectedSeason) return false
+            if (selectedLeague) {
+                const league = leagues.find(l => String(l.id) === selectedLeague)
+                if (league && m.season !== league.season) return false
+            }
             if (selectedReferee && m.referee !== selectedReferee) return false
             if (selectedCoach && m.home_coach !== selectedCoach && m.away_coach !== selectedCoach) return false
             if (selectedTeam) {
@@ -239,7 +242,7 @@ export default function SelfService() {
             return String(a[xAxis]).localeCompare(String(b[xAxis]))
         })
 
-    }, [matches, xAxis, selectedSeason, selectedTeam, selectedReferee, aggregation])
+    }, [matches, xAxis, selectedLeague, selectedTeam, selectedReferee, aggregation])
 
     // Toggle Y Axis Selection
     const toggleYAxis = (id) => {
@@ -365,11 +368,11 @@ export default function SelfService() {
 
                             <select
                                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                value={selectedSeason}
-                                onChange={(e) => setSelectedSeason(e.target.value)}
+                                value={selectedLeague}
+                                onChange={(e) => setSelectedLeague(e.target.value)}
                             >
-                                <option value="">Todas las Temporadas</option>
-                                {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                                <option value="">Todas las Ligas</option>
+                                {leagues.map(l => <option key={l.id} value={l.id}>{l.name} {l.season}</option>)}
                             </select>
 
                             <select

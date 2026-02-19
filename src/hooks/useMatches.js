@@ -1,9 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 
-export function useMatches(seasonId) {
+export function useLeagues() {
     return useQuery({
-        queryKey: ['matches', seasonId],
+        queryKey: ['leagues'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('leagues')
+                .select('*')
+                .order('is_default', { ascending: false })
+                .order('season', { ascending: false })
+
+            if (error) throw error
+            return data || []
+        },
+    })
+}
+
+export function useMatches(leagueId) {
+    return useQuery({
+        queryKey: ['matches', leagueId],
         queryFn: async () => {
             let query = supabase
                 .from('matches')
@@ -15,8 +31,8 @@ export function useMatches(seasonId) {
                 `)
                 .order('match_date', { ascending: false })
 
-            if (seasonId) {
-                query = query.eq('season', seasonId)
+            if (leagueId) {
+                query = query.eq('league_id', leagueId)
             }
 
             const { data, error } = await query
@@ -82,17 +98,17 @@ export function useTeams() {
     })
 }
 
-export function useMatchdays(seasonId) {
+export function useMatchdays(leagueId) {
     return useQuery({
-        queryKey: ['matchdays', seasonId],
+        queryKey: ['matchdays', leagueId],
         queryFn: async () => {
             let query = supabase
                 .from('matches')
                 .select('matchday')
                 .order('matchday', { ascending: true })
 
-            if (seasonId) {
-                query = query.eq('season', seasonId)
+            if (leagueId) {
+                query = query.eq('league_id', leagueId)
             }
 
             const { data, error } = await query

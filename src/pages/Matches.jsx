@@ -1,33 +1,33 @@
 import { useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useMatches, useSeasons } from '@/hooks/useMatches'
+import { useMatches, useLeagues } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
 import { Search, Filter, CalendarDays } from 'lucide-react'
 
 export default function Matches() {
     const [searchParams, setSearchParams] = useSearchParams()
-    const { data: seasons = [] } = useSeasons()
+    const { data: leagues = [] } = useLeagues()
 
     // Get filter values from URL params
-    const selectedSeason = searchParams.get('season')
+    const selectedLeagueId = searchParams.get('league')
     const selectedMatchday = searchParams.get('matchday')
     const searchTerm = searchParams.get('q') || ''
 
-    // Determine active season (URL param > first available season)
-    // We only set default if seasons are loaded and no param is present
-    const activeSeason = selectedSeason || (seasons.length > 0 ? seasons[0] : null)
+    // Determine active league (URL param > default league > first available)
+    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
+    const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
 
-    // Sync default season to URL if not present
+    // Sync default league to URL if not present
     useEffect(() => {
-        if (!selectedSeason && seasons.length > 0) {
+        if (!selectedLeagueId && defaultLeague) {
             setSearchParams(prev => {
-                prev.set('season', seasons[0])
+                prev.set('league', String(defaultLeague.id))
                 return prev
             }, { replace: true })
         }
-    }, [selectedSeason, seasons, setSearchParams])
+    }, [selectedLeagueId, defaultLeague, setSearchParams])
 
-    const { data: matches = [], isLoading } = useMatches(activeSeason)
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId)
 
     // Calculate available matchdays from the fetched matches
     const availableMatchdays = useMemo(() => {
@@ -57,10 +57,10 @@ export default function Matches() {
     }, [matches, selectedMatchday, searchTerm])
 
     // Handlers for updating URL params
-    const handleSeasonChange = (season) => {
+    const handleLeagueChange = (leagueId) => {
         setSearchParams(prev => {
-            prev.set('season', season)
-            prev.delete('matchday') // Reset matchday on season change
+            prev.set('league', leagueId)
+            prev.delete('matchday') // Reset matchday on league change
             return prev
         })
     }
@@ -127,15 +127,15 @@ export default function Matches() {
                     />
                 </div>
 
-                {/* Season selector */}
-                {seasons.length > 0 && (
+                {/* League selector */}
+                {leagues.length > 0 && (
                     <select
-                        value={activeSeason || ''}
-                        onChange={(e) => handleSeasonChange(e.target.value)}
+                        value={activeLeagueId || ''}
+                        onChange={(e) => handleLeagueChange(e.target.value)}
                         className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                        {seasons.map((season) => (
-                            <option key={season} value={season}>{season}</option>
+                        {leagues.map((league) => (
+                            <option key={league.id} value={league.id}>{league.name} {league.season}</option>
                         ))}
                     </select>
                 )}

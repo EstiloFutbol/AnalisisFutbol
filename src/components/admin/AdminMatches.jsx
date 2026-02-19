@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -55,8 +55,15 @@ export default function AdminMatches({ onClose }) {
     const [isAddingReferee, setIsAddingReferee] = useState(false)
     const [newRefereeName, setNewRefereeName] = useState('')
 
+    // Set default league when leagues load
+    useEffect(() => {
+        if (defaultLeague && !formData.league_id) {
+            setFormData(prev => ({ ...prev, league_id: defaultLeague.id }))
+        }
+    }, [defaultLeague])
+
     // Load data on mount
-    useState(() => {
+    useEffect(() => {
         const loadInitialData = async () => {
             const [teamsRes, refereesRes] = await Promise.all([
                 supabase.from('teams').select('*').order('name'),

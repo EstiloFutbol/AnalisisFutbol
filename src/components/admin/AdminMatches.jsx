@@ -13,17 +13,26 @@ export default function AdminMatches({ onClose }) {
     const [isCreating, setIsCreating] = useState(false)
     const { data: leagues = [] } = useLeagues()
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
-    const [formData, setFormData] = useState({
+    const initialFormData = {
         league_id: '',
         season: '2025-2026',
         matchday: 1,
         match_date: new Date().toISOString().split('T')[0],
+        kick_off_time: '',
         home_team_id: '',
         away_team_id: '',
         referee_id: '',
         home_goals: 0,
         away_goals: 0,
+        home_xg: null,
+        away_xg: null,
+        home_goal_minutes_text: '',
+        away_goal_minutes_text: '',
         attendance: null,
+        home_coach: '',
+        away_coach: '',
+        home_formation: '',
+        away_formation: '',
         home_possession: null,
         away_possession: null,
         home_shots: null,
@@ -45,9 +54,8 @@ export default function AdminMatches({ onClose }) {
         home_odds: null,
         draw_odds: null,
         away_odds: null,
-        home_goal_minutes: [],
-        away_goal_minutes: []
-    })
+    }
+    const [formData, setFormData] = useState(initialFormData)
     const [loading, setLoading] = useState(false)
     const queryClient = useQueryClient()
     const [teams, setTeams] = useState([])
@@ -125,12 +133,19 @@ export default function AdminMatches({ onClose }) {
             const referee = referees.find(r => r.id === Number(formData.referee_id))
             const homeTeam = teams.find(t => t.id === Number(formData.home_team_id))
             const selectedLeague = leagues.find(l => l.id === Number(formData.league_id))
+            // Parse goal minutes from comma-separated text
+            const parseMinutes = (text) => {
+                if (!text || !text.trim()) return []
+                return text.split(',').map(m => m.trim()).filter(m => m !== '')
+            }
+
             const matchToInsert = {
                 id: nextId,
                 season: selectedLeague?.season || formData.season,
                 league_id: Number(formData.league_id) || null,
                 matchday: formData.matchday,
                 match_date: formData.match_date,
+                kick_off_time: formData.kick_off_time || null,
                 home_team_id: Number(formData.home_team_id) || null,
                 away_team_id: Number(formData.away_team_id) || null,
                 referee_id: Number(formData.referee_id) || null,
@@ -138,7 +153,16 @@ export default function AdminMatches({ onClose }) {
                 stadium: homeTeam?.stadium || '',
                 home_goals: formData.home_goals,
                 away_goals: formData.away_goals,
+                home_xg: formData.home_xg,
+                away_xg: formData.away_xg,
+                home_goal_minutes: parseMinutes(formData.home_goal_minutes_text),
+                away_goal_minutes: parseMinutes(formData.away_goal_minutes_text),
+                btts: (formData.home_goals > 0 && formData.away_goals > 0),
                 attendance: formData.attendance,
+                home_coach: formData.home_coach || null,
+                away_coach: formData.away_coach || null,
+                home_formation: formData.home_formation || null,
+                away_formation: formData.away_formation || null,
                 home_possession: formData.home_possession,
                 away_possession: formData.away_possession,
                 home_shots: formData.home_shots,
@@ -161,8 +185,6 @@ export default function AdminMatches({ onClose }) {
                 home_odds: formData.home_odds,
                 draw_odds: formData.draw_odds,
                 away_odds: formData.away_odds,
-                home_goal_minutes: formData.home_goal_minutes,
-                away_goal_minutes: formData.away_goal_minutes,
             }
 
             const { error } = await supabase.from('matches').insert([matchToInsert])
@@ -171,41 +193,7 @@ export default function AdminMatches({ onClose }) {
             alert('Partido creado exitosamente')
             setIsCreating(false)
             // Reset form
-            setFormData({
-                league_id: defaultLeague?.id || '',
-                season: '2025-2026',
-                matchday: 1,
-                match_date: new Date().toISOString().split('T')[0],
-                home_team_id: '',
-                away_team_id: '',
-                referee_id: '',
-                home_goals: 0,
-                away_goals: 0,
-                attendance: null,
-                home_possession: null,
-                away_possession: null,
-                home_shots: null,
-                away_shots: null,
-                home_shots_on_target: null,
-                away_shots_on_target: null,
-                home_corners_1h: null,
-                home_corners_2h: null,
-                away_corners_1h: null,
-                away_corners_2h: null,
-                home_fouls: null,
-                away_fouls: null,
-                home_yellow_cards: null,
-                away_yellow_cards: null,
-                home_red_cards: null,
-                away_red_cards: null,
-                home_offsides: null,
-                away_offsides: null,
-                home_odds: null,
-                draw_odds: null,
-                away_odds: null,
-                home_goal_minutes: [],
-                away_goal_minutes: []
-            })
+            setFormData({ ...initialFormData, league_id: defaultLeague?.id || '' })
             queryClient.invalidateQueries(['matches'])
         } catch (error) {
             console.error('Error creating match:', error)
@@ -340,6 +328,74 @@ export default function AdminMatches({ onClose }) {
                             <div className="space-y-2">
                                 <Label>Goles Visitante</Label>
                                 <Input type="number" name="away_goals" value={formData.away_goals} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* xG */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Expected Goals (xG)</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>xG Local</Label>
+                                <Input type="number" step="0.01" name="home_xg" value={formData.home_xg || ''} onChange={handleChange} placeholder="Ej: 1.45" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>xG Visitante</Label>
+                                <Input type="number" step="0.01" name="away_xg" value={formData.away_xg || ''} onChange={handleChange} placeholder="Ej: 0.85" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Minutos de Goles */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Minutos de Goles</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Local (separados por coma)</Label>
+                                <Input name="home_goal_minutes_text" value={formData.home_goal_minutes_text} onChange={handleChange} placeholder="Ej: 23, 45+1, 67" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Visitante (separados por coma)</Label>
+                                <Input name="away_goal_minutes_text" value={formData.away_goal_minutes_text} onChange={handleChange} placeholder="Ej: 12, 89" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Asistencia y Hora */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Asistencia y Hora</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Asistencia</Label>
+                                <Input type="number" name="attendance" value={formData.attendance || ''} onChange={handleChange} placeholder="Ej: 45000" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Hora de Inicio</Label>
+                                <Input type="time" name="kick_off_time" value={formData.kick_off_time || ''} onChange={handleChange} />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Entrenadores y Formaciones */}
+                    <div className="space-y-2">
+                        <Label className="text-base font-semibold">Entrenadores y Formaciones</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Entrenador Local</Label>
+                                <Input name="home_coach" value={formData.home_coach} onChange={handleChange} placeholder="Ej: Carlo Ancelotti" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Entrenador Visitante</Label>
+                                <Input name="away_coach" value={formData.away_coach} onChange={handleChange} placeholder="Ej: Diego Simeone" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Formación Local</Label>
+                                <Input name="home_formation" value={formData.home_formation} onChange={handleChange} placeholder="Ej: 4-3-3" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Formación Visitante</Label>
+                                <Input name="away_formation" value={formData.away_formation} onChange={handleChange} placeholder="Ej: 5-3-2" />
                             </div>
                         </div>
                     </div>

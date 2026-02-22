@@ -7,6 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Filter, Settings2, BarChart3, LineChart as LineIcon, PieChart, Activity } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import BettingCalculator from '@/components/BettingCalculator'
 
 // Configuration constants
 const CHART_TYPES = [
@@ -263,6 +264,8 @@ export default function SelfService() {
                 <h1 className="text-3xl font-bold tracking-tight text-white">Self-Service Data</h1>
                 <p className="text-muted-foreground">Explora, filtra y crea tus propios gráficos personalizados.</p>
             </div>
+
+            <BettingCalculator matches={matches} />
 
             <div className="grid gap-6 lg:grid-cols-4">
 

@@ -8,7 +8,8 @@ import AdminMatches from '@/components/admin/AdminMatches'
 import AdminTeams from '@/components/admin/AdminTeams'
 import AdminLeagues from '@/components/admin/AdminLeagues'
 import AdminReferees from '@/components/admin/AdminReferees'
-import { Shield, Database, Users, Calendar, Settings, Gavel } from 'lucide-react'
+import AdminCoaches from '@/components/admin/AdminCoaches'
+import { Shield, Database, Users, Calendar, Settings, Gavel, UserCheck } from 'lucide-react'
 
 export default function Admin() {
     const { session, loading } = useAuth()
@@ -43,10 +44,11 @@ export default function Admin() {
             </div>
 
             <Tabs defaultValue="matches" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
+                <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
                     <TabsTrigger value="matches">Partidos</TabsTrigger>
                     <TabsTrigger value="teams">Equipos</TabsTrigger>
                     <TabsTrigger value="referees">Árbitros</TabsTrigger>
+                    <TabsTrigger value="coaches">Entrenadores</TabsTrigger>
                     <TabsTrigger value="leagues">Ligas</TabsTrigger>
                 </TabsList>
 
@@ -60,6 +62,10 @@ export default function Admin() {
 
                 <TabsContent value="referees" className="space-y-4">
                     <AdminReferees />
+                </TabsContent>
+
+                <TabsContent value="coaches" className="space-y-4">
+                    <AdminCoaches />
                 </TabsContent>
 
                 <TabsContent value="leagues" className="space-y-4">

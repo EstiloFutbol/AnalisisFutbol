@@ -60,8 +60,11 @@ export default function AdminMatches({ onClose }) {
     const queryClient = useQueryClient()
     const [teams, setTeams] = useState([])
     const [referees, setReferees] = useState([])
+    const [coaches, setCoaches] = useState([])
     const [isAddingReferee, setIsAddingReferee] = useState(false)
     const [newRefereeName, setNewRefereeName] = useState('')
+    const [isAddingCoach, setIsAddingCoach] = useState(false)
+    const [newCoachName, setNewCoachName] = useState('')
 
     // Set default league when leagues load
     useEffect(() => {
@@ -73,12 +76,14 @@ export default function AdminMatches({ onClose }) {
     // Load data on mount
     useEffect(() => {
         const loadInitialData = async () => {
-            const [teamsRes, refereesRes] = await Promise.all([
+            const [teamsRes, refereesRes, coachesRes] = await Promise.all([
                 supabase.from('teams').select('*').order('name'),
-                supabase.from('referees').select('*').order('name')
+                supabase.from('referees').select('*').order('name'),
+                supabase.from('coaches').select('*').order('name')
             ])
             setTeams(teamsRes.data || [])
             setReferees(refereesRes.data || [])
+            setCoaches(coachesRes.data || [])
         }
         loadInitialData()
     }, [])
@@ -383,11 +388,17 @@ export default function AdminMatches({ onClose }) {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Entrenador Local</Label>
-                                <Input name="home_coach" value={formData.home_coach} onChange={handleChange} placeholder="Ej: Carlo Ancelotti" />
+                                <select name="home_coach" value={formData.home_coach} onChange={handleChange} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Seleccionar entrenador</option>
+                                    {coaches.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Entrenador Visitante</Label>
-                                <Input name="away_coach" value={formData.away_coach} onChange={handleChange} placeholder="Ej: Diego Simeone" />
+                                <select name="away_coach" value={formData.away_coach} onChange={handleChange} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Seleccionar entrenador</option>
+                                    {coaches.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Formación Local</Label>

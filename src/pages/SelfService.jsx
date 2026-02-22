@@ -81,12 +81,10 @@ export default function SelfService() {
         }
     }, [matches])
 
-    // Data Processing
-    const processedData = useMemo(() => {
+    // 1. Filtered Matches (shared between chart and calculator)
+    const filteredMatches = useMemo(() => {
         if (!matches.length) return []
-
-        // 1. Filter
-        let filtered = matches.filter(m => {
+        return matches.filter(m => {
             if (selectedLeague) {
                 const league = leagues.find(l => String(l.id) === selectedLeague)
                 if (league && m.season !== league.season) return false
@@ -101,6 +99,13 @@ export default function SelfService() {
             }
             return true
         })
+    }, [matches, selectedLeague, selectedTeam, selectedReferee, selectedCoach, leagues])
+
+    // Data Processing for charts
+    const processedData = useMemo(() => {
+        if (!filteredMatches.length) return []
+
+        let filtered = filteredMatches
 
         // 2. Map / Derive Values
         // Special Case: Minute Interval (Goals Aggregation)
@@ -243,7 +248,7 @@ export default function SelfService() {
             return String(a[xAxis]).localeCompare(String(b[xAxis]))
         })
 
-    }, [matches, xAxis, selectedLeague, selectedTeam, selectedReferee, aggregation])
+    }, [filteredMatches, xAxis, aggregation])
 
     // Toggle Y Axis Selection
     const toggleYAxis = (id) => {
@@ -265,7 +270,7 @@ export default function SelfService() {
                 <p className="text-muted-foreground">Explora, filtra y crea tus propios gráficos personalizados.</p>
             </div>
 
-            <BettingCalculator matches={matches} />
+            <BettingCalculator matches={filteredMatches} />
 
             <div className="grid gap-6 lg:grid-cols-4">
 

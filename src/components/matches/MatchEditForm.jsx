@@ -12,12 +12,19 @@ export default function MatchEditForm({ match, onClose }) {
     const [formData, setFormData] = useState({ ...match })
     const [loading, setLoading] = useState(false)
     const [referees, setReferees] = useState([])
+    const [coaches, setCoaches] = useState([])
     const [isAddingReferee, setIsAddingReferee] = useState(false)
     const [newRefereeName, setNewRefereeName] = useState('')
     const queryClient = useQueryClient()
 
     useEffect(() => {
-        supabase.from('referees').select('*').order('name').then(({ data }) => setReferees(data || []))
+        Promise.all([
+            supabase.from('referees').select('*').order('name'),
+            supabase.from('coaches').select('*').order('name')
+        ]).then(([refRes, coachRes]) => {
+            setReferees(refRes.data || [])
+            setCoaches(coachRes.data || [])
+        })
     }, [])
 
     const handleChange = (e) => {
@@ -106,6 +113,12 @@ export default function MatchEditForm({ match, onClose }) {
                     away_odds: formData.away_odds,
                     home_goal_minutes: parseMinutes(formData.home_goal_minutes_text || JSON.stringify(formData.home_goal_minutes || [])),
                     away_goal_minutes: parseMinutes(formData.away_goal_minutes_text || JSON.stringify(formData.away_goal_minutes || [])),
+                    match_date: formData.match_date,
+                    kick_off_time: formData.kick_off_time || null,
+                    home_coach: formData.home_coach || null,
+                    away_coach: formData.away_coach || null,
+                    home_formation: formData.home_formation || null,
+                    away_formation: formData.away_formation || null,
                 })
                 .eq('id', match.id)
 
@@ -325,6 +338,46 @@ export default function MatchEditForm({ match, onClose }) {
                                         </>
                                     )}
                                 </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Fecha</Label>
+                                <Input type="date" name="match_date" value={formData.match_date || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Hora de Inicio</Label>
+                                <Input type="time" name="kick_off_time" value={formData.kick_off_time || ''} onChange={handleChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Asistencia</Label>
+                                <Input type="number" name="attendance" value={formData.attendance || ''} onChange={handleChange} placeholder="Ej: 45000" />
+                            </div>
+                        </div>
+
+                        {/* Coaches & Formations */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Entrenador Local</Label>
+                                <select name="home_coach" value={formData.home_coach || ''} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Seleccionar...</option>
+                                    {coaches.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Entrenador Visitante</Label>
+                                <select name="away_coach" value={formData.away_coach || ''} onChange={handleChange} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Seleccionar...</option>
+                                    {coaches.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Formación Local</Label>
+                                <Input name="home_formation" value={formData.home_formation || ''} onChange={handleChange} placeholder="Ej: 4-3-3" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Formación Visitante</Label>
+                                <Input name="away_formation" value={formData.away_formation || ''} onChange={handleChange} placeholder="Ej: 5-3-2" />
                             </div>
                         </div>
                     </div>

@@ -264,9 +264,11 @@ def parse_gk_table(df, header_row):
 
 # ── Main parser ──────────────────────────────────────────────────────────────
 
-def parse_match_file(filepath):
-    df = pd.read_excel(filepath, sheet_name=0, header=None)
-    r = {"file": os.path.basename(filepath)}
+def parse_match_file(filepath, sheet_name=0):
+    df = pd.read_excel(filepath, sheet_name=sheet_name, header=None)
+    fname = os.path.basename(filepath)
+    sheet_label = f"{fname}[{sheet_name}]" if sheet_name != 0 else fname
+    r = {"file": sheet_label}
 
     # ── Title: teams, matchday ───────────────────────────────────────────
     title = clean(df.iloc[0, 0]) or ""
@@ -618,22 +620,38 @@ def main():
 
     if not files:
         print(f"No .xlsx files found in {MATCH_FILES_DIR}/")
-        print(f"(Already-processed files are in {MATCH_FILES_DIR}/processed/)")
+        print(f"(Already-processed files are in {MATCH_FILES_DIR}/processed/)\n")
         return
 
     print(f"Found {len(files)} match file(s)\n")
 
-    # ── Parse & preview all files ─────────────────────────────────────────────
-    parsed = []   # list of (filepath, data) tuples
+    # ── Parse & preview all files (multi-sheet aware) ─────────────────────────
+    # parsed entries: {data dict, '_filepath': str, '_all_sheets_done': bool}
+    parsed = []          # list of data dicts (one per match/sheet)
+    file_sheet_map = {}  # filepath -> [sheet_indices that parsed OK]
+
     for f in files:
-        try:
-            data = parse_match_file(f)
-            data["_filepath"] = f
-            print_preview(data)
-            parsed.append(data)
-        except Exception as e:
-            print(f"[ERROR] Could not parse {os.path.basename(f)}: {e}")
-            import traceback; traceback.print_exc()
+        with pd.ExcelFile(f) as xl:        # ← 'with' releases the file lock
+            sheet_names = xl.sheet_names
+            is_multi = len(sheet_names) > 1
+
+            if is_multi:
+                print(f"  Multi-sheet file: {os.path.basename(f)} ({len(sheet_names)} hojas)")
+
+            for sheet_idx, sheet_name in enumerate(sheet_names):
+                try:
+                    data = parse_match_file(f, sheet_name=sheet_idx)
+                    data["_filepath"]     = f
+                    data["_sheet_idx"]    = sheet_idx
+                    data["_is_multi"]     = is_multi
+                    data["_total_sheets"] = len(sheet_names)
+                    print_preview(data)
+                    parsed.append(data)
+                    file_sheet_map.setdefault(f, []).append(sheet_idx)
+                except Exception as e:
+                    label = f"{os.path.basename(f)}[Hoja{sheet_idx+1}]"
+                    print(f"[ERROR] Could not parse {label}: {e}")
+                    import traceback; traceback.print_exc()
 
     if not parsed:
         print("No files could be parsed. Aborting.")
@@ -660,17 +678,32 @@ def main():
     db_teams = {t["name"]: t["id"] for t in sb.from_("teams").select("id,name").execute().data}
 
     ok = fail = 0
+    file_ok_sheets = {}   # filepath -> count of successfully uploaded sheets
+
     for data in parsed:
-        filepath = data.pop("_filepath")
+        filepath     = data.pop("_filepath")
+        sheet_idx    = data.pop("_sheet_idx")
+        is_multi     = data.pop("_is_multi")
+        total_sheets = data.pop("_total_sheets")
+
         if upload_match(sb, db_teams, data):
-            ok   += 1
-            move_to_processed(filepath)   # ← only move on success
+            ok += 1
+            file_ok_sheets[filepath] = file_ok_sheets.get(filepath, 0) + 1
+            # For single-sheet files, move immediately
+            if not is_multi:
+                move_to_processed(filepath)
         else:
             fail += 1
-            print(f"  [!] Keeping file in place (upload failed): {os.path.basename(filepath)}")
+            print(f"  [!] Sheet {sheet_idx+1} failed — keeping file: {os.path.basename(filepath)}")
+
+    # Move multi-sheet files only after ALL their sheets have been processed
+    for filepath in file_ok_sheets:
+        sheets_in_file = len(file_sheet_map.get(filepath, []))
+        if sheets_in_file > 1:   # is multi-sheet — move the whole file once
+            move_to_processed(filepath)
 
     print(f"\n{'='*62}")
-    print(f"  Done: {ok} uploaded & moved, {fail} failed.")
+    print(f"  Done: {ok} uploaded, {fail} failed.")
     print(f"{'='*62}\n")
 
 

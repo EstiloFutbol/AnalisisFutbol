@@ -6,6 +6,7 @@ import Dashboard from '@/pages/Dashboard'
 import Matches from '@/pages/Matches'
 import MatchDetail from '@/pages/MatchDetail'
 import Statistics from '@/pages/Statistics'
+import Players from '@/pages/Players'
 
 import SelfService from '@/pages/SelfService'
 import DataImport from '@/pages/DataImport'
@@ -27,6 +28,7 @@ function App() {
                                 <Route path="/matches" element={<Matches />} />
                                 <Route path="/matches/:matchId" element={<MatchDetail />} />
                                 <Route path="/statistics" element={<Statistics />} />
+                                <Route path="/players" element={<Players />} />
                                 <Route path="/self-service" element={<SelfService />} />
                                 <Route path="/import" element={<DataImport />} />
                                 <Route path="/login" element={<Login />} />

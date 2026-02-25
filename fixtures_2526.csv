@@ -1,0 +1,381 @@
+Wk;Day;Date;Time;Home;Score;Away;Attendance;Venue;Referee
+1;Fri;15/08/2025;19:00;Girona;1–3;Rayo Vallecano;12,403;Estadi Municipal de Montilivi;Javier Alberola
+1;Fri;15/08/2025;21:30;Villarreal;2–0;Oviedo;18,333;Estadio de la Cerámica;Alejandro Muñíz
+1;Sat;16/08/2025;19:30;Mallorca;0–3;Barcelona;23,318;Estadi Mallorca Son Moix;José Luis Munuera
+1;Sat;16/08/2025;21:30;Alavés;2–1;Levante;12,837;Estadio de Mendizorroza;Miguel Sesma
+1;Sat;16/08/2025;21:30;Valencia;1–1;Real Sociedad;45,333;Estadio de Mestalla;Jose Maria Sánchez
+1;Sun;17/08/2025;17:00;Celta Vigo;0–2;Getafe;20,53;Estadio Abanca Balaídos;Iosu Galech
+1;Sun;17/08/2025;19:30;Athletic Club;3–2;Sevilla;49,134;San Mamés;Francisco Hernández
+1;Sun;17/08/2025;21:30;Espanyol;2–1;Atlético Madrid;29,612;RCDE Stadium;Mateo Busquets
+1;Mon;18/08/2025;21:00;Elche;1–1;Real Betis;28,585;Estadio Manuel Martínez Valero;Víctor García
+1;Tue;19/08/2025;21:00;Real Madrid;1–0;Osasuna;68,407;Estadio Santiago Bernabéu;Adrián Cordero
+2;Fri;22/08/2025;21:30;Real Betis;1–0;Alavés;54,646;Estadio La Cartuja de Sevilla;Miguel Ángel Ortiz Arias
+2;Sat;23/08/2025;17:00;Mallorca;1–1;Celta Vigo;16,274;Estadi Mallorca Son Moix;José Guzmán
+2;Sat;23/08/2025;19:30;Atlético Madrid;1–1;Elche;59,369;Riyadh Air Metropolitano;César Soto
+2;Sat;23/08/2025;21:30;Levante;2–3;Barcelona;23,415;Estadio Ciudad de Valencia;Alejandro Hernández
+2;Sun;24/08/2025;17:00;Osasuna;1–0;Valencia;21,226;Estadio El Sadar;Jesús Gil
+2;Sun;24/08/2025;19:30;Real Sociedad;2–2;Espanyol;31,616;Reale Arena;Alejandro Quintero
+2;Sun;24/08/2025;19:30;Villarreal;5–0;Girona;18,195;Estadio de la Cerámica;Guillermo Cuadra
+2;Sun;24/08/2025;21:30;Oviedo;0–3;Real Madrid;29,758;Estadio Nuevo Carlos Tartiere;Ricardo de Burgos
+2;Mon;25/08/2025;19:30;Athletic Club;1–0;Rayo Vallecano;48,703;San Mamés;Juan Martínez
+2;Mon;25/08/2025;21:30;Sevilla;1–2;Getafe;36,697;Estadio Ramón Sánchez Pizjuán;Isidro Díaz de Mera
+6;Wed;27/08/2025;21:00;Celta Vigo;1–1;Real Betis;20,302;Estadio Abanca Balaídos;Jesús Gil
+3;Fri;29/08/2025;19:30;Elche;2–0;Levante;26,936;Estadio Manuel Martínez Valero;Iosu Galech
+3;Fri;29/08/2025;21:30;Valencia;3–0;Getafe;45,449;Estadio de Mestalla;Francisco Hernández
+3;Sat;30/08/2025;17:00;Alavés;1–1;Atlético Madrid;18,042;Estadio de Mendizorroza;Víctor García
+3;Sat;30/08/2025;19:00;Oviedo;1–0;Real Sociedad;25,688;Estadio Nuevo Carlos Tartiere;Adrián Cordero
+3;Sat;30/08/2025;19:30;Girona;0–2;Sevilla;11,305;Estadi Municipal de Montilivi;Miguel Ángel Ortiz Arias
+3;Sat;30/08/2025;21:30;Real Madrid;2–1;Mallorca;72,699;Estadio Santiago Bernabéu;Jose Maria Sánchez
+3;Sun;31/08/2025;17:00;Celta Vigo;1–1;Villarreal;20,172;Estadio Abanca Balaídos;Alejandro Quintero
+3;Sun;31/08/2025;19:00;Real Betis;1–2;Athletic Club;65,222;Estadio La Cartuja de Sevilla;Isidro Díaz de Mera
+3;Sun;31/08/2025;19:30;Espanyol;1–0;Osasuna;29,78;RCDE Stadium;Miguel Sesma
+3;Sun;31/08/2025;21:30;Rayo Vallecano;1–1;Barcelona;14,438;Campo de Fútbol de Vallecas;Mateo Busquets
+4;Fri;12/09/2025;21:00;Sevilla;2–2;Elche;37,331;Estadio Ramón Sánchez Pizjuán;Javier Alberola
+4;Sat;13/09/2025;14:00;Getafe;2–0;Oviedo;8,657;Coliseum Alfonso Pérez;José Guzmán
+4;Sat;13/09/2025;16:15;Real Sociedad;1–2;Real Madrid;36,958;Reale Arena;Jesús Gil
+4;Sat;13/09/2025;18:30;Athletic Club;0–1;Alavés;49,136;San Mamés;Jose Maria Sánchez
+4;Sat;13/09/2025;21:00;Atlético Madrid;2–0;Villarreal;63,312;Riyadh Air Metropolitano;José Luis Munuera
+4;Sun;14/09/2025;14:00;Celta Vigo;1–1;Girona;18,862;Estadio Abanca Balaídos;Adrián Cordero
+4;Sun;14/09/2025;16:15;Levante;2–2;Real Betis;21,938;Estadio Ciudad de Valencia;Alejandro Muñíz
+4;Sun;14/09/2025;18:30;Osasuna;2–0;Rayo Vallecano;20,511;Estadio El Sadar;César Soto
+4;Sun;14/09/2025;21:00;Barcelona;6–0;Valencia;5,862;Estadi Johan Cruyff;Guillermo Cuadra
+4;Mon;15/09/2025;21:00;Espanyol;3–2;Mallorca;26,082;RCDE Stadium;Alejandro Hernández
+5;Fri;19/09/2025;21:00;Real Betis;3–1;Real Sociedad;59,773;Estadio La Cartuja de Sevilla;Mateo Busquets
+5;Sat;20/09/2025;14:00;Girona;0–4;Levante;11,048;Estadi Municipal de Montilivi;Alejandro Quintero
+5;Sat;20/09/2025;16:15;Real Madrid;2–0;Espanyol;73,466;Estadio Santiago Bernabéu;Juan Martínez
+5;Sat;20/09/2025;18:30;Alavés;1–2;Sevilla;17,525;Estadio de Mendizorroza;Iosu Galech
+5;Sat;20/09/2025;18:30;Villarreal;2–1;Osasuna;17,542;Estadio de la Cerámica;Isidro Díaz de Mera
+5;Sat;20/09/2025;21:00;Valencia;2–0;Athletic Club;46,004;Estadio de Mestalla;Miguel Ángel Ortiz Arias
+5;Sun;21/09/2025;14:00;Rayo Vallecano;1–1;Celta Vigo;13,028;Campo de Fútbol de Vallecas;Víctor García
+5;Sun;21/09/2025;16:15;Mallorca;1–1;Atlético Madrid;21,027;Estadi Mallorca Son Moix;Francisco Hernández
+5;Sun;21/09/2025;18:30;Elche;1–0;Oviedo;27,235;Estadio Manuel Martínez Valero;Miguel Sesma
+5;Sun;21/09/2025;21:00;Barcelona;3–0;Getafe;5,711;Estadi Johan Cruyff;Ricardo de Burgos
+6;Tue;23/09/2025;19:00;Espanyol;2–2;Valencia;26,802;RCDE Stadium;José Guzmán
+6;Tue;23/09/2025;19:00;Athletic Club;1–1;Girona;45,739;San Mamés;José Luis Munuera
+6;Tue;23/09/2025;21:30;Levante;1–4;Real Madrid;23,361;Estadio Ciudad de Valencia;Isidro Díaz de Mera
+6;Tue;23/09/2025;21:30;Sevilla;1–2;Villarreal;38,145;Estadio Ramón Sánchez Pizjuán;César Soto
+6;Wed;24/09/2025;19:00;Getafe;1–1;Alavés;8,005;Coliseum Alfonso Pérez;Alejandro Quintero
+6;Wed;24/09/2025;21:30;Atlético Madrid;3–2;Rayo Vallecano;54,098;Riyadh Air Metropolitano;Alejandro Hernández
+6;Wed;24/09/2025;21:30;Real Sociedad;1–0;Mallorca;22,442;Reale Arena;Iosu Galech
+6;Thu;25/09/2025;19:30;Osasuna;1–1;Elche;19,475;Estadio El Sadar;Adrián Cordero
+6;Thu;25/09/2025;21:30;Oviedo;1–3;Barcelona;29,85;Estadio Nuevo Carlos Tartiere;Miguel Ángel Ortiz Arias
+7;Fri;26/09/2025;21:00;Girona;0–0;Espanyol;11,488;Estadi Municipal de Montilivi;Francisco Hernández
+7;Sat;27/09/2025;14:00;Getafe;1–1;Levante;7,749;Coliseum Alfonso Pérez;Mateo Busquets
+7;Sat;27/09/2025;16:15;Atlético Madrid;5–2;Real Madrid;69,167;Riyadh Air Metropolitano;Javier Alberola
+7;Sat;27/09/2025;18:30;Mallorca;1–0;Alavés;16,275;Estadi Mallorca Son Moix;Adrián Cordero
+7;Sat;27/09/2025;21:00;Villarreal;1–0;Athletic Club;18,908;Estadio de la Cerámica;Miguel Sesma
+7;Sun;28/09/2025;14:00;Rayo Vallecano;0–1;Sevilla;13,08;Campo de Fútbol de Vallecas;Jesús Gil
+7;Sun;28/09/2025;16:15;Elche;2–1;Celta Vigo;26,708;Estadio Manuel Martínez Valero;Guillermo Cuadra
+7;Sun;28/09/2025;18:30;Barcelona;2–1;Real Sociedad;50,103;Estadi Olímpic Lluís Companys;Alejandro Hernández
+7;Sun;28/09/2025;21:00;Real Betis;2–0;Osasuna;50,034;Estadio La Cartuja de Sevilla;Víctor García
+7;Tue;30/09/2025;20:00;Valencia;1–2;Oviedo;40,364;Estadio de Mestalla;Ricardo de Burgos
+8;Fri;03/10/2025;21:00;Osasuna;2–1;Getafe;19,895;Estadio El Sadar;Javier Alberola
+8;Sat;04/10/2025;14:00;Oviedo;0–2;Levante;23,878;Estadio Nuevo Carlos Tartiere;José Luis Munuera
+8;Sat;04/10/2025;16:15;Girona;2–1;Valencia;10,867;Estadi Municipal de Montilivi;Isidro Díaz de Mera
+8;Sat;04/10/2025;18:30;Athletic Club;2–1;Mallorca;47,098;San Mamés;Alejandro Quintero
+8;Sat;04/10/2025;21:00;Real Madrid;3–1;Villarreal;75,216;Estadio Santiago Bernabéu;Guillermo Cuadra
+8;Sun;05/10/2025;14:00;Alavés;3–1;Elche;16,203;Estadio de Mendizorroza;Miguel Ángel Ortiz Arias
+8;Sun;05/10/2025;16:15;Sevilla;4–1;Barcelona;41,04;Estadio Ramón Sánchez Pizjuán;Alejandro Muñíz
+8;Sun;05/10/2025;18:30;Espanyol;1–2;Real Betis;32,778;RCDE Stadium;Iosu Galech
+8;Sun;05/10/2025;18:30;Real Sociedad;0–1;Rayo Vallecano;31,189;Reale Arena;José Guzmán
+8;Sun;05/10/2025;21:00;Celta Vigo;1–1;Atlético Madrid;20,877;Estadio Abanca Balaídos;César Soto
+9;Fri;17/10/2025;21:00;Oviedo;0–2;Espanyol;25,625;Estadio Nuevo Carlos Tartiere;Mateo Busquets
+9;Sat;18/10/2025;14:00;Sevilla;1–3;Mallorca;37,008;Estadio Ramón Sánchez Pizjuán;Víctor García
+9;Sat;18/10/2025;16:15;Barcelona;2–1;Girona;43,172;Estadi Olímpic Lluís Companys;Jesús Gil
+9;Sat;18/10/2025;18:30;Villarreal;2–2;Real Betis;19,238;Estadio de la Cerámica;Francisco Hernández
+9;Sat;18/10/2025;21:00;Atlético Madrid;1–0;Osasuna;62,884;Riyadh Air Metropolitano;Ricardo de Burgos
+9;Sun;19/10/2025;14:00;Elche;0–0;Athletic Club;29,043;Estadio Manuel Martínez Valero;José Guzmán
+9;Sun;19/10/2025;16:15;Celta Vigo;1–1;Real Sociedad;19,102;Estadio Abanca Balaídos;Juan Martínez
+9;Sun;19/10/2025;18:30;Levante;0–3;Rayo Vallecano;20,312;Estadio Ciudad de Valencia;Miguel Sesma
+9;Sun;19/10/2025;21:00;Getafe;0–1;Real Madrid;10,09;Coliseum Alfonso Pérez;José Luis Munuera
+9;Mon;20/10/2025;21:00;Alavés;0–0;Valencia;15,564;Estadio de Mendizorroza;Iosu Galech
+10;Fri;24/10/2025;21:00;Real Sociedad;2–1;Sevilla;30,965;Reale Arena;Adrián Cordero
+10;Sat;25/10/2025;14:00;Girona;3–3;Oviedo;11,12;Estadi Municipal de Montilivi;Alejandro Muñíz
+10;Sat;25/10/2025;16:15;Espanyol;1–0;Elche;30,82;RCDE Stadium;Ricardo de Burgos
+10;Sat;25/10/2025;18:30;Athletic Club;0–1;Getafe;47,749;San Mamés;Isidro Díaz de Mera
+10;Sat;25/10/2025;21:00;Valencia;0–2;Villarreal;45,56;Estadio de Mestalla;Javier Alberola
+10;Sun;26/10/2025;14:00;Mallorca;1–1;Levante;12,964;Estadi Mallorca Son Moix;Miguel Ángel Ortiz Arias
+10;Sun;26/10/2025;16:15;Real Madrid;2–1;Barcelona;78,107;Estadio Santiago Bernabéu;César Soto
+10;Sun;26/10/2025;18:30;Osasuna;2–3;Celta Vigo;20,065;Estadio El Sadar;Alejandro Hernández
+10;Sun;26/10/2025;21:00;Rayo Vallecano;1–0;Alavés;11,734;Campo de Fútbol de Vallecas;Víctor García
+10;Mon;27/10/2025;21:00;Real Betis;0–2;Atlético Madrid;57,537;Estadio La Cartuja de Sevilla;Juan Martínez
+11;Fri;31/10/2025;21:00;Getafe;2–1;Girona;7,223;Coliseum Alfonso Pérez;Jose Maria Sánchez
+11;Sat;01/11/2025;14:00;Villarreal;4–0;Rayo Vallecano;17,022;Estadio de la Cerámica;Iosu Galech
+11;Sat;01/11/2025;16:15;Atlético Madrid;3–0;Sevilla;66,119;Riyadh Air Metropolitano;Francisco Hernández
+11;Sat;01/11/2025;18:30;Real Sociedad;3–2;Athletic Club;37,685;Reale Arena;José Luis Munuera
+11;Sat;01/11/2025;21:00;Real Madrid;4–0;Valencia;74,796;Estadio Santiago Bernabéu;Mateo Busquets
+11;Sun;02/11/2025;14:00;Levante;1–2;Celta Vigo;19,513;Estadio Ciudad de Valencia;Alejandro Quintero
+11;Sun;02/11/2025;16:15;Alavés;2–1;Espanyol;17,149;Estadio de Mendizorroza;Guillermo Cuadra
+11;Sun;02/11/2025;18:30;Barcelona;3–1;Elche;44,37;Estadi Olímpic Lluís Companys;Miguel Sesma
+11;Sun;02/11/2025;21:00;Real Betis;3–0;Mallorca;54,747;Estadio La Cartuja de Sevilla;Jesús Gil
+11;Mon;03/11/2025;21:00;Oviedo;0–0;Osasuna;23,795;Estadio Nuevo Carlos Tartiere;José Guzmán
+12;Fri;07/11/2025;21:00;Elche;1–1;Real Sociedad;26,242;Estadio Manuel Martínez Valero;Isidro Díaz de Mera
+12;Sat;08/11/2025;14:00;Girona;1–0;Alavés;10,05;Estadi Municipal de Montilivi;Adrián Cordero
+12;Sat;08/11/2025;16:15;Sevilla;1–0;Osasuna;35,169;Estadio Ramón Sánchez Pizjuán;Miguel Ángel Ortiz Arias
+12;Sat;08/11/2025;18:30;Atlético Madrid;3–1;Levante;60,119;Riyadh Air Metropolitano;Jesús Gil
+12;Sat;08/11/2025;21:00;Espanyol;0–2;Villarreal;29,54;RCDE Stadium;Alejandro Hernández
+12;Sun;09/11/2025;14:00;Athletic Club;1–0;Oviedo;47,209;San Mamés;César Soto
+12;Sun;09/11/2025;16:15;Rayo Vallecano;0–0;Real Madrid;14,468;Campo de Fútbol de Vallecas;Juan Martínez
+12;Sun;09/11/2025;18:30;Mallorca;1–0;Getafe;17,507;Estadi Mallorca Son Moix;Ricardo de Burgos
+12;Sun;09/11/2025;18:30;Valencia;1–1;Real Betis;45,82;Estadio de Mestalla;Víctor García
+12;Sun;09/11/2025;21:00;Celta Vigo;2–4;Barcelona;21,887;Estadio Abanca Balaídos;Javier Alberola
+13;Fri;21/11/2025;21:00;Valencia;1–0;Levante;46,302;Estadio de Mestalla;Alejandro Muñíz
+13;Sat;22/11/2025;14:00;Alavés;0–1;Celta Vigo;16,582;Estadio de Mendizorroza;Juan Martínez
+13;Sat;22/11/2025;16:15;Barcelona;4–0;Athletic Club;45,157;Spotify Camp Nou;Jose Maria Sánchez
+13;Sat;22/11/2025;18:30;Osasuna;1–3;Real Sociedad;21,377;Estadio El Sadar;Mateo Busquets
+13;Sat;22/11/2025;21:00;Villarreal;2–1;Mallorca;16,854;Estadio de la Cerámica;José Guzmán
+13;Sun;23/11/2025;14:00;Oviedo;0–0;Rayo Vallecano;23,684;Estadio Nuevo Carlos Tartiere;Alejandro Quintero
+13;Sun;23/11/2025;16:15;Real Betis;1–1;Girona;64,268;Estadio La Cartuja de Sevilla;Iosu Galech
+13;Sun;23/11/2025;18:30;Getafe;0–1;Atlético Madrid;9,783;Coliseum Alfonso Pérez;Guillermo Cuadra
+13;Sun;23/11/2025;21:00;Elche;2–2;Real Madrid;31,024;Estadio Manuel Martínez Valero;Francisco Hernández
+13;Mon;24/11/2025;21:00;Espanyol;2–1;Sevilla;25,166;RCDE Stadium;Miguel Sesma
+14;Fri;28/11/2025;21:00;Getafe;1–0;Elche;7,697;Coliseum Alfonso Pérez;Alejandro Hernández
+14;Sat;29/11/2025;14:00;Mallorca;2–2;Osasuna;15,457;Estadi Mallorca Son Moix;Jesús Gil
+14;Sat;29/11/2025;16:15;Barcelona;3–1;Alavés;44,834;Spotify Camp Nou;Miguel Ángel Ortiz Arias
+14;Sat;29/11/2025;18:30;Levante;0–2;Athletic Club;19,848;Estadio Ciudad de Valencia;Adrián Cordero
+14;Sat;29/11/2025;21:00;Atlético Madrid;2–0;Oviedo;61,305;Riyadh Air Metropolitano;Víctor Acosta
+14;Sun;30/11/2025;14:00;Real Sociedad;2–3;Villarreal;30,14;Reale Arena;César Soto
+14;Sun;30/11/2025;16:15;Sevilla;0–2;Real Betis;42,58;Estadio Ramón Sánchez Pizjuán;José Luis Munuera
+14;Sun;30/11/2025;18:30;Celta Vigo;0–1;Espanyol;20,031;Estadio Abanca Balaídos;Isidro Díaz de Mera
+14;Sun;30/11/2025;21:00;Girona;1–1;Real Madrid;14,005;Estadi Municipal de Montilivi;Ricardo de Burgos
+14;Mon;01/12/2025;21:00;Rayo Vallecano;1–1;Valencia;11,267;Campo de Fútbol de Vallecas;Javier Alberola
+19;Tue;02/12/2025;21:00;Barcelona;3–1;Atlético Madrid;45,205;Spotify Camp Nou;Ricardo de Burgos
+19;Wed;03/12/2025;19:00;Athletic Club;0–3;Real Madrid;51,313;San Mamés;Jesús Gil
+15;Fri;05/12/2025;21:00;Oviedo;0–0;Mallorca;23,333;Estadio Nuevo Carlos Tartiere;Iosu Galech
+15;Sat;06/12/2025;14:00;Villarreal;2–0;Getafe;17,089;Estadio de la Cerámica;Mateo Busquets
+15;Sat;06/12/2025;16:15;Alavés;1–0;Real Sociedad;18,132;Estadio de Mendizorroza;Javier Alberola
+15;Sat;06/12/2025;18:30;Real Betis;3–5;Barcelona;64,562;Estadio La Cartuja de Sevilla;Francisco Hernández
+15;Sat;06/12/2025;21:00;Athletic Club;1–0;Atlético Madrid;48,904;San Mamés;Alejandro Muñíz
+15;Sun;07/12/2025;14:00;Elche;3–0;Girona;23,374;Estadio Manuel Martínez Valero;Miguel Sesma
+15;Sun;07/12/2025;16:15;Valencia;1–1;Sevilla;44,369;Estadio de Mestalla;Guillermo Cuadra
+15;Sun;07/12/2025;18:30;Espanyol;1–0;Rayo Vallecano;28,11;RCDE Stadium;Jose Maria Sánchez
+15;Sun;07/12/2025;21:00;Real Madrid;0–2;Celta Vigo;74,511;Estadio Santiago Bernabéu;Alejandro Quintero
+15;Mon;08/12/2025;21:00;Osasuna;2–0;Levante;18,16;Estadio El Sadar;José Guzmán
+16;Fri;12/12/2025;21:00;Real Sociedad;1–2;Girona;26,122;Reale Arena;Miguel Ángel Ortiz Arias
+16;Sat;13/12/2025;14:00;Atlético Madrid;2–1;Valencia;61,011;Riyadh Air Metropolitano;César Soto
+16;Sat;13/12/2025;16:15;Mallorca;3–1;Elche;16,199;Estadi Mallorca Son Moix;José Luis Munuera
+16;Sat;13/12/2025;18:30;Barcelona;2–0;Osasuna;42,058;Spotify Camp Nou;Adrián Cordero
+16;Sat;13/12/2025;21:00;Getafe;0–1;Espanyol;7,443;Coliseum Alfonso Pérez;Jesús Gil
+16;Sun;14/12/2025;14:00;Sevilla;4–0;Oviedo;32,885;Estadio Ramón Sánchez Pizjuán;Isidro Díaz de Mera
+16;Sun;14/12/2025;16:15;Celta Vigo;2–0;Athletic Club;20,505;Estadio Abanca Balaídos;Alejandro Hernández
+16;Sun;14/12/2025;21:00;Alavés;1–2;Real Madrid;19,29;Estadio de Mendizorroza;Víctor García
+16;Mon;15/12/2025;21:00;Rayo Vallecano;0–0;Real Betis;11,489;Campo de Fútbol de Vallecas;Ricardo de Burgos
+17;Fri;19/12/2025;21:00;Valencia;1–1;Mallorca;41,179;Estadio de Mestalla;Alejandro Quintero
+17;Sat;20/12/2025;14:00;Oviedo;0–0;Celta Vigo;23,613;Estadio Nuevo Carlos Tartiere;Francisco Hernández
+17;Sat;20/12/2025;16:15;Levante;1–1;Real Sociedad;17,346;Estadio Ciudad de Valencia;Guillermo Cuadra
+17;Sat;20/12/2025;18:30;Osasuna;3–0;Alavés;20,408;Estadio El Sadar;César Soto
+17;Sat;20/12/2025;21:00;Real Madrid;2–0;Sevilla;72,062;Estadio Santiago Bernabéu;Alejandro Muñíz
+17;Sun;21/12/2025;14:00;Girona;0–3;Atlético Madrid;12,363;Estadi Municipal de Montilivi;José Guzmán
+17;Sun;21/12/2025;16:15;Villarreal;0–2;Barcelona;20,701;Estadio de la Cerámica;Javier Alberola
+17;Sun;21/12/2025;18:30;Elche;4–0;Rayo Vallecano;23,765;Estadio Manuel Martínez Valero;Adrián Cordero
+17;Sun;21/12/2025;21:00;Real Betis;4–0;Getafe;54,365;Estadio La Cartuja de Sevilla;Miguel Sesma
+17;Mon;22/12/2025;21:00;Athletic Club;1–2;Espanyol;47,856;San Mamés;Mateo Busquets
+18;Fri;02/01/2026;21:00;Rayo Vallecano;1–1;Getafe;12,544;Campo de Fútbol de Vallecas;Miguel Ángel Ortiz Arias
+18;Sat;03/01/2026;14:00;Celta Vigo;4–1;Valencia;20,475;Estadio Abanca Balaídos;Ricardo de Burgos
+18;Sat;03/01/2026;16:15;Osasuna;1–1;Athletic Club;22,01;Estadio El Sadar;José Luis Munuera
+18;Sat;03/01/2026;18:30;Elche;1–3;Villarreal;27,078;Estadio Manuel Martínez Valero;Isidro Díaz de Mera
+18;Sat;03/01/2026;21:00;Espanyol;0–2;Barcelona;36,283;RCDE Stadium;Víctor García
+18;Sun;04/01/2026;14:00;Sevilla;0–3;Levante;25,303;Estadio Ramón Sánchez Pizjuán;Iosu Galech
+18;Sun;04/01/2026;16:15;Real Madrid;5–1;Real Betis;75,19;Estadio Santiago Bernabéu;Alejandro Hernández
+18;Sun;04/01/2026;18:30;Mallorca;1–2;Girona;16,011;Estadi Mallorca Son Moix;Javier Alberola
+18;Sun;04/01/2026;18:30;Alavés;1–1;Oviedo;17,345;Estadio de Mendizorroza;Jesús Gil
+18;Sun;04/01/2026;21:00;Real Sociedad;1–1;Atlético Madrid;31,576;Reale Arena;Juan Martínez
+19;Fri;09/01/2026;21:00;Getafe;1–2;Real Sociedad;7,497;Coliseum Alfonso Pérez;Francisco Hernández
+19;Sat;10/01/2026;14:00;Oviedo;1–1;Real Betis;25,549;Estadio Nuevo Carlos Tartiere;Guillermo Cuadra
+19;Sat;10/01/2026;16:15;Villarreal;3–1;Alavés;17,011;Estadio de la Cerámica;Alejandro Muñíz
+19;Sat;10/01/2026;18:30;Girona;1–0;Osasuna;12,059;Estadi Municipal de Montilivi;Alejandro Hernández
+19;Sat;10/01/2026;21:00;Valencia;1–1;Elche;44,949;Estadio de Mestalla;Miguel Ángel Ortiz Arias
+19;Sun;11/01/2026;14:00;Rayo Vallecano;2–1;Mallorca;12,223;Campo de Fútbol de Vallecas;Juan Martínez
+19;Sun;11/01/2026;16:15;Levante;1–1;Espanyol;20,501;Estadio Ciudad de Valencia;César Soto
+19;Mon;12/01/2026;21:00;Sevilla;0–1;Celta Vigo;31,383;Estadio Ramón Sánchez Pizjuán;Jose Maria Sánchez
+20;Fri;16/01/2026;21:00;Espanyol;0–2;Girona;28,451;RCDE Stadium;Iosu Galech
+20;Sat;17/01/2026;14:00;Real Madrid;2–0;Levante;70,104;Estadio Santiago Bernabéu;Miguel Sesma
+20;Sat;17/01/2026;16:15;Mallorca;3–2;Athletic Club;14,284;Estadi Mallorca Son Moix;José Guzmán
+20;Sat;17/01/2026;18:30;Osasuna;3–2;Oviedo;20,651;Estadio El Sadar;Alejandro Quintero
+20;Sat;17/01/2026;21:00;Real Betis;2–0;Villarreal;60,138;Estadio La Cartuja de Sevilla;Víctor García
+20;Sun;18/01/2026;14:00;Getafe;0–1;Valencia;8,361;Coliseum Alfonso Pérez;Isidro Díaz de Mera
+20;Sun;18/01/2026;16:15;Atlético Madrid;1–0;Alavés;61,192;Riyadh Air Metropolitano;Guillermo Cuadra
+20;Sun;18/01/2026;18:30;Celta Vigo;3–0;Rayo Vallecano;20,835;Estadio Abanca Balaídos;Mateo Busquets
+20;Sun;18/01/2026;21:00;Real Sociedad;2–1;Barcelona;36,346;Reale Arena;Jesús Gil
+20;Mon;19/01/2026;21:00;Elche;2–2;Sevilla;22,594;Estadio Manuel Martínez Valero;Ricardo de Burgos
+21;Fri;23/01/2026;21:00;Levante;3–2;Elche;18,973;Estadio Ciudad de Valencia;José Luis Munuera
+21;Sat;24/01/2026;14:00;Rayo Vallecano;1–3;Osasuna;12,091;Campo de Fútbol de Vallecas;Miguel Sesma
+21;Sat;24/01/2026;16:15;Valencia;3–2;Espanyol;44,163;Estadio de Mestalla;Alejandro Hernández
+21;Sat;24/01/2026;18:30;Sevilla;2–1;Athletic Club;34,642;Estadio Ramón Sánchez Pizjuán;Francisco Hernández
+21;Sat;24/01/2026;21:00;Villarreal;0–2;Real Madrid;20,432;Estadio de la Cerámica;César Soto
+21;Sun;25/01/2026;14:00;Atlético Madrid;3–0;Mallorca;55,028;Riyadh Air Metropolitano;Jose Maria Sánchez
+21;Sun;25/01/2026;16:15;Barcelona;3–0;Oviedo;44,763;Spotify Camp Nou;Juan Martínez
+21;Sun;25/01/2026;18:30;Real Sociedad;3–1;Celta Vigo;29,682;Reale Arena;Javier Alberola
+21;Sun;25/01/2026;21:00;Alavés;2–1;Real Betis;14,81;Estadio de Mendizorroza;Miguel Ángel Ortiz Arias
+21;Mon;26/01/2026;21:00;Girona;1–1;Getafe;11,388;Estadi Municipal de Montilivi;Alejandro Quintero
+22;Fri;30/01/2026;21:00;Espanyol;1–2;Alavés;25,881;RCDE Stadium;Miguel Sesma
+22;Sat;31/01/2026;14:00;Oviedo;1–0;Girona;25,085;Estadio Nuevo Carlos Tartiere;Javier Alberola
+22;Sat;31/01/2026;16:15;Osasuna;2–2;Villarreal;20,455;Estadio El Sadar;Ricardo de Burgos
+22;Sat;31/01/2026;18:30;Levante;0–0;Atlético Madrid;20,573;Estadio Ciudad de Valencia;Víctor García
+22;Sat;31/01/2026;21:00;Elche;1–3;Barcelona;31,233;Estadio Manuel Martínez Valero;Alejandro Muñíz
+22;Sun;01/02/2026;14:00;Real Madrid;2–1;Rayo Vallecano;71,051;Estadio Santiago Bernabéu;Isidro Díaz de Mera
+22;Sun;01/02/2026;16:15;Real Betis;2–1;Valencia;57,523;Estadio La Cartuja de Sevilla;Jose Maria Sánchez
+22;Sun;01/02/2026;18:30;Getafe;0–0;Celta Vigo;7,363;Coliseum Alfonso Pérez;Iosu Galech
+22;Sun;01/02/2026;21:00;Athletic Club;1–1;Real Sociedad;48,02;San Mamés;Guillermo Cuadra
+22;Mon;02/02/2026;21:00;Mallorca;4–1;Sevilla;15,621;Estadi Mallorca Son Moix;César Soto
+23;Fri;06/02/2026;21:00;Celta Vigo;1–2;Osasuna;18,705;Estadio Abanca Balaídos;José Luis Munuera
+23;Sat;07/02/2026;16:15;Barcelona;3–0;Mallorca;44,301;Spotify Camp Nou;Alejandro Quintero
+23;Sat;07/02/2026;21:00;Real Sociedad;3–1;Elche;30,187;Reale Arena;José Guzmán
+23;Sun;08/02/2026;14:00;Alavés;0–2;Getafe;15,96;Estadio de Mendizorroza;Juan Martínez
+23;Sun;08/02/2026;16:15;Athletic Club;4–2;Levante;46,487;San Mamés;Alejandro Muñíz
+23;Sun;08/02/2026;16:15;Sevilla;1–1;Girona;30,384;Estadio Ramón Sánchez Pizjuán;Jesús Gil
+23;Sun;08/02/2026;18:30;Atlético Madrid;0–1;Real Betis;65,21;Riyadh Air Metropolitano;Mateo Busquets
+23;Sun;08/02/2026;21:00;Valencia;0–2;Real Madrid;47,515;Estadio de Mestalla;Javier Alberola
+23;Mon;09/02/2026;21:00;Villarreal;4–1;Espanyol;16,825;Estadio de la Cerámica;Adrián Cordero
+24;Fri;13/02/2026;21:00;Elche;0–0;Osasuna;21,253;Estadio Manuel Martínez Valero;Jose Maria Sánchez
+24;Sat;14/02/2026;14:00;Espanyol;2–2;Celta Vigo;27,368;RCDE Stadium;Guillermo Cuadra
+24;Sat;14/02/2026;16:15;Getafe;2–1;Villarreal;7,551;Coliseum Alfonso Pérez;Miguel Sesma
+24;Sat;14/02/2026;18:30;Sevilla;1–1;Alavés;32,846;Estadio Ramón Sánchez Pizjuán;Iosu Galech
+24;Sat;14/02/2026;21:00;Real Madrid;4–1;Real Sociedad;74,176;Estadio Santiago Bernabéu;Francisco Hernández
+24;Sun;15/02/2026;14:00;Oviedo;1–2;Athletic Club;25,255;Estadio Nuevo Carlos Tartiere;Mateo Busquets
+24;Sun;15/02/2026;16:15;Rayo Vallecano;3–0;Atlético Madrid;5,335;Estadio Municipal de Butarque;Ricardo de Burgos
+24;Sun;15/02/2026;18:30;Levante;0–2;Valencia;22,967;Estadio Ciudad de Valencia;Miguel Ángel Ortiz Arias
+24;Sun;15/02/2026;21:00;Mallorca;1–2;Real Betis;18,658;Estadi Mallorca Son Moix;Isidro Díaz de Mera
+24;Mon;16/02/2026;21:00;Girona;2–1;Barcelona;14,043;Estadi Municipal de Montilivi;César Soto
+16;Wed;18/02/2026;20:00;Levante;0–1;Villarreal;18,153;Estadio Ciudad de Valencia;Juan Martínez
+25;Fri;20/02/2026;21:00;Athletic Club;2–1;Elche;46,654;San Mamés;Alejandro Hernández
+25;Sat;21/02/2026;14:00;Real Sociedad;3–3;Oviedo;30,917;Reale Arena;José Luis Munuera
+25;Sat;21/02/2026;16:15;Real Betis;1–1;Rayo Vallecano;59,436;Estadio La Cartuja de Sevilla;Juan Martínez
+25;Sat;21/02/2026;18:30;Osasuna;2–1;Real Madrid;22,48;Estadio El Sadar;Alejandro Quintero
+25;Sat;21/02/2026;21:00;Atlético Madrid;4–2;Espanyol;56,412;Riyadh Air Metropolitano;Alejandro Muñíz
+25;Sun;22/02/2026;14:00;Getafe;;Sevilla;;Coliseum Alfonso Pérez;
+25;Sun;22/02/2026;16:15;Barcelona;;Levante;;Spotify Camp Nou;
+25;Sun;22/02/2026;18:30;Celta Vigo;;Mallorca;;Estadio Abanca Balaídos;
+25;Sun;22/02/2026;21:00;Villarreal;;Valencia;;Estadio de la Cerámica;
+25;Mon;23/02/2026;21:00;Alavés;;Girona;;Estadio de Mendizorroza;
+26;Fri;27/02/2026;21:00;Levante;;Alavés;;Estadio Ciudad de Valencia;
+26;Sat;28/02/2026;14:00;Rayo Vallecano;;Athletic Club;;Campo de Fútbol de Vallecas;
+26;Sat;28/02/2026;16:15;Barcelona;;Villarreal;;Spotify Camp Nou;
+26;Sat;28/02/2026;18:30;Mallorca;;Real Sociedad;;Estadi Mallorca Son Moix;
+26;Sat;28/02/2026;21:00;Oviedo;;Atlético Madrid;;Estadio Nuevo Carlos Tartiere;
+26;Sun;01/03/2026;14:00;Elche;;Espanyol;;Estadio Manuel Martínez Valero;
+26;Sun;01/03/2026;16:15;Valencia;;Osasuna;;Estadio de Mestalla;
+26;Sun;01/03/2026;18:30;Real Betis;;Sevilla;;Estadio La Cartuja de Sevilla;
+26;Sun;01/03/2026;21:00;Girona;;Celta Vigo;;Estadi Municipal de Montilivi;
+26;Mon;02/03/2026;21:00;Real Madrid;;Getafe;;Estadio Santiago Bernabéu;
+23;Wed;04/03/2026;19:00;Rayo Vallecano;;Oviedo;;Campo de Fútbol de Vallecas;
+27;Fri;06/03/2026;21:00;Osasuna;;Mallorca;;Estadio El Sadar;
+27;Sat;07/03/2026;14:00;Getafe;;Real Betis;;Coliseum Alfonso Pérez;
+27;Sat;07/03/2026;16:15;Levante;;Girona;;Estadio Ciudad de Valencia;
+27;Sat;07/03/2026;18:30;Atlético Madrid;;Real Sociedad;;Riyadh Air Metropolitano;
+27;Sat;07/03/2026;21:00;Celta Vigo;;Real Madrid;;Estadio Abanca Balaídos;
+27;Sun;08/03/2026;14:00;Villarreal;;Elche;;Estadio de la Cerámica;
+27;Sun;08/03/2026;16:15;Athletic Club;;Barcelona;;San Mamés;
+27;Sun;08/03/2026;18:30;Sevilla;;Rayo Vallecano;;Estadio Ramón Sánchez Pizjuán;
+27;Sun;08/03/2026;21:00;Valencia;;Alavés;;Estadio de Mestalla;
+27;Mon;09/03/2026;21:00;Espanyol;;Oviedo;;RCDE Stadium;
+28;Fri;13/03/2026;21:00;Alavés;;Villarreal;;Estadio de Mendizorroza;
+28;Sat;14/03/2026;14:00;Girona;;Athletic Club;;Estadi Municipal de Montilivi;
+28;Sat;14/03/2026;16:15;Atlético Madrid;;Getafe;;Riyadh Air Metropolitano;
+28;Sat;14/03/2026;18:30;Oviedo;;Valencia;;Estadio Nuevo Carlos Tartiere;
+28;Sat;14/03/2026;21:00;Real Madrid;;Elche;;Estadio Santiago Bernabéu;
+28;Sun;15/03/2026;14:00;Mallorca;;Espanyol;;Estadi Mallorca Son Moix;
+28;Sun;15/03/2026;16:15;Barcelona;;Sevilla;;Spotify Camp Nou;
+28;Sun;15/03/2026;18:30;Real Betis;;Celta Vigo;;Estadio La Cartuja de Sevilla;
+28;Sun;15/03/2026;21:00;Real Sociedad;;Osasuna;;Reale Arena;
+28;Mon;16/03/2026;21:00;Rayo Vallecano;;Levante;;Campo de Fútbol de Vallecas;
+29;Sun;22/03/2026;;Sevilla;;Valencia;;Estadio Ramón Sánchez Pizjuán;
+29;Sun;22/03/2026;;Elche;;Mallorca;;Estadio Manuel Martínez Valero;
+29;Sun;22/03/2026;;Celta Vigo;;Alavés;;Estadio Abanca Balaídos;
+29;Sun;22/03/2026;;Athletic Club;;Real Betis;;San Mamés;
+29;Sun;22/03/2026;;Real Madrid;;Atlético Madrid;;Estadio Santiago Bernabéu;
+29;Sun;22/03/2026;;Levante;;Oviedo;;Estadio Ciudad de Valencia;
+29;Sun;22/03/2026;;Espanyol;;Getafe;;RCDE Stadium;
+29;Sun;22/03/2026;;Villarreal;;Real Sociedad;;Estadio de la Cerámica;
+29;Sun;22/03/2026;;Osasuna;;Girona;;Estadio El Sadar;
+29;Sun;22/03/2026;;Barcelona;;Rayo Vallecano;;Spotify Camp Nou;
+30;Sun;05/04/2026;;Oviedo;;Sevilla;;Estadio Nuevo Carlos Tartiere;
+30;Sun;05/04/2026;;Atlético Madrid;;Barcelona;;Riyadh Air Metropolitano;
+30;Sun;05/04/2026;;Getafe;;Athletic Club;;Coliseum Alfonso Pérez;
+30;Sun;05/04/2026;;Real Sociedad;;Levante;;Reale Arena;
+30;Sun;05/04/2026;;Valencia;;Celta Vigo;;Estadio de Mestalla;
+30;Sun;05/04/2026;;Girona;;Villarreal;;Estadi Municipal de Montilivi;
+30;Sun;05/04/2026;;Alavés;;Osasuna;;Estadio de Mendizorroza;
+30;Sun;05/04/2026;;Mallorca;;Real Madrid;;Estadi Mallorca Son Moix;
+30;Sun;05/04/2026;;Real Betis;;Espanyol;;Estadio La Cartuja de Sevilla;
+30;Sun;05/04/2026;;Rayo Vallecano;;Elche;;Campo de Fútbol de Vallecas;
+31;Sun;12/04/2026;;Mallorca;;Rayo Vallecano;;Estadi Mallorca Son Moix;
+31;Sun;12/04/2026;;Real Madrid;;Girona;;Estadio Santiago Bernabéu;
+31;Sun;12/04/2026;;Athletic Club;;Villarreal;;San Mamés;
+31;Sun;12/04/2026;;Levante;;Getafe;;Estadio Ciudad de Valencia;
+31;Sun;12/04/2026;;Elche;;Valencia;;Estadio Manuel Martínez Valero;
+31;Sun;12/04/2026;;Sevilla;;Atlético Madrid;;Estadio Ramón Sánchez Pizjuán;
+31;Sun;12/04/2026;;Celta Vigo;;Oviedo;;Estadio Abanca Balaídos;
+31;Sun;12/04/2026;;Osasuna;;Real Betis;;Estadio El Sadar;
+31;Sun;12/04/2026;;Barcelona;;Espanyol;;Spotify Camp Nou;
+31;Sun;12/04/2026;;Real Sociedad;;Alavés;;Reale Arena;
+33;Wed;22/04/2026;;Elche;;Atlético Madrid;;Estadio Manuel Martínez Valero;
+33;Wed;22/04/2026;;Barcelona;;Celta Vigo;;Spotify Camp Nou;
+33;Wed;22/04/2026;;Levante;;Sevilla;;Estadio Ciudad de Valencia;
+33;Wed;22/04/2026;;Real Madrid;;Alavés;;Estadio Santiago Bernabéu;
+33;Wed;22/04/2026;;Real Sociedad;;Getafe;;Reale Arena;
+33;Wed;22/04/2026;;Mallorca;;Valencia;;Estadi Mallorca Son Moix;
+33;Wed;22/04/2026;;Girona;;Real Betis;;Estadi Municipal de Montilivi;
+33;Wed;22/04/2026;;Oviedo;;Villarreal;;Estadio Nuevo Carlos Tartiere;
+33;Wed;22/04/2026;;Athletic Club;;Osasuna;;San Mamés;
+33;Wed;22/04/2026;;Rayo Vallecano;;Espanyol;;Campo de Fútbol de Vallecas;
+32;Sun;26/04/2026;;Osasuna;;Sevilla;;Estadio El Sadar;
+32;Sun;26/04/2026;;Real Betis;;Real Madrid;;Estadio La Cartuja de Sevilla;
+32;Sun;26/04/2026;;Rayo Vallecano;;Real Sociedad;;Campo de Fútbol de Vallecas;
+32;Sun;26/04/2026;;Alavés;;Mallorca;;Estadio de Mendizorroza;
+32;Sun;26/04/2026;;Oviedo;;Elche;;Estadio Nuevo Carlos Tartiere;
+32;Sun;26/04/2026;;Espanyol;;Levante;;RCDE Stadium;
+32;Sun;26/04/2026;;Getafe;;Barcelona;;Coliseum Alfonso Pérez;
+32;Sun;26/04/2026;;Valencia;;Girona;;Estadio de Mestalla;
+32;Sun;26/04/2026;;Atlético Madrid;;Athletic Club;;Riyadh Air Metropolitano;
+32;Sun;26/04/2026;;Villarreal;;Celta Vigo;;Estadio de la Cerámica;
+34;Sun;03/05/2026;;Sevilla;;Real Sociedad;;Estadio Ramón Sánchez Pizjuán;
+34;Sun;03/05/2026;;Espanyol;;Real Madrid;;RCDE Stadium;
+34;Sun;03/05/2026;;Getafe;;Rayo Vallecano;;Coliseum Alfonso Pérez;
+34;Sun;03/05/2026;;Real Betis;;Oviedo;;Estadio La Cartuja de Sevilla;
+34;Sun;03/05/2026;;Celta Vigo;;Elche;;Estadio Abanca Balaídos;
+34;Sun;03/05/2026;;Osasuna;;Barcelona;;Estadio El Sadar;
+34;Sun;03/05/2026;;Alavés;;Athletic Club;;Estadio de Mendizorroza;
+34;Sun;03/05/2026;;Valencia;;Atlético Madrid;;Estadio de Mestalla;
+34;Sun;03/05/2026;;Girona;;Mallorca;;Estadi Municipal de Montilivi;
+34;Sun;03/05/2026;;Villarreal;;Levante;;Estadio de la Cerámica;
+35;Sun;10/05/2026;;Oviedo;;Getafe;;Estadio Nuevo Carlos Tartiere;
+35;Sun;10/05/2026;;Sevilla;;Espanyol;;Estadio Ramón Sánchez Pizjuán;
+35;Sun;10/05/2026;;Levante;;Osasuna;;Estadio Ciudad de Valencia;
+35;Sun;10/05/2026;;Barcelona;;Real Madrid;;Spotify Camp Nou;
+35;Sun;10/05/2026;;Real Sociedad;;Real Betis;;Reale Arena;
+35;Sun;10/05/2026;;Mallorca;;Villarreal;;Estadi Mallorca Son Moix;
+35;Sun;10/05/2026;;Rayo Vallecano;;Girona;;Campo de Fútbol de Vallecas;
+35;Sun;10/05/2026;;Atlético Madrid;;Celta Vigo;;Riyadh Air Metropolitano;
+35;Sun;10/05/2026;;Elche;;Alavés;;Estadio Manuel Martínez Valero;
+35;Sun;10/05/2026;;Athletic Club;;Valencia;;San Mamés;
+36;Wed;13/05/2026;;Alavés;;Barcelona;;Estadio de Mendizorroza;
+36;Wed;13/05/2026;;Getafe;;Mallorca;;Coliseum Alfonso Pérez;
+36;Wed;13/05/2026;;Valencia;;Rayo Vallecano;;Estadio de Mestalla;
+36;Wed;13/05/2026;;Real Betis;;Elche;;Estadio La Cartuja de Sevilla;
+36;Wed;13/05/2026;;Espanyol;;Athletic Club;;RCDE Stadium;
+36;Wed;13/05/2026;;Celta Vigo;;Levante;;Estadio Abanca Balaídos;
+36;Wed;13/05/2026;;Villarreal;;Sevilla;;Estadio de la Cerámica;
+36;Wed;13/05/2026;;Osasuna;;Atlético Madrid;;Estadio El Sadar;
+36;Wed;13/05/2026;;Girona;;Real Sociedad;;Estadi Municipal de Montilivi;
+36;Wed;13/05/2026;;Real Madrid;;Oviedo;;Estadio Santiago Bernabéu;
+37;Sun;17/05/2026;;Oviedo;;Alavés;;Estadio Nuevo Carlos Tartiere;
+37;Sun;17/05/2026;;Athletic Club;;Celta Vigo;;San Mamés;
+37;Sun;17/05/2026;;Real Sociedad;;Valencia;;Reale Arena;
+37;Sun;17/05/2026;;Atlético Madrid;;Girona;;Riyadh Air Metropolitano;
+37;Sun;17/05/2026;;Osasuna;;Espanyol;;Estadio El Sadar;
+37;Sun;17/05/2026;;Sevilla;;Real Madrid;;Estadio Ramón Sánchez Pizjuán;
+37;Sun;17/05/2026;;Levante;;Mallorca;;Estadio Ciudad de Valencia;
+37;Sun;17/05/2026;;Barcelona;;Real Betis;;Spotify Camp Nou;
+37;Sun;17/05/2026;;Rayo Vallecano;;Villarreal;;Campo de Fútbol de Vallecas;
+37;Sun;17/05/2026;;Elche;;Getafe;;Estadio Manuel Martínez Valero;
+38;Sun;24/05/2026;;Getafe;;Osasuna;;Coliseum Alfonso Pérez;
+38;Sun;24/05/2026;;Villarreal;;Atlético Madrid;;Estadio de la Cerámica;
+38;Sun;24/05/2026;;Real Madrid;;Athletic Club;;Estadio Santiago Bernabéu;
+38;Sun;24/05/2026;;Alavés;;Rayo Vallecano;;Estadio de Mendizorroza;
+38;Sun;24/05/2026;;Espanyol;;Real Sociedad;;RCDE Stadium;
+38;Sun;24/05/2026;;Real Betis;;Levante;;Estadio La Cartuja de Sevilla;
+38;Sun;24/05/2026;;Mallorca;;Oviedo;;Estadi Mallorca Son Moix;
+38;Sun;24/05/2026;;Celta Vigo;;Sevilla;;Estadio Abanca Balaídos;
+38;Sun;24/05/2026;;Valencia;;Barcelona;;Estadio de Mestalla;
+38;Sun;24/05/2026;;Girona;;Elche;;Estadi Municipal de Montilivi;

@@ -99,10 +99,8 @@ export function parseMatchesCSV(csvText) {
             away_red_cards: num(getValue(parts, 'Tajerata roja visitante')) || 0,
             first_red_card_minute: getValue(parts, 'Minuto primera tarjeta roja'),
 
-            home_corners_1h: num(getValue(parts, 'num_corners_local_1p')),
-            away_corners_1h: num(getValue(parts, 'num_corners_visitante_1p')),
-            home_corners_2h: num(getValue(parts, 'num_corners_local_2p')),
-            away_corners_2h: num(getValue(parts, 'num_corners_visitante_2p')),
+            home_corners: num(getValue(parts, 'num_corners_local_1p')) + num(getValue(parts, 'num_corners_local_2p')),
+            away_corners: num(getValue(parts, 'num_corners_visitante_1p')) + num(getValue(parts, 'num_corners_visitante_2p')),
             total_corners: num(getValue(parts, 'Total corners')),
 
             home_fouls: num(getValue(parts, 'num_faltas_local')),

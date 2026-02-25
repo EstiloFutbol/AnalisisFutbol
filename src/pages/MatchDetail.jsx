@@ -154,15 +154,10 @@ export default function MatchDetail() {
     const homePlayers = playerStats.filter(p => p.is_home)
     const awayPlayers = playerStats.filter(p => !p.is_home)
 
-    // Corner total: prefer half-by-half, fall back to total
-    const homeCorners = match.home_corners_1h != null
-        ? (match.home_corners_1h || 0) + (match.home_corners_2h || 0)
-        : match.home_corners
-    const awayCorners = match.away_corners_1h != null
-        ? (match.away_corners_1h || 0) + (match.away_corners_2h || 0)
-        : match.away_corners
 
-    const hasPerHalfCorners = match.home_corners_1h != null
+    // Total corners come directly from DB now
+    const homeCorners = match.home_corners
+    const awayCorners = match.away_corners
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -345,17 +340,6 @@ export default function MatchDetail() {
                                 homeTeam={homeTeam}
                                 awayTeam={awayTeam}
                             />
-
-                            {/* Corners per half — only show if we have half data */}
-                            {hasPerHalfCorners && (
-                                <div className="rounded-xl border border-border/50 bg-card/50 p-4">
-                                    <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Córners por Parte</h4>
-                                    <div className="space-y-1">
-                                        <StatBar label="1ª Parte" homeValue={match.home_corners_1h} awayValue={match.away_corners_1h} />
-                                        <StatBar label="2ª Parte" homeValue={match.home_corners_2h} awayValue={match.away_corners_2h} />
-                                    </div>
-                                </div>
-                            )}
 
                             {/* Betting Odds */}
                             {match.home_odds && (

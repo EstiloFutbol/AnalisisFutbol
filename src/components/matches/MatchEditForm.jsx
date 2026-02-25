@@ -98,11 +98,9 @@ export default function MatchEditForm({ match, onClose }) {
                     away_red_cards: formData.away_red_cards,
                     home_offsides: formData.home_offsides,
                     away_offsides: formData.away_offsides,
-                    home_corners_1h: formData.home_corners_1h,
-                    home_corners_2h: formData.home_corners_2h,
-                    away_corners_1h: formData.away_corners_1h,
-                    away_corners_2h: formData.away_corners_2h,
-                    total_corners: (Number(formData.home_corners_1h || 0) + Number(formData.home_corners_2h || 0) + Number(formData.away_corners_1h || 0) + Number(formData.away_corners_2h || 0)),
+                    home_corners: formData.home_corners,
+                    away_corners: formData.away_corners,
+                    total_corners: (Number(formData.home_corners || 0) + Number(formData.away_corners || 0)),
                     referee_id: formData.referee_id,
                     referee: referees.find(r => r.id === Number(formData.referee_id))?.name || formData.referee,
                     stadium: match.home_team?.stadium || formData.stadium,
@@ -275,18 +273,12 @@ export default function MatchEditForm({ match, onClose }) {
                         <Label className="font-semibold block mb-2">Córners</Label>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-xs">Local: 1ª Parte / 2ª Parte</Label>
-                                <div className="flex gap-2">
-                                    <Input type="number" name="home_corners_1h" value={formData.home_corners_1h} onChange={handleChange} placeholder="1H" />
-                                    <Input type="number" name="home_corners_2h" value={formData.home_corners_2h} onChange={handleChange} placeholder="2H" />
-                                </div>
+                                <Label className="text-xs">Local (total)</Label>
+                                <Input type="number" name="home_corners" value={formData.home_corners} onChange={handleChange} placeholder="Córners local" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs">Visitante: 1ª Parte / 2ª Parte</Label>
-                                <div className="flex gap-2">
-                                    <Input type="number" name="away_corners_1h" value={formData.away_corners_1h} onChange={handleChange} placeholder="1H" />
-                                    <Input type="number" name="away_corners_2h" value={formData.away_corners_2h} onChange={handleChange} placeholder="2H" />
-                                </div>
+                                <Label className="text-xs">Visitante (total)</Label>
+                                <Input type="number" name="away_corners" value={formData.away_corners} onChange={handleChange} placeholder="Córners visitante" />
                             </div>
                         </div>
                     </div>

@@ -497,6 +497,7 @@ def upload_match(sb, db_teams, d):
         "away_fouls":           d.get("away_fouls"),
         "home_corners":         d.get("home_corners"),
         "away_corners":         d.get("away_corners"),
+        "total_corners":        (d.get("home_corners") or 0) + (d.get("away_corners") or 0) or None,
         "home_crosses":         d.get("home_crosses"),
         "away_crosses":         d.get("away_crosses"),
         "home_interceptions":   d.get("home_interceptions"),

@@ -168,28 +168,17 @@ export default function Dashboard() {
             const allMins = [...(m.home_goal_minutes || []), ...(m.away_goal_minutes || [])].filter(Boolean)
             if (allMins.length) firstGoalMins.push(Math.min(...allMins))
         })
+        const firstGoalMinsCount = firstGoalMins.length
         const fgUnder30 = firstGoalMins.filter(m => m <= 30).length
         const fg3060 = firstGoalMins.filter(m => m > 30 && m <= 60).length
         const fgOver60 = firstGoalMins.filter(m => m > 60).length
 
         // Corners
-        const totalCorners = matches.reduce((a, m) => {
-            const hc = (m.home_corners_1h || 0) + (m.home_corners_2h || 0) + (m.home_corners || 0)
-            const ac = (m.away_corners_1h || 0) + (m.away_corners_2h || 0) + (m.away_corners || 0)
-            return a + hc + ac
-        }, 0)
-        const homeCorners = matches.reduce((a, m) => a + (m.home_corners_1h || 0) + (m.home_corners_2h || 0) + (m.home_corners || 0), 0)
-        const awayCorners = matches.reduce((a, m) => a + (m.away_corners_1h || 0) + (m.away_corners_2h || 0) + (m.away_corners || 0), 0)
-        const over85c = matches.filter(m => {
-            const t = (m.home_corners_1h || 0) + (m.home_corners_2h || 0) + (m.home_corners || 0)
-                + (m.away_corners_1h || 0) + (m.away_corners_2h || 0) + (m.away_corners || 0)
-            return t > 8.5
-        }).length
-        const over105c = matches.filter(m => {
-            const t = (m.home_corners_1h || 0) + (m.home_corners_2h || 0) + (m.home_corners || 0)
-                + (m.away_corners_1h || 0) + (m.away_corners_2h || 0) + (m.away_corners || 0)
-            return t > 10.5
-        }).length
+        const totalCorners = matches.reduce((a, m) => a + (m.total_corners || 0), 0)
+        const homeCorners = matches.reduce((a, m) => a + (m.home_corners || 0), 0)
+        const awayCorners = matches.reduce((a, m) => a + (m.away_corners || 0), 0)
+        const over85c = matches.filter(m => (m.total_corners || 0) > 8.5).length
+        const over105c = matches.filter(m => (m.total_corners || 0) > 10.5).length
 
         // Cards
         const yc = matches.reduce((a, m) => a + (m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0), 0)
@@ -403,19 +392,15 @@ export default function Dashboard() {
                     <MarketRow label="Avg Córners — Visitante" value={avg(s.awayCorners, n)} sublabel="por partido" color="blue" />
                     <MarketRow label="Hándicap Córners (Local -2)"
                         value={`${pct(matches.filter(m => {
-                            const hc = (m.home_corners_1h || 0) + (m.home_corners_2h || 0) + (m.home_corners || 0)
-                            const ac = (m.away_corners_1h || 0) + (m.away_corners_2h || 0) + (m.away_corners || 0)
+                            const hc = m.home_corners || 0
+                            const ac = m.away_corners || 0
                             return hc - 2 > ac
                         }).length, n)}%`}
                         color="indigo" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-1">
                     <StatDistributionChart
-                        matches={matches.map(m => ({
-                            ...m,
-                            total_corners: (m.home_corners_1h || 0) + (m.home_corners_2h || 0) + (m.home_corners || 0)
-                                + (m.away_corners_1h || 0) + (m.away_corners_2h || 0) + (m.away_corners || 0)
-                        }))}
+                        matches={matches}
                         homeKey="total_corners"
                         title="Distribución Total de Córners"
                         description="Cuántos partidos terminaron con X córners"

@@ -25,38 +25,56 @@ export function usePlayerLeaderboard(leagueId) {
     return useQuery({
         queryKey: ['player_leaderboard', leagueId],
         queryFn: async () => {
-            // We join via matches to filter by league
-            let query = supabase
-                .from('match_player_stats')
-                .select(`
-                    player_name,
-                    position,
-                    goals,
-                    assists,
-                    shots,
-                    shots_on_target,
-                    yellow_cards,
-                    red_cards,
-                    fouls_committed,
-                    minutes,
-                    gk_saves,
-                    gk_shots_faced,
-                    gk_save_pct,
-                    team:teams(id, name, short_name, logo_url),
-                    match:matches!inner(id, league_id, home_goals)
-                `)
-                .not('match.home_goals', 'is', null)
+            let allData = []
+            let page = 0
+            const PAGE_SIZE = 1000
 
-            if (leagueId) {
-                query = query.eq('match.league_id', leagueId)
+            while (true) {
+                let query = supabase
+                    .from('match_player_stats')
+                    .select(`
+                        player_name,
+                        position,
+                        goals,
+                        assists,
+                        shots,
+                        shots_on_target,
+                        yellow_cards,
+                        red_cards,
+                        fouls_committed,
+                        minutes,
+                        gk_saves,
+                        gk_shots_faced,
+                        gk_save_pct,
+                        team:teams(id, name, short_name, logo_url),
+                        match:matches!inner(id, league_id, home_goals)
+                    `)
+                    .not('match.home_goals', 'is', null)
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
+                if (leagueId) {
+                    query = query.eq('match.league_id', leagueId)
+                }
+
+                const { data, error } = await query
+                if (error) throw error
+
+                allData = allData.concat(data || [])
+
+                // If we got fewer than PAGE_SIZE rows, we've reached the end
+                if (!data || data.length < PAGE_SIZE) {
+                    break
+                }
+
+                page++
+
+                // Safety escape hatch (e.g. 20000 rows = 20 pages max)
+                if (page > 20) break;
             }
-
-            const { data, error } = await query
-            if (error) throw error
 
             // Aggregate per player (same name + same team)
             const map = {}
-            for (const row of data || []) {
+            for (const row of allData) {
                 const team = Array.isArray(row.team) ? row.team[0] : row.team
                 const key = `${row.player_name}__${team?.id || 'unknown'}`
                 if (!map[key]) {

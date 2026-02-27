@@ -17,9 +17,9 @@ export function useLeagues() {
     })
 }
 
-export function useMatches(leagueId) {
+export function useMatches(leagueId, { playedOnly = false } = {}) {
     return useQuery({
-        queryKey: ['matches', leagueId],
+        queryKey: ['matches', leagueId, playedOnly],
         queryFn: async () => {
             let query = supabase
                 .from('matches')
@@ -33,6 +33,10 @@ export function useMatches(leagueId) {
 
             if (leagueId) {
                 query = query.eq('league_id', leagueId)
+            }
+            // Exclude fixture rows: played matches always have a score
+            if (playedOnly) {
+                query = query.not('home_goals', 'is', null)
             }
 
             const { data, error } = await query

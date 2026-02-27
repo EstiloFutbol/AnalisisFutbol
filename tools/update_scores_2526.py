@@ -9,10 +9,12 @@ from supabase import create_client
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-load_dotenv(".env.local")
+# Anchor all paths to the project root (one level above this script)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_ROOT, ".env.local"))
 SUPABASE_URL = os.environ["VITE_SUPABASE_URL"]
 SUPABASE_KEY = os.environ["VITE_SUPABASE_SERVICE_ROLE_KEY"]
-CSV_FILE = "fixtures_2526.csv"
+CSV_FILE = os.path.join(_ROOT, "data", "fixtures_2526.csv")
 SEASON = "2025-2026"
 
 TEAM_NAME_MAP = {

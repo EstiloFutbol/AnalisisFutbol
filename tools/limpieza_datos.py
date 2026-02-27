@@ -28,10 +28,12 @@ from supabase import create_client
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 # ── Config ──────────────────────────────────────────────────────────────────
-load_dotenv(".env.local")
+# Anchor all paths to the project root (one level above this script)
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(_ROOT, ".env.local"))
 SUPABASE_URL = os.environ["VITE_SUPABASE_URL"]
 SUPABASE_KEY = os.environ["VITE_SUPABASE_SERVICE_ROLE_KEY"]
-MATCH_FILES_DIR = "src/match_files"
+MATCH_FILES_DIR = os.path.join(_ROOT, "src", "match_files")
 
 TEAM_NAME_MAP = {
     "Atletico Madrid":    "Atlético Madrid",
@@ -463,14 +465,28 @@ def upload_match(sb, db_teams, d):
     if not home_id: print(f"  [!] Team not found: '{d['home_team']}'"); return False
     if not away_id: print(f"  [!] Team not found: '{d['away_team']}'"); return False
 
-    resp = (sb.from_("matches").select("id")
-            .eq("home_team_id", home_id).eq("away_team_id", away_id)
-            .eq("matchday", d["matchday"]).execute())
+    # ── Find match in DB ──────────────────────────────────────────────────────
+    query = (sb.from_("matches").select("id")
+            .eq("home_team_id", home_id)
+            .eq("away_team_id", away_id))
+    
+    # Try different filters to identify the match uniquely
+    if d.get("matchday"):
+        query = query.eq("matchday", d["matchday"])
+    elif d.get("match_date"):
+        query = query.eq("match_date", d["match_date"])
+    
+    # Optional: filter by season if we had it, but let's stick to teams+matchday/date
+    resp = query.execute()
+    
+    id_str = f"J{d.get('matchday')}" if d.get('matchday') else f"on {d.get('match_date')}"
     if not resp.data:
-        print(f"  [!] Match not found: {d['home_team']} vs {d['away_team']} J{d['matchday']}")
+        print(f"  [!] Match not found: {d['home_team']} vs {d['away_team']} {id_str}")
         return False
 
     match_id = resp.data[0]["id"]
+    if len(resp.data) > 1:
+        print(f"  [!] Multiple matches found for {d['home_team']} vs {d['away_team']} {id_str}. Using first ID: {match_id}")
 
     # ── Update matches row ────────────────────────────────────────────────────
     payload = {

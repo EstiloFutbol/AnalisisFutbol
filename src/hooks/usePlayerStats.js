@@ -43,8 +43,9 @@ export function usePlayerLeaderboard(leagueId) {
                     gk_shots_faced,
                     gk_save_pct,
                     team:teams(id, name, short_name, logo_url),
-                    match:matches!match_player_stats_match_id_fkey(id, league_id)
+                    match:matches!inner(id, league_id, home_goals)
                 `)
+                .not('match.home_goals', 'is', null)
 
             if (leagueId) {
                 query = query.eq('match.league_id', leagueId)
@@ -56,13 +57,13 @@ export function usePlayerLeaderboard(leagueId) {
             // Aggregate per player (same name + same team)
             const map = {}
             for (const row of data || []) {
-                if (!row.match) continue // league filter excluded it
-                const key = `${row.player_name}__${row.team?.id}`
+                const team = Array.isArray(row.team) ? row.team[0] : row.team
+                const key = `${row.player_name}__${team?.id || 'unknown'}`
                 if (!map[key]) {
                     map[key] = {
                         player_name: row.player_name,
                         position: row.position,
-                        team: row.team,
+                        team: team,
                         appearances: 0,
                         minutes: 0,
                         goals: 0,

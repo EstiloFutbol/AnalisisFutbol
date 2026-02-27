@@ -10,7 +10,6 @@ import {
     ArrowUpRight, Minus, ArrowDownRight, Star, Timer
 } from 'lucide-react'
 import GoalTimeChart from '@/components/charts/GoalTimeChart'
-import CornerHalfChart from '@/components/charts/CornerHalfChart'
 import StatDistributionChart from '@/components/charts/StatDistributionChart'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -75,7 +74,7 @@ function SectionHeader({ icon: Icon, title, subtitle }) {
     )
 }
 
-function MarketRow({ label, value, sublabel, trend, color = 'primary' }) {
+function MarketRow({ label, value, sublabel = null, trend = null, color = 'primary' }) {
     const cls = COLORS[color] || COLORS.primary
     const TrendIcon = trend === 'up' ? ArrowUpRight : trend === 'down' ? ArrowDownRight : Minus
     return (
@@ -118,7 +117,7 @@ export default function Dashboard() {
         }
     }, [selectedLeagueId, defaultLeague, setSearchParams])
 
-    const { data: matches = [], isLoading } = useMatches(activeLeagueId)
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: true })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
     // ── Core computed stats ──────────────────────────────────────────────────
@@ -351,9 +350,8 @@ export default function Dashboard() {
                 </div>
 
                 {/* Charts */}
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-1">
                     <GoalTimeChart matches={matches} />
-                    <CornerHalfChart matches={matches} />
                 </div>
             </section>
 

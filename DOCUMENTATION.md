@@ -1,115 +1,106 @@
-# AnálisisFútbol - Documentación Completa del Proyecto
+# AnalisisFutbol — Technical Documentation
 
-Bienvenido a la documentación técnica de **AnálisisFútbol**, una plataforma avanzada de análisis de datos futbolísticos diseñada para proporcionar insights estratégicos y tendencias para apuestas deportivas.
+## Architecture
 
----
+**Single Page Application** built with React 18 + Vite, backed by Supabase (PostgreSQL).
 
-## 🏗️ 1. Arquitectura del Proyecto
-
-El proyecto sigue una arquitectura moderna de **Single Page Application (SPA)** desacoplada con un backend como servicio (BaaS).
-
--   **Frontend**: React.js (v18+) con Vite para un desarrollo ultrarápido.
--   **Backend/Base de Datos**: Supabase (PostgreSQL).
--   **Hosting**: Cloudflare Pages.
--   **Estilos**: Tailwind CSS con un sistema de diseño "Glassmorphism" oscuro y premium.
+- **Frontend**: React + Vite + Tailwind CSS + shadcn/ui
+- **Data Fetching**: TanStack React Query v5
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Hosting**: Cloudflare Pages
 
 ---
 
-## 📂 2. Organización de Archivos
+## Project Structure
 
-La estructura del proyecto está organizada de la siguiente manera:
-
-```text
+```
 /
-├── .env.local             # Variables de entorno (Supabase URL/Key)
-├── index.html             # Punto de entrada HTML
-├── package.json           # Dependencias y scripts de NPM
-├── supabase_migration.sql # Esquema completo de la base de datos
-├── vite.config.js         # Configuración de Vite y alias (@)
+├── tools/              Python data import scripts
+├── database/           SQL migration files
+├── data/               Raw CSV datasets (fixtures, legacy data)
 ├── src/
-│   ├── App.jsx            # Enrutador principal y proveedores de contexto
-│   ├── main.jsx           # Punto de montaje de React
-│   ├── components/        # Componentes reutilizables
-│   │   ├── charts/        # Gráficos (GoalTime, CornerHalf, StatDistribution, etc.)
-│   │   ├── layout/        # Navbar y envoltorios de diseño
-│   │   ├── matches/       # Tarjetas de partido, formularios de edición y barras de stats
-│   │   └── ui/            # Componentes base (Botones, Cards, Inputs)
-│   ├── context/           # AuthContext (Manejo de sesión de Supabase)
-│   ├── hooks/             # useMatches (Hooks de React Query para fetching de datos)
-│   ├── lib/               # Clientes (Supabase, QueryClient, Parseaores CSV)
-│   └── pages/             # Vistas principales (Dashboard, Matches, MatchDetail, etc.)
-└── scripts/               # Scripts de utilidad (ej. actualización masiva de logos)
+│   ├── App.jsx         Main React Component
+│   ├── main.jsx        React Entry Point
+│   ├── index.css       Global Styles
+│   ├── pages/          Dashboard, Matches, MatchDetail, Statistics, SelfService, Admin, DataImport
+│   ├── components/
+│   │   ├── admin/      AdminMatches, AdminTeams, AdminLeagues, AdminReferees, AdminCoaches
+│   │   ├── charts/     GoalTimeChart, CornerHalfChart, StatDistributionChart, OddsCorrelationChart
+│   │   ├── matches/    MatchCard, MatchEditForm, StatBar, GoalTimeline
+│   │   └── BettingCalculator.jsx
+│   ├── hooks/          useMatches.js, usePlayerStats.js
+│   ├── lib/            supabase.js, csvParser.js, query-client.js, utils.js
+│   ├── context/        AuthContext.jsx
+│   └── match_files/    FBRef Excel files — processed/ subfolder for uploaded files
+└── package.json        Project dependencies
+
 ```
 
 ---
 
-## 🗄️ 3. Base de Datos (Supabase)
+## Database
 
-El sistema utiliza **PostgreSQL** hospedado en Supabase. El archivo `supabase_migration.sql` contiene la definición exacta.
+Built on **Supabase PostgreSQL**. Key tables:
 
-### Tablas Principales:
-1.  **`teams`**: Almacena los equipos de La Liga.
-    *   `id`, `name`, `short_name`, `logo_url`.
-2.  **`matches`**: La tabla más importante con +40 columnas.
-    *   **Identificación**: `id`, `season`, `matchday`, `match_date`.
-    *   **Equipos**: `home_team_id`, `away_team_id` (FKs a `teams`).
-    *   **Resultados**: `home_goals`, `away_goals`, `btts` (Both Teams to Score).
-    *   **Stats Avanzadas**: xG (Expected Goals), posesión, tiros, córners (por mitades), tarjetas, faltas, etc.
-    *   **Cuotas**: `home_odds`, `draw_odds`, `away_odds`.
-    *   **Eventos**: `home_goal_minutes`, `away_goal_minutes` (almacenados como JSONB).
+| Table | Description |
+|---|---|
+| `leagues` | League definitions; `is_default=true` sets the default UI league |
+| `teams` | Club names, logos (Supabase Storage), stadium |
+| `matches` | ~50 columns — the heart of the app. `home_goals IS NULL` = unplayed |
+| `referees` | Referee names |
+| `coaches` | Coach names |
+| `match_player_stats` | One row per player per match (goals, assists, cards, GK stats) |
 
-### Seguridad (RLS):
--   **Lectura**: Pública (Cualquier usuario puede ver los datos).
--   **Escritura**: Solo usuarios autenticados (Admin) pueden insertar o modificar datos a través del panel de importación o edición.
+**Corner data**: Only `home_corners`, `away_corners`, `total_corners`. Half-time split was removed in migration v6.
 
----
+**Unplayed matches**: All analytics hooks use `{ playedOnly: true }` to exclude fixtures from stats.
 
-## 🚀 4. Funcionamiento de las Vistas
-
-### 📊 Dashboard (Panel de Betting)
-Es el corazón del proyecto. Calcula tendencias en tiempo real:
--   **Filtro de Temporada**: Sincronizado con la URL (`?season=...`).
--   **Betting Insights**: Lógica automatizada que analiza los partidos de la temporada y genera alertas como "Festival de Goles" si los partidos superan el 55% de Over 2.5.
--   **Gráficos**: Distribuciones de córners, faltas y tarjetas vs cuotas de apuestas.
-
-### 📅 Partidos (Matches)
-Lista completa de encuentros con filtros avanzados.
--   **Persistencia de Estado**: Utiliza `URLSearchParams`. Al navegar a un detalle y volver, se mantienen los filtros de temporada y jornada.
--   **Agrupación**: Los partidos se agrupan visualmente por Jornada (Matchday).
-
-### 📝 Detalle y Edición (Match Detail)
--   Muestra el "Match Report" completo con xG, posesión y línea de tiempo de goles.
--   **Editor**: Permite a los administradores corregir datos o añadir minutos de goles manualmente. Limpia automáticamente inputs de texto para asegurar que los arrays JSONB sean correctos.
+**RLS Policy**: Public read. Authenticated write (admin UI). Service role key used only by Python tools.
 
 ---
 
-## 📥 5. Gestión de Datos (Data Import)
+## Data Import
 
-El archivo `src/pages/DataImport.jsx` permite subir archivos CSV.
-1.  **Parsing**: Utiliza `src/lib/csvParser.js` para convertir el CSV (delimitado por `;`) en objetos JSON compatibles con Supabase.
-2.  **Upsert**: Utiliza la lógica de `upsert` (Update or Insert). Si el ID del partido ya existe, lo actualiza; si no, lo crea.
-3.  **Relaciones**: Convierte nombres de equipos en IDs de la tabla `teams`.
+Match data is imported using Python scripts in `tools/`. All scripts are run from the project root.
 
----
+### Add match stats from FBRef
+1. Download FBRef match Excel → place in `src/match_files/`
+2. `python tools/limpieza_datos.py --preview`
+3. `python tools/limpieza_datos.py --upload`
+4. Processed files auto-move to `src/match_files/processed/`
 
-## ☁️ 6. Despliegue en Cloudflare Pages
+### Import a new season's fixtures
+```bash
+python tools/import_fixtures_2526.py
+```
 
-El proyecto está configurado para despliegue continuo (CI/CD):
-1.  **Vite Build**: Genera la carpeta `dist`.
-2.  **Variables de Entorno**: Deben configurarse en el panel de Cloudflare:
-    *   `VITE_SUPABASE_URL`
-    *   `VITE_SUPABASE_ANON_KEY`
-3.  **Routing**: El archivo `_redirects` (o la configuración de Single Page App) debe estar activo para que las rutas de React Router funcionen al recargar.
-
----
-
-## 🛠️ 7. Cómo seguir mejorando el proyecto
-
-1.  **Predicciones con IA**: Implementar un modelo que use `home_xg` y `away_xg` históricos para predecir el ganador de la siguiente jornada.
-2.  **Comparativa Face-to-Face (H2H)**: En la página de detalle, añadir el historial de enfrentamientos entre ambos equipos.
-3.  **Nuevas Ligas**: El sistema es agnóstico a la liga. Se podrían añadir temporadas de Premier League o Champions League simplemente cambiando la tabla de equipos y el campo `season`.
-4.  **Actualización Real-time**: Usar Supabase Realtime para que los cambios en la DB se reflejen instantáneamente sin refrescar el Dashboard.
+### Update scores only
+```bash
+python tools/update_scores_2526.py
+```
 
 ---
 
-*Documentación generada el 15 de febrero de 2026.*
+## Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Public read access (frontend) |
+| `VITE_SUPABASE_SERVICE_ROLE_KEY` | Full write access (Python tools only — never expose to frontend) |
+
+---
+
+## Deployment
+
+Deployed on **Cloudflare Pages** with continuous deployment from GitHub.
+
+- Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in Cloudflare environment variables
+- Build command: `npm run build`
+- Output directory: `dist`
+
+---
+
+## Current Season
+
+La Liga **2025-2026**, `league_id = 2`. Jornadas 1–25 uploaded with full stats and player data.

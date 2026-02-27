@@ -39,10 +39,8 @@ export default function AdminMatches({ onClose }) {
         away_shots: null,
         home_shots_on_target: null,
         away_shots_on_target: null,
-        home_corners_1h: null,
-        home_corners_2h: null,
-        away_corners_1h: null,
-        away_corners_2h: null,
+        home_corners: null,
+        away_corners: null,
         home_fouls: null,
         away_fouls: null,
         home_yellow_cards: null,
@@ -174,11 +172,9 @@ export default function AdminMatches({ onClose }) {
                 away_shots: formData.away_shots,
                 home_shots_on_target: formData.home_shots_on_target,
                 away_shots_on_target: formData.away_shots_on_target,
-                home_corners_1h: formData.home_corners_1h,
-                home_corners_2h: formData.home_corners_2h,
-                away_corners_1h: formData.away_corners_1h,
-                away_corners_2h: formData.away_corners_2h,
-                total_corners: (Number(formData.home_corners_1h || 0) + Number(formData.home_corners_2h || 0) + Number(formData.away_corners_1h || 0) + Number(formData.away_corners_2h || 0)) || null,
+                home_corners: formData.home_corners,
+                away_corners: formData.away_corners,
+                total_corners: (Number(formData.home_corners || 0) + Number(formData.away_corners || 0)) || null,
                 home_fouls: formData.home_fouls,
                 away_fouls: formData.away_fouls,
                 home_cards: formData.home_yellow_cards,
@@ -479,20 +475,12 @@ export default function AdminMatches({ onClose }) {
                         <Label className="text-base font-semibold">Córners</Label>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Local 1ª Parte</Label>
-                                <Input type="number" name="home_corners_1h" value={formData.home_corners_1h || ''} onChange={handleChange} />
+                                <Label>Local (total)</Label>
+                                <Input type="number" name="home_corners" value={formData.home_corners || ''} onChange={handleChange} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Visitante 1ª Parte</Label>
-                                <Input type="number" name="away_corners_1h" value={formData.away_corners_1h || ''} onChange={handleChange} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Local 2ª Parte</Label>
-                                <Input type="number" name="home_corners_2h" value={formData.home_corners_2h || ''} onChange={handleChange} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Visitante 2ª Parte</Label>
-                                <Input type="number" name="away_corners_2h" value={formData.away_corners_2h || ''} onChange={handleChange} />
+                                <Label>Visitante (total)</Label>
+                                <Input type="number" name="away_corners" value={formData.away_corners || ''} onChange={handleChange} />
                             </div>
                         </div>
                     </div>

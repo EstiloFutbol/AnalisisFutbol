@@ -1,61 +1,57 @@
-# ⚽ AnálisisFútbol
+# ⚽ AnalisisFutbol
 
-Una plataforma premium de análisis de datos futbolísticos diseñada para aficionados y apostadores que buscan una ventaja estadística.
+A premium football data analytics platform for La Liga, built for fans and bettors who want a statistical edge.
 
-![Dashboard Preview](https://github.com/EstiloFutbol/AnalisisFutbol/raw/main/public/preview.png)
+## Features
 
-## 🌟 Características
+- **Betting Dashboard** — betting insights: Over/Under, BTTS, corner and card rates with historical win rates
+- **Match Reports** — full stats per match: xG, possession, shots, corners, cards, goal timelines, and player lineups
+- **Statistics** — team standings, xG leaderboards, goals and possession charts
+- **Self-Service Tool** — filter by team / referee / coach / league and run the built-in Betting Calculator
+- **Admin Panel** — create and edit matches, teams, leagues, referees and coaches
+- **Data Import** — upload match data via CSV or FBRef Excel files
 
-- **Dashboard Inteligente**: Insights automatizados sobre tendencias de goles (Over/Under), córners y tarjetas.
-- **Base de Datos en Tiempo Real**: Sincronización completa con Supabase para datos de partidos y equipos.
-- **Filtros Persistentes**: Navegación fluida que mantiene tus selecciones de temporada y jornada en el navegador.
-- **Importación masiva**: Herramienta de carga CSV para actualizar miles de partidos en segundos.
-- **Diseño Premium**: Interfaz oscura, moderna y totalmente adaptada a dispositivos móviles.
+## Quick Start
 
-## 📚 Documentación
+### Prerequisites
+- Node.js v18+
+- A [Supabase](https://supabase.com) project
 
-Para una guía detallada sobre la arquitectura del proyecto, la base de datos y cómo contribuir, consulta:
-👉 **[DOCUMENTATION.md](./DOCUMENTATION.md)**
+### Installation
 
-## 🚀 Inicio Rápido
+```bash
+git clone https://github.com/EstiloFutbol/AnalisisFutbol.git
+cd AnalisisFutbol
+npm install
+```
 
-### Requisitos previos
-- Node.js (v18+)
-- Una cuenta en Supabase.com
-- Git
+### Environment Variables
 
-### Instalación local
+Create `.env.local`:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
 
-1. **Clonar el repo**:
-   ```bash
-   git clone https://github.com/EstiloFutbol/AnalisisFutbol.git
-   cd AnalisisFutbol
-   ```
+### Run locally
+```bash
+npm run dev
+```
 
-2. **Instalar dependencias**:
-   ```bash
-   npm install
-   ```
+### Build for production
+```bash
+npm run build
+```
 
-3. **Variables de Entorno**:
-   Crea un archivo `.env.local` con tus credenciales de Supabase:
-   ```env
-   VITE_SUPABASE_URL=tu_url_de_supabase
-   VITE_SUPABASE_ANON_KEY=tu_anon_key_de_supabase
-   ```
+## Tech Stack
 
-4. **Ejecutar en desarrollo**:
-   ```bash
-   npm run dev
-   ```
-
-## 🛠️ Tech Stack
-
-- **React + Vite**
-- **Supabase** (PostgreSQL + Auth + Storage)
-- **Tailwind CSS**
-- **React Query**
-- **Framer Motion** & **Recharts**
+| | |
+|---|---|
+| Frontend | React 18 + Vite |
+| Styling | Tailwind CSS + shadcn/ui |
+| Data | TanStack React Query + Supabase (PostgreSQL) |
+| Charts | Recharts + Framer Motion |
+| Hosting | Cloudflare Pages |
 
 ---
-Desarrollado con ❤️ para el análisis del fútbol.
+Developed with ❤️ for football analytics.

@@ -85,6 +85,9 @@ export default function SelfService() {
     const filteredMatches = useMemo(() => {
         if (!matches.length) return []
         return matches.filter(m => {
+            // Only analysis of played matches
+            if (m.home_goals === null) return false
+
             if (selectedLeague) {
                 const league = leagues.find(l => String(l.id) === selectedLeague)
                 if (league && m.season !== league.season) return false

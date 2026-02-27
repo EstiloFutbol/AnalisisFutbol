@@ -74,7 +74,7 @@ export default function Statistics() {
 
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
-    const { data: matches = [], isLoading: matchesLoading } = useMatches(activeLeagueId)
+    const { data: matches = [], isLoading: matchesLoading } = useMatches(activeLeagueId, { playedOnly: true })
     const { data: players = [], isLoading: playersLoading } = usePlayerLeaderboard(activeLeagueId)
 
     const isLoading = matchesLoading || playersLoading

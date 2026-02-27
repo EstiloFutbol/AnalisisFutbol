@@ -32,3 +32,6 @@ dist-ssr
 # Large assets
 src/frontend/assets/Logos_teams/
 src/frontend/assets/Logos_teams
+
+# Private developer documentation (do NOT commit)
+docs/

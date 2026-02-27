@@ -9,7 +9,6 @@ import Statistics from '@/pages/Statistics'
 import Players from '@/pages/Players'
 
 import SelfService from '@/pages/SelfService'
-import DataImport from '@/pages/DataImport'
 import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 
@@ -30,7 +29,6 @@ function App() {
                                 <Route path="/statistics" element={<Statistics />} />
                                 <Route path="/players" element={<Players />} />
                                 <Route path="/self-service" element={<SelfService />} />
-                                <Route path="/import" element={<DataImport />} />
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/admin" element={<Admin />} />
                             </Routes>

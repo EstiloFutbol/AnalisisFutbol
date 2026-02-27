@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp, Upload, ShieldCheck, Users } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp, ShieldCheck, Users } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
@@ -10,7 +10,6 @@ const navItems = [
     { path: '/players', label: 'Jugadores', icon: Users },
     { path: '/statistics', label: 'Estadísticas', icon: TrendingUp },
     { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
-    { path: '/import', label: 'Importar', icon: Upload },
 ]
 
 export default function Navbar() {

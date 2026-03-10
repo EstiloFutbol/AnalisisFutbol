@@ -217,7 +217,7 @@ export default function Dashboard() {
     // ── Player leaderboards ──────────────────────────────────────────────────
     const topScorers = useMemo(() => [...players].filter(p => p.goals > 0).sort((a, b) => b.goals - a.goals).slice(0, 5), [players])
     const topAssists = useMemo(() => [...players].filter(p => p.assists > 0).sort((a, b) => b.assists - a.assists).slice(0, 5), [players])
-    const topShots = useMemo(() => [...players].filter(p => p.shots > 0).sort((a, b) => b.shots - a.shots).slice(0, 5), [players])
+    const topShots = useMemo(() => [...players].filter(p => p.shots_on_target_per_90 > 0 && p.minutes >= 90).sort((a, b) => b.shots_on_target_per_90 - a.shots_on_target_per_90).slice(0, 5), [players])
     const topYellows = useMemo(() => [...players].filter(p => p.yellow_cards > 0).sort((a, b) => b.yellow_cards - a.yellow_cards).slice(0, 5), [players])
 
     if (isLoading) return (
@@ -366,8 +366,8 @@ export default function Dashboard() {
                         <PlayerLeaderCard title="Marcador (cualquier momento)" players={topScorers} valueKey="goals" label="goles" color="green" />
                         {/* Top Asistencias */}
                         <PlayerLeaderCard title="Asistencias" players={topAssists} valueKey="assists" label="asist." color="blue" />
-                        {/* Top Tiros a puerta */}
-                        <PlayerLeaderCard title="Tiros a Puerta" players={topShots} valueKey="shots_on_target" label="tiros" color="violet" />
+                        {/* Top Tiros a puerta / 90 */}
+                        <PlayerLeaderCard title="Tiros a Puerta /90 min" players={topShots} valueKey="shots_on_target_per_90" label="tiros/90" color="violet" />
                         {/* Tarjetas */}
                         <PlayerLeaderCard title="Jugador Amonestado" players={topYellows} valueKey="yellow_cards" label="amarillas" color="yellow" />
                     </div>
@@ -399,10 +399,10 @@ export default function Dashboard() {
                 <div className="grid gap-4 sm:grid-cols-1">
                     <StatDistributionChart
                         matches={matches}
-                        homeKey="total_corners"
-                        title="Distribución Total de Córners"
-                        description="Cuántos partidos terminaron con X córners"
-                        color="#3b82f6"
+                        homeKey="home_corners"
+                        awayKey="away_corners"
+                        title="Distribución de Córners por Equipo"
+                        description="Local vs Visitante — distribución"
                     />
                 </div>
             </section>

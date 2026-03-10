@@ -25,11 +25,25 @@ export function usePlayerLeaderboard(leagueId) {
     return useQuery({
         queryKey: ['player_leaderboard', leagueId],
         queryFn: async () => {
-            let allData = []
-            let page = 0
-            const PAGE_SIZE = 1000
+            // Get total count first to parallelize requests
+            let countQuery = supabase
+                .from('match_player_stats')
+                .select('id, match:matches!inner(id, league_id, home_goals)', { count: 'exact', head: true })
+                .not('match.home_goals', 'is', null)
 
-            while (true) {
+            if (leagueId) {
+                countQuery = countQuery.eq('match.league_id', leagueId)
+            }
+
+            const { count, error: countError } = await countQuery
+            if (countError) throw countError
+            if (!count) return []
+
+            const PAGE_SIZE = 1000
+            const numPages = Math.ceil(count / PAGE_SIZE)
+            const fetchPromises = []
+
+            for (let page = 0; page < numPages; page++) {
                 let query = supabase
                     .from('match_player_stats')
                     .select(`
@@ -56,21 +70,14 @@ export function usePlayerLeaderboard(leagueId) {
                     query = query.eq('match.league_id', leagueId)
                 }
 
-                const { data, error } = await query
-                if (error) throw error
-
-                allData = allData.concat(data || [])
-
-                // If we got fewer than PAGE_SIZE rows, we've reached the end
-                if (!data || data.length < PAGE_SIZE) {
-                    break
-                }
-
-                page++
-
-                // Safety escape hatch (e.g. 20000 rows = 20 pages max)
-                if (page > 20) break;
+                fetchPromises.push(query.then(res => {
+                    if (res.error) throw res.error
+                    return res.data || []
+                }))
             }
+
+            const pages = await Promise.all(fetchPromises)
+            const allData = pages.flat()
 
             // Aggregate per player (same name + same team)
             const map = {}
@@ -109,7 +116,15 @@ export function usePlayerLeaderboard(leagueId) {
                 p.gk_shots_faced += row.gk_shots_faced || 0
             }
 
-            return Object.values(map)
+            // Calculate per 90 metrics
+            const resultList = Object.values(map)
+            resultList.forEach(p => {
+                p.shots_on_target_per_90 = p.minutes > 0
+                    ? Number(((p.shots_on_target / p.minutes) * 90).toFixed(2))
+                    : 0
+            })
+
+            return resultList
         },
         enabled: true,
     })

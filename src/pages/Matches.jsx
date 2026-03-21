@@ -153,18 +153,31 @@ export default function Matches() {
                 </select>
             </div>
 
-            {/* Matchday chips (horizontal scroll) - only show if no specific matchday selected */}
-            {!selectedMatchday && availableMatchdays.length > 0 && (
+            {/* Matchday chips (horizontal scroll) */}
+            {availableMatchdays.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    {availableMatchdays.map((md) => (
-                        <button
-                            key={md}
-                            onClick={() => handleMatchdayChange(String(md))}
-                            className="flex-none rounded-full border border-border/50 bg-card px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
-                        >
-                            J{md}
-                        </button>
-                    ))}
+                    <button
+                        onClick={() => handleMatchdayChange('')}
+                        className={`flex-none rounded-full border px-3 py-1 text-xs font-medium transition-colors ${!selectedMatchday
+                            ? 'bg-primary/20 text-primary border-primary/40'
+                            : 'border-border/50 bg-card text-muted-foreground hover:border-primary/30 hover:text-primary'}`}
+                    >
+                        Todas
+                    </button>
+                    {availableMatchdays.map((md) => {
+                        const isActive = selectedMatchday === String(md)
+                        return (
+                            <button
+                                key={md}
+                                onClick={() => handleMatchdayChange(String(md))}
+                                className={`flex-none rounded-full border px-3 py-1 text-xs font-medium transition-colors ${isActive
+                                    ? 'bg-primary/20 text-primary border-primary/40'
+                                    : 'border-border/50 bg-card text-muted-foreground hover:border-primary/30 hover:text-primary'}`}
+                            >
+                                J{md}
+                            </button>
+                        )
+                    })}
                 </div>
             )}
 

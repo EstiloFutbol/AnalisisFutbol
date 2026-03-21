@@ -1,14 +1,13 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, TrendingUp, ShieldCheck, Users } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/matches', label: 'Partidos', icon: CalendarDays },
     { path: '/players', label: 'Jugadores', icon: Users },
-    { path: '/statistics', label: 'Estadísticas', icon: TrendingUp },
     { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
 ]
 

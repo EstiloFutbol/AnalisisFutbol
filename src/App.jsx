@@ -5,7 +5,6 @@ import Navbar from '@/components/layout/Navbar'
 import Dashboard from '@/pages/Dashboard'
 import Matches from '@/pages/Matches'
 import MatchDetail from '@/pages/MatchDetail'
-import Statistics from '@/pages/Statistics'
 import Players from '@/pages/Players'
 
 import SelfService from '@/pages/SelfService'
@@ -26,7 +25,6 @@ function App() {
                                 <Route path="/" element={<Dashboard />} />
                                 <Route path="/matches" element={<Matches />} />
                                 <Route path="/matches/:matchId" element={<MatchDetail />} />
-                                <Route path="/statistics" element={<Statistics />} />
                                 <Route path="/players" element={<Players />} />
                                 <Route path="/self-service" element={<SelfService />} />
                                 <Route path="/login" element={<Login />} />

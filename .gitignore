@@ -35,3 +35,12 @@ src/frontend/assets/Logos_teams
 
 # Private developer documentation (do NOT commit)
 docs/
+
+# Raw match data files (large Excel files, not code)
+src/match_files/*.xlsx
+src/match_files/*.xls
+src/match_files/processed/
+
+# Temp / debug scripts
+tools/_inspect*.py
+tools/_debug*.py

@@ -283,11 +283,23 @@ def parse_match_file(filepath, sheet_name=0):
     mw = re.search(r'Matchweek\s+(\d+)', league_row, re.IGNORECASE)
     r["matchday"] = int(mw.group(1)) if mw else None
 
+
     # ── Score ────────────────────────────────────────────────────────────
-    try: r["home_goals"] = int(clean(df.iloc[5, 0]))
-    except: r["home_goals"] = None
-    try: r["away_goals"] = int(clean(df.iloc[12, 0]))
-    except: r["away_goals"] = None
+    # Scan a window around the expected score rows to handle extra subtitle
+    # rows (e.g. "El Derbi Madrileño") that shift content down by 1–2 rows.
+    def find_score(start_row, window=3):
+        for i in range(start_row, min(start_row + window, len(df))):
+            try:
+                v = int(clean(df.iloc[i, 0]))
+                if 0 <= v <= 30:   # sanity: goals are 0-30
+                    return v
+            except (TypeError, ValueError):
+                pass
+        return None
+
+    r["home_goals"] = find_score(5)
+    r["away_goals"] = find_score(12)
+
 
     # ── Coaches ──────────────────────────────────────────────────────────
     coaches_found = 0

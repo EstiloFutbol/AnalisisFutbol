@@ -1,20 +1,52 @@
-import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users, UserCircle, LogOut, ChevronDown, Trophy } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/matches', label: 'Partidos', icon: CalendarDays },
     { path: '/players', label: 'Jugadores', icon: Users },
+    { path: '/betting', label: 'Apuestas', icon: Trophy },
     { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
 ]
 
+function UserAvatar({ name, email }) {
+    const initials = name
+        ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+        : (email ? email[0].toUpperCase() : '?')
+    return (
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 border border-primary/30 text-xs font-bold text-primary">
+            {initials}
+        </div>
+    )
+}
+
 export default function Navbar() {
     const location = useLocation()
+    const navigate = useNavigate()
     const [mobileOpen, setMobileOpen] = useState(false)
-    const { session } = useAuth()
+    const [userMenuOpen, setUserMenuOpen] = useState(false)
+    const userMenuRef = useRef(null)
+    const { session, user, userProfile, isAdmin, signOut } = useAuth()
+
+    // Close user menu on outside click
+    useEffect(() => {
+        function handleClickOutside(e) {
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+                setUserMenuOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    const handleSignOut = async () => {
+        setUserMenuOpen(false)
+        await signOut()
+        navigate('/')
+    }
 
     return (
         <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
@@ -35,12 +67,6 @@ export default function Navbar() {
                         </span>
                     </div>
                 </Link>
-                {session && (
-                    <Link to="/admin" className="hidden md:flex items-center gap-1 ml-4 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-colors">
-                        <ShieldCheck className="h-3 w-3" />
-                        <span>Admin</span>
-                    </Link>
-                )}
 
                 {/* Desktop Nav */}
                 <nav className="hidden items-center gap-1 md:flex">
@@ -69,13 +95,92 @@ export default function Navbar() {
                     })}
                 </nav>
 
-                {/* Mobile Toggle */}
-                <button
-                    onClick={() => setMobileOpen(!mobileOpen)}
-                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground md:hidden"
-                >
-                    {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </button>
+                {/* Right side: user area */}
+                <div className="flex items-center gap-2">
+                    {/* Admin badge (only for admins) */}
+                    {isAdmin && (
+                        <Link
+                            to="/admin"
+                            className="hidden md:flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-colors"
+                        >
+                            <ShieldCheck className="h-3 w-3" />
+                            <span>Admin</span>
+                        </Link>
+                    )}
+
+                    {session ? (
+                        /* Logged-in user dropdown */
+                        <div className="relative hidden md:block" ref={userMenuRef}>
+                            <button
+                                onClick={() => setUserMenuOpen(o => !o)}
+                                className="flex items-center gap-2 rounded-lg border border-border/50 bg-card/60 px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-card transition-colors"
+                            >
+                                <UserAvatar name={userProfile?.display_name} email={user?.email} />
+                                <span className="max-w-[120px] truncate text-xs">
+                                    {userProfile?.display_name || user?.email?.split('@')[0]}
+                                </span>
+                                <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {userMenuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                                        transition={{ duration: 0.15 }}
+                                        className="absolute right-0 mt-2 w-52 rounded-xl border border-border/60 bg-card shadow-xl overflow-hidden"
+                                    >
+                                        <div className="border-b border-border/40 px-4 py-3">
+                                            <p className="text-xs font-semibold text-foreground truncate">
+                                                {userProfile?.display_name || 'Mi cuenta'}
+                                            </p>
+                                            <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                                            {userProfile?.balance != null && (
+                                                <p className="mt-1 text-[11px] font-semibold text-primary">
+                                                    🪙 {Number(userProfile.balance).toLocaleString('es-ES', { maximumFractionDigits: 0 })} monedas
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="py-1">
+                                            <Link
+                                                to="/account"
+                                                onClick={() => setUserMenuOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                                            >
+                                                <UserCircle className="h-4 w-4 text-muted-foreground" />
+                                                Mi cuenta
+                                            </Link>
+                                            <button
+                                                onClick={handleSignOut}
+                                                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                                            >
+                                                <LogOut className="h-4 w-4" />
+                                                Cerrar sesión
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    ) : (
+                        /* Not logged in: show login button */
+                        <Link
+                            to="/login"
+                            className="hidden md:flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
+                        >
+                            Iniciar sesión
+                        </Link>
+                    )}
+
+                    {/* Mobile Toggle */}
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground md:hidden"
+                    >
+                        {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
+                </div>
             </div>
 
             {/* Mobile Nav */}
@@ -106,6 +211,41 @@ export default function Navbar() {
                                     </Link>
                                 )
                             })}
+                            {/* Mobile auth links */}
+                            <div className="border-t border-border/40 pt-2 mt-2">
+                                {session ? (
+                                    <>
+                                        <Link
+                                            to="/account"
+                                            onClick={() => setMobileOpen(false)}
+                                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                        >
+                                            <UserCircle className="h-4 w-4" />
+                                            Mi cuenta
+                                            {userProfile?.balance != null && (
+                                                <span className="ml-auto text-xs font-semibold text-primary">
+                                                    🪙 {Number(userProfile.balance).toLocaleString('es-ES', { maximumFractionDigits: 0 })}
+                                                </span>
+                                            )}
+                                        </Link>
+                                        <button
+                                            onClick={() => { setMobileOpen(false); handleSignOut() }}
+                                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+                                        >
+                                            <LogOut className="h-4 w-4" />
+                                            Cerrar sesión
+                                        </button>
+                                    </>
+                                ) : (
+                                    <Link
+                                        to="/login"
+                                        onClick={() => setMobileOpen(false)}
+                                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+                                    >
+                                        Iniciar sesión
+                                    </Link>
+                                )}
+                            </div>
                         </div>
                     </motion.nav>
                 )}

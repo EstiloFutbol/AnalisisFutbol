@@ -16,7 +16,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-2.5-flash'
 // Stake amounts by confidence level (in monedas)
 const STAKE_BY_CONFIDENCE: Record<string, number> = {
   alta:  150,

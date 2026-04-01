@@ -25,8 +25,16 @@ async function callEdgeFunction(action, body = {}, withAuth = false) {
         headers,
         body: JSON.stringify({ action, ...body }),
     })
-    const data = await resp.json()
-    if (!resp.ok) throw new Error(data.error || 'Edge function error')
+    let data
+    try {
+        data = await resp.json()
+    } catch {
+        throw new Error(`HTTP ${resp.status} — respuesta no válida de la función`)
+    }
+    if (!resp.ok) {
+        // Supabase gateway errors use 'message'; our function errors use 'error'
+        throw new Error(data.error || data.message || `Error HTTP ${resp.status}`)
+    }
     return data
 }
 

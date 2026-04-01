@@ -150,27 +150,51 @@ async function getUpcomingWithOdds(supabase: ReturnType<typeof createClient>) {
   return data || []
 }
 
+// ── JWT helper ──────────────────────────────────────────────────────────────
+// NOTE: We do NOT verify the signature here — the Supabase gateway already
+// validates every JWT before the request reaches this function. We only need
+// to read the user's ID (sub) from the payload.
+function decodeJWTPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    // Base64url → standard base64 → decode
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const json = atob(b64)
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
 // ── action: analyze ─────────────────────────────────────────────────────────
 
 async function handleAnalyze(
   supabase: ReturnType<typeof createClient>,
   authHeader: string | null,
 ) {
-  // Verify admin
+  // ── Auth check ─────────────────────────────────────────────────────────────
   if (!authHeader) {
     return Response.json({ error: 'Authentication required' }, { status: 401, headers: corsHeaders })
   }
-  const jwt = authHeader.replace('Bearer ', '')
-  const { data: { user }, error: authErr } = await supabase.auth.getUser(jwt)
-  if (authErr || !user) {
-    return Response.json({ error: 'Invalid token' }, { status: 401, headers: corsHeaders })
+
+  // Decode JWT to get user ID (gateway already validated the signature)
+  const jwt = authHeader.replace(/^Bearer\s+/i, '').trim()
+  const payload = decodeJWTPayload(jwt)
+  const userId = payload?.sub as string | undefined
+
+  if (!userId) {
+    return Response.json({ error: 'Token inválido o expirado' }, { status: 401, headers: corsHeaders })
   }
-  const { data: profile } = await supabase
+
+  // ── Admin check (fetch from DB with service role — bypasses RLS) ──────────
+  const { data: profile, error: profileErr } = await supabase
     .from('user_profiles')
     .select('is_admin')
-    .eq('id', user.id)
+    .eq('id', userId)
     .single()
-  if (!profile?.is_admin) {
+
+  if (profileErr || !profile?.is_admin) {
     return Response.json({ error: 'Admin access required' }, { status: 403, headers: corsHeaders })
   }
 

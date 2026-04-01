@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users, UserCircle, LogOut, ChevronDown, Trophy } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users, UserCircle, LogOut, ChevronDown, Trophy, Bot } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
     { path: '/matches', label: 'Partidos', icon: CalendarDays },
     { path: '/players', label: 'Jugadores', icon: Users },
     { path: '/betting', label: 'Apuestas', icon: Trophy },
+    { path: '/ai', label: 'IA Bot', icon: Bot },
     { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
 ]
 

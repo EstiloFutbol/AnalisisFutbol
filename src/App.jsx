@@ -12,6 +12,7 @@ import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
+import AIAssistant from '@/pages/AIAssistant'
 
 import { AuthProvider } from '@/context/AuthContext'
 
@@ -33,6 +34,7 @@ function App() {
                                 <Route path="/admin" element={<Admin />} />
                                 <Route path="/account" element={<Account />} />
                                 <Route path="/betting" element={<Betting />} />
+                                <Route path="/ai" element={<AIAssistant />} />
                             </Routes>
                         </main>
                     </div>

@@ -5,14 +5,13 @@ import { supabase } from '@/lib/supabase'
 const EDGE_FN_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`
 
 async function callEdgeFunction(action, body = {}, withAuth = false) {
-    // Supabase Edge Functions always require the anon key via 'apikey' header.
-    // The Authorization header starts as the anon key (public access),
-    // and is overridden with the user JWT when withAuth=true.
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    // 'apikey' header authenticates the project (anon key, may be sb_publishable_... format).
+    // 'Authorization' header is ONLY set when we have a real user JWT — never use the
+    // anon key here because newer Supabase projects use a non-JWT publishable key format
+    // which would cause the gateway to return "Invalid JWT".
     const headers = {
         'Content-Type': 'application/json',
-        'apikey': anonKey,
-        'Authorization': `Bearer ${anonKey}`,
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
     }
     if (withAuth) {
         const { data: { session } } = await supabase.auth.getSession()

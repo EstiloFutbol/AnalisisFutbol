@@ -317,7 +317,7 @@ function ChatSection() {
 export default function AIAssistant() {
     const { isAdmin } = useAuth()
     const { data: bets = [], isLoading } = useAIBets()
-    const { mutate: generateBets, isPending: isGenerating, error: genError, isSuccess: genSuccess } = useGenerateAIBets()
+    const { mutate: generateBets, isPending: isGenerating, error: genError, isSuccess: genSuccess, data: genData } = useGenerateAIBets()
     const stats = useAIBotStats(bets)
     const [betsTab, setBetsTab] = useState('pending')
 
@@ -366,8 +366,13 @@ export default function AIAssistant() {
                             }
                         </button>
                         {genSuccess && (
-                            <p className="text-xs text-green-400 flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> Apuestas generadas y guardadas
+                            <p className={`text-xs flex items-center gap-1 ${
+                                genData?.alreadyGenerated ? 'text-yellow-400' : 'text-green-400'
+                            }`}>
+                                <CheckCircle className="h-3 w-3" />
+                                {genData?.alreadyGenerated
+                                    ? `Ya generadas (${genData.count} apuestas). Genera cuando haya nueva jornada.`
+                                    : 'Apuestas generadas y guardadas'}
                             </p>
                         )}
                         {genError && (

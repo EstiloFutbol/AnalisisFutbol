@@ -208,14 +208,36 @@ async function handleAnalyze(
     return Response.json({ bets: [], message: 'No hay partidos disponibles con cuotas' }, { headers: corsHeaders })
   }
 
-  // Build context
-  const resultsText = results.map((m: any) =>
+  // ── Check if bets already exist for these matches ──────────────────────────
+  // Avoids re-calling Gemini (expensive + slow) and prevents timeout on 2nd click
+  const upcomingIds = upcoming.map((m: any) => m.id)
+  const { data: existingBets } = await supabase
+    .from('ai_bets')
+    .select('match_id, status')
+    .in('match_id', upcomingIds)
+
+  if (existingBets && existingBets.length > 0) {
+    return Response.json(
+      {
+        bets: existingBets,
+        count: existingBets.length,
+        message: `Las apuestas de IA ya fueron generadas para esta jornada (${existingBets.length} apuestas). Vuelve a generar cuando haya nuevos partidos disponibles.`,
+        alreadyGenerated: true,
+      },
+      { status: 200, headers: corsHeaders },
+    )
+  }
+
+  // ── Build context (last 15 jornadas to keep context short & fast) ──────────
+  const recentResults = results.slice(-150) // ~15 jornadas × 10 matches
+  const resultsText = recentResults.map((m: any) =>
     `J${m.matchday}: ${m.home_team.name} ${m.home_goals}-${m.away_goals} ${m.away_team.name}`
   ).join('\n')
 
   const upcomingText = upcoming.map((m: any) =>
     `ID:${m.id} J${m.matchday} ${m.match_date} — ${m.home_team.name} vs ${m.away_team.name} | Cuotas: Local=${m.home_odds} X=${m.draw_odds} Visit=${m.away_odds}`
   ).join('\n')
+
 
   const systemPrompt = `Eres un experto analista de apuestas de fútbol de La Liga española temporada 2025-2026.
 Analiza datos históricos reales de la temporada y haz predicciones fundamentadas.

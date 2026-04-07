@@ -1,8 +1,13 @@
-#env
+# ============================================
+# Environment & secrets
+# ============================================
 .env
 .env.*
+.env.local
 
+# ============================================
 # Logs
+# ============================================
 logs
 *.log
 npm-debug.log*
@@ -11,12 +16,17 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# ============================================
+# Dependencies & build
+# ============================================
 node_modules
 dist
 dist-ssr
 *.local
 
+# ============================================
 # Editor directories and files
+# ============================================
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -27,20 +37,22 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
+# ============================================
+# Sensitive / internal folders (NOT for public repo)
+# These contain database migrations, match data,
+# import scripts, and internal tooling.
+# ============================================
+tools/
+database/
+data/
+scripts/
+docs/
 
 # Large assets
 src/frontend/assets/Logos_teams/
 src/frontend/assets/Logos_teams
 
-# Private developer documentation (do NOT commit)
-docs/
-
-# Raw match data files (large Excel files, not code)
+# Raw match data files
 src/match_files/*.xlsx
 src/match_files/*.xls
 src/match_files/processed/
-
-# Temp / debug scripts
-tools/_inspect*.py
-tools/_debug*.py

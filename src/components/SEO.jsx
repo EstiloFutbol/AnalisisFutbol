@@ -111,23 +111,17 @@ export default function SEO({
 
             {/* Structured Data: Page-specific */}
             {structuredData && (
-                <script type="application/ld+json">
-                    {JSON.stringify(structuredData)}
-                </script>
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
             )}
 
             {/* Structured Data: Breadcrumbs */}
             {breadcrumbs && (
-                <script type="application/ld+json">
-                    {JSON.stringify(breadcrumbs)}
-                </script>
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }} />
             )}
 
             {/* Structured Data: WebSite */}
             {websiteSchema && (
-                <script type="application/ld+json">
-                    {JSON.stringify(websiteSchema)}
-                </script>
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
             )}
         </Helmet>
     )

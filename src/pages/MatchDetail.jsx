@@ -45,7 +45,7 @@ function PlayerTable({ players, teamName }) {
                 <div className="flex items-center gap-2">
                     <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold
                         ${isSub ? 'bg-secondary text-muted-foreground' : 'bg-primary/15 text-primary'}`}>
-                        {p.shirt_number ?? p.player_name.charAt(0)}
+                        {p.shirt_number ?? p.player_name?.charAt(0) ?? '?'}
                     </div>
                     <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-foreground leading-tight">{p.player_name}</p>

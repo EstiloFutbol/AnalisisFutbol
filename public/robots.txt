@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /cuenta
+Disallow: /iniciar-sesion
+
+Sitemap: https://analisisfutbol.com/sitemap.xml

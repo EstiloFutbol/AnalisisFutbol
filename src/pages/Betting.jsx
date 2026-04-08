@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Coins, Loader2, CheckCircle, AlertCircle, Lock, TrendingUp, Wallet, Clock } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useBettableMatches, useUserBets, usePlaceBet } from '@/hooks/useBetting'
+import SEO from '@/components/SEO'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -261,7 +262,7 @@ export default function Betting() {
                 <h1 className="text-2xl font-black text-foreground">Inicia sesión para apostar</h1>
                 <p className="text-sm text-muted-foreground">Regístrate gratis y recibe 1,000 monedas de bienvenida</p>
                 <Link
-                    to="/login"
+                    to="/iniciar-sesion"
                     className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
                 >
                     Iniciar sesión
@@ -272,10 +273,15 @@ export default function Betting() {
 
     return (
         <div className="space-y-6">
+            <SEO
+                title="Mis Apuestas Virtuales La Liga"
+                description="Apuesta con monedas virtuales en los partidos de La Liga 2025-2026. Consulta cuotas, realiza pronósticos y sigue tus resultados."
+                path="/mis-apuestas"
+            />
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-foreground">Apuestas</h1>
+                    <h1 className="text-3xl font-black tracking-tight text-foreground">Mis Apuestas</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Apuesta con monedas virtuales en los próximos partidos</p>
                 </div>
                 {/* Balance card */}

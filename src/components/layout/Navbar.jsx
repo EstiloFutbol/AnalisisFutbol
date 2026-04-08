@@ -6,11 +6,9 @@ import { useAuth } from '@/context/AuthContext'
 
 const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/matches', label: 'Partidos', icon: CalendarDays },
-    { path: '/players', label: 'Jugadores', icon: Users },
-    { path: '/betting', label: 'Apuestas', icon: Trophy },
-    { path: '/ai', label: 'IA Bot', icon: Bot },
-    { path: '/self-service', label: 'Self-Service', icon: BarChart3 },
+    { path: '/mis-apuestas', label: 'Mis Apuestas', icon: Trophy },
+    { path: '/ia-bet', label: 'IA Bet', icon: Bot },
+    { path: '/explorar', label: 'Explorar', icon: BarChart3 },
 ]
 
 function UserAvatar({ name, email }) {
@@ -145,7 +143,7 @@ export default function Navbar() {
                                         </div>
                                         <div className="py-1">
                                             <Link
-                                                to="/account"
+                                                to="/cuenta"
                                                 onClick={() => setUserMenuOpen(false)}
                                                 className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
                                             >
@@ -167,7 +165,7 @@ export default function Navbar() {
                     ) : (
                         /* Not logged in: show login button */
                         <Link
-                            to="/login"
+                            to="/iniciar-sesion"
                             className="hidden md:flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/20 transition-colors"
                         >
                             Iniciar sesión
@@ -217,7 +215,7 @@ export default function Navbar() {
                                 {session ? (
                                     <>
                                         <Link
-                                            to="/account"
+                                            to="/cuenta"
                                             onClick={() => setMobileOpen(false)}
                                             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                                         >
@@ -239,7 +237,7 @@ export default function Navbar() {
                                     </>
                                 ) : (
                                     <Link
-                                        to="/login"
+                                        to="/iniciar-sesion"
                                         onClick={() => setMobileOpen(false)}
                                         className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
                                     >

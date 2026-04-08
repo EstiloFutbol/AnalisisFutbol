@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react'
+import { useMemo, useEffect, useState, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useMatches, useLeagues } from '@/hooks/useMatches'
@@ -7,10 +7,16 @@ import {
     Trophy, Goal, Target, TrendingUp, Activity,
     BarChart3, Clock, Shield, CreditCard,
     AlertTriangle, Zap, Info, Users, Crosshair,
-    ArrowUpRight, Minus, ArrowDownRight, Star, Timer
+    ArrowUpRight, Minus, ArrowDownRight, Star, Timer,
+    CalendarDays, ShieldCheck
 } from 'lucide-react'
 import GoalTimeChart from '@/components/charts/GoalTimeChart'
 import StatDistributionChart from '@/components/charts/StatDistributionChart'
+import SEO from '@/components/SEO'
+
+// Lazy-load the sub-tab content
+import MatchesTab from '@/pages/Matches'
+import PlayersTab from '@/pages/Players'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -91,15 +97,14 @@ function MarketRow({ label, value, sublabel = null, trend = null, color = 'prima
     )
 }
 
-function InsightBadge({ title, description, color = 'primary' }) {
-    const cls = COLORS[color] || COLORS.primary
-    return (
-        <div className={`rounded-xl border p-4 ${cls.split(' ').slice(1).join(' ')}`}>
-            <p className={`text-xs font-black uppercase tracking-wider ${cls.split(' ')[0]}`}>{title}</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{description}</p>
-        </div>
-    )
-}
+// ─── Dashboard Sub-Tabs ──────────────────────────────────────────────────────
+
+const DASHBOARD_TABS = [
+    { id: 'mercados', label: 'Mercados', icon: BarChart3 },
+    { id: 'jugadores', label: 'Jugadores', icon: Users },
+    { id: 'partidos', label: 'Partidos', icon: CalendarDays },
+    { id: 'equipos', label: 'Equipos', icon: ShieldCheck },
+]
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -108,39 +113,60 @@ export default function Dashboard() {
     const { data: leagues = [] } = useLeagues()
 
     const selectedLeagueId = searchParams.get('league')
+    const activeTab = searchParams.get('tab') || 'mercados'
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
 
     useEffect(() => {
         if (!selectedLeagueId && defaultLeague) {
-            setSearchParams({ league: String(defaultLeague.id) }, { replace: true })
+            setSearchParams(prev => {
+                prev.set('league', String(defaultLeague.id))
+                return prev
+            }, { replace: true })
         }
     }, [selectedLeagueId, defaultLeague, setSearchParams])
 
-    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: true })
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados' })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
-    // ── Core computed stats ──────────────────────────────────────────────────
+    const handleTabChange = (tabId) => {
+        setSearchParams(prev => {
+            prev.set('tab', tabId)
+            return prev
+        })
+    }
+
+    // ── SEO description based on active tab ──
+    const seoDescriptions = {
+        mercados: 'Análisis completo de La Liga: goles, córners, tarjetas y mercados de apuestas con datos reales de la temporada 2025-2026.',
+        jugadores: 'Estadísticas de jugadores de La Liga 2025-2026: goleadores, asistencias, tarjetas, tiros y porteros.',
+        partidos: 'Resultados y estadísticas de todos los partidos de La Liga 2025-2026.',
+        equipos: 'Equipos de La Liga 2025-2026: plantillas, estadísticas y rendimiento.',
+    }
+
+    // ── Core computed stats (for mercados tab) ──
     const s = useMemo(() => {
-        if (!matches.length) return null
-        const n = matches.length
+        if (!matches.length || activeTab !== 'mercados') return null
+        const playedMatches = matches.filter(m => m.home_goals != null)
+        if (!playedMatches.length) return null
+        const n = playedMatches.length
 
         // Goals
-        const goals = matches.map(m => (m.home_goals || 0) + (m.away_goals || 0))
+        const goals = playedMatches.map(m => (m.home_goals || 0) + (m.away_goals || 0))
         const totalGoals = goals.reduce((a, b) => a + b, 0)
         const over05 = goals.filter(g => g > 0.5).length
         const over15 = goals.filter(g => g > 1.5).length
         const over25 = goals.filter(g => g > 2.5).length
         const over35 = goals.filter(g => g > 3.5).length
         const over45 = goals.filter(g => g > 4.5).length
-        const btts = matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length
-        const homeWins = matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0)).length
-        const draws = matches.filter(m => (m.home_goals || 0) === (m.away_goals || 0)).length
-        const awayWins = matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0)).length
+        const btts = playedMatches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length
+        const homeWins = playedMatches.filter(m => (m.home_goals || 0) > (m.away_goals || 0)).length
+        const draws = playedMatches.filter(m => (m.home_goals || 0) === (m.away_goals || 0)).length
+        const awayWins = playedMatches.filter(m => (m.away_goals || 0) > (m.home_goals || 0)).length
 
         // Exact scores
         const scoreCounts = {}
-        matches.forEach(m => {
+        playedMatches.forEach(m => {
             const key = `${m.home_goals || 0}-${m.away_goals || 0}`
             scoreCounts[key] = (scoreCounts[key] || 0) + 1
         })
@@ -150,12 +176,12 @@ export default function Dashboard() {
             .map(([score, count]) => ({ score, count, pct: pct(count, n) }))
 
         // First team to score
-        const homeScoresFirst = matches.filter(m => {
+        const homeScoresFirst = playedMatches.filter(m => {
             const hMin = m.home_goal_minutes?.[0] ?? 999
             const aMin = m.away_goal_minutes?.[0] ?? 999
             return hMin < aMin
         }).length
-        const awayScoresFirst = matches.filter(m => {
+        const awayScoresFirst = playedMatches.filter(m => {
             const hMin = m.home_goal_minutes?.[0] ?? 999
             const aMin = m.away_goal_minutes?.[0] ?? 999
             return aMin < hMin
@@ -163,39 +189,38 @@ export default function Dashboard() {
 
         // First goal minute buckets
         const firstGoalMins = []
-        matches.forEach(m => {
+        playedMatches.forEach(m => {
             const allMins = [...(m.home_goal_minutes || []), ...(m.away_goal_minutes || [])].filter(Boolean)
             if (allMins.length) firstGoalMins.push(Math.min(...allMins))
         })
-        const firstGoalMinsCount = firstGoalMins.length
         const fgUnder30 = firstGoalMins.filter(m => m <= 30).length
         const fg3060 = firstGoalMins.filter(m => m > 30 && m <= 60).length
         const fgOver60 = firstGoalMins.filter(m => m > 60).length
 
         // Corners
-        const totalCorners = matches.reduce((a, m) => a + (m.total_corners || 0), 0)
-        const homeCorners = matches.reduce((a, m) => a + (m.home_corners || 0), 0)
-        const awayCorners = matches.reduce((a, m) => a + (m.away_corners || 0), 0)
-        const over85c = matches.filter(m => (m.total_corners || 0) > 8.5).length
-        const over105c = matches.filter(m => (m.total_corners || 0) > 10.5).length
+        const totalCorners = playedMatches.reduce((a, m) => a + (m.total_corners || 0), 0)
+        const homeCorners = playedMatches.reduce((a, m) => a + (m.home_corners || 0), 0)
+        const awayCorners = playedMatches.reduce((a, m) => a + (m.away_corners || 0), 0)
+        const over85c = playedMatches.filter(m => (m.total_corners || 0) > 8.5).length
+        const over105c = playedMatches.filter(m => (m.total_corners || 0) > 10.5).length
 
         // Cards
-        const yc = matches.reduce((a, m) => a + (m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0), 0)
-        const rc = matches.reduce((a, m) => a + (m.home_red_cards || 0) + (m.away_red_cards || 0), 0)
-        const over35yc = matches.filter(m => ((m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0)) > 3.5).length
-        const over15yc = matches.filter(m => ((m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0)) > 1.5).length
-        const matchesWithRed = matches.filter(m => (m.home_red_cards || 0) + (m.away_red_cards || 0) > 0).length
+        const yc = playedMatches.reduce((a, m) => a + (m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0), 0)
+        const rc = playedMatches.reduce((a, m) => a + (m.home_red_cards || 0) + (m.away_red_cards || 0), 0)
+        const over35yc = playedMatches.filter(m => ((m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0)) > 3.5).length
+        const over15yc = playedMatches.filter(m => ((m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0)) > 1.5).length
+        const matchesWithRed = playedMatches.filter(m => (m.home_red_cards || 0) + (m.away_red_cards || 0) > 0).length
 
         // HT data
-        const htGoals = matches.map(m => {
+        const htGoals = playedMatches.map(m => {
             const allMins = [...(m.home_goal_minutes || []), ...(m.away_goal_minutes || [])]
             return allMins.filter(min => min != null && min <= 45).length
         })
         const avgHtGoals = htGoals.reduce((a, b) => a + b, 0) / (n || 1)
 
-        // Shots (FBref data)
-        const totalShots = matches.reduce((a, m) => a + (m.home_shots || 0) + (m.away_shots || 0), 0)
-        const matchesWithShots = matches.filter(m => m.home_shots != null).length
+        // Shots
+        const totalShots = playedMatches.reduce((a, m) => a + (m.home_shots || 0) + (m.away_shots || 0), 0)
+        const matchesWithShots = playedMatches.filter(m => m.home_shots != null).length
 
         // Doble oportunidad
         const x1 = homeWins + draws
@@ -210,11 +235,11 @@ export default function Dashboard() {
             yc, rc, over35yc, over15yc, matchesWithRed,
             avgHtGoals: avgHtGoals.toFixed(2),
             totalShots, matchesWithShots,
-            x1, x2,
+            x1, x2, playedMatches,
         }
-    }, [matches])
+    }, [matches, activeTab])
 
-    // ── Player leaderboards ──────────────────────────────────────────────────
+    // ── Player leaderboards ──
     const topScorers = useMemo(() => [...players].filter(p => p.goals > 0).sort((a, b) => b.goals - a.goals).slice(0, 5), [players])
     const topAssists = useMemo(() => [...players].filter(p => p.assists > 0).sort((a, b) => b.assists - a.assists).slice(0, 5), [players])
     const topShots = useMemo(() => [...players].filter(p => p.shots_on_target_per_90 > 0 && p.minutes >= 90).sort((a, b) => b.shots_on_target_per_90 - a.shots_on_target_per_90).slice(0, 5), [players])
@@ -226,18 +251,13 @@ export default function Dashboard() {
         </div>
     )
 
-    if (!s) return (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 py-32 text-center">
-            <Trophy className="h-12 w-12 text-muted-foreground/30 mb-4" />
-            <h3 className="text-xl font-bold text-foreground">Sin datos todavía</h3>
-            <p className="mt-2 max-w-[280px] text-sm text-muted-foreground/60">Añade partidos en Supabase para verlos aquí.</p>
-        </div>
-    )
-
-    const n = s.n
-
     return (
-        <div className="space-y-10 animate-fade-in pb-12">
+        <div className="space-y-6 animate-fade-in pb-12">
+            <SEO
+                title={activeTab === 'mercados' ? 'Estadísticas La Liga 2025-26' : DASHBOARD_TABS.find(t => t.id === activeTab)?.label}
+                description={seoDescriptions[activeTab]}
+                path={`/?tab=${activeTab}`}
+            />
 
             {/* ── Header ── */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
@@ -245,14 +265,14 @@ export default function Dashboard() {
                     <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">Dashboard</h1>
                     <p className="text-sm font-medium text-muted-foreground/80 flex items-center gap-2">
                         <Activity className="h-4 w-4 text-primary" />
-                        Bet365 · Análisis de mercados sobre {n} partido{n !== 1 ? 's' : ''}
+                        Análisis completo de La Liga · Temporada 2025-2026
                     </p>
                 </div>
                 {leagues.length > 0 && (
                     <div className="relative inline-block">
                         <select
                             value={activeLeagueId || ''}
-                            onChange={e => setSearchParams({ league: e.target.value })}
+                            onChange={e => setSearchParams(prev => { prev.set('league', e.target.value); return prev })}
                             className="appearance-none rounded-xl border border-border bg-card/50 px-6 py-3 pr-10 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                         >
                             {leagues.map(l => <option key={l.id} value={l.id}>{l.name} {l.season}</option>)}
@@ -262,40 +282,78 @@ export default function Dashboard() {
                 )}
             </div>
 
-            {/* ══════════════════════════════════════════════════════════════
-                1. APUESTAS AL RESULTADO
-            ══════════════════════════════════════════════════════════════ */}
+            {/* ── Sub-tabs ── */}
+            <div className="flex gap-1 overflow-x-auto rounded-xl border border-border/50 bg-card/50 p-1">
+                {DASHBOARD_TABS.map(tab => {
+                    const Icon = tab.icon
+                    const active = activeTab === tab.id
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => handleTabChange(tab.id)}
+                            className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-all
+                                ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            {active && (
+                                <motion.div
+                                    layoutId="dashboard-tab-bg"
+                                    className="absolute inset-0 rounded-lg bg-primary/10 border border-primary/20"
+                                    transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                                />
+                            )}
+                            <Icon className="relative h-4 w-4" />
+                            <span className="relative">{tab.label}</span>
+                        </button>
+                    )
+                })}
+            </div>
+
+            {/* ── Tab Content ── */}
+            {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} topScorers={topScorers} topAssists={topAssists} topShots={topShots} topYellows={topYellows} />}
+            {activeTab === 'jugadores' && <PlayersTab />}
+            {activeTab === 'partidos' && <MatchesTab />}
+            {activeTab === 'equipos' && <TeamsTab />}
+        </div>
+    )
+}
+
+// ─── Mercados (original Dashboard content) ──────────────────────────────────
+
+function MercadosContent({ s, matches, topScorers, topAssists, topShots, topYellows }) {
+    if (!s) return (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 py-32 text-center">
+            <Trophy className="h-12 w-12 text-muted-foreground/30 mb-4" />
+            <h3 className="text-xl font-bold text-foreground">Sin datos todavía</h3>
+            <p className="mt-2 max-w-[280px] text-sm text-muted-foreground/60">Añade partidos para ver estadísticas aquí.</p>
+        </div>
+    )
+
+    const n = s.n
+
+    return (
+        <div className="space-y-10">
+            {/* 1. APUESTAS AL RESULTADO */}
             <section className="space-y-4">
                 <SectionHeader icon={Trophy} title="1 · Apuestas al Resultado" subtitle="1X2 · Doble oportunidad · Empate no válida" />
-
-                {/* 1X2 */}
                 <div className="grid grid-cols-3 gap-3">
                     <StatCard icon={ArrowUpRight} label="1 — Gana Local" value={`${pct(s.homeWins, n)}%`} sublabel={`${s.homeWins} de ${n}`} color="green" />
                     <StatCard icon={Minus} label="X — Empate" value={`${pct(s.draws, n)}%`} sublabel={`${s.draws} de ${n}`} color="orange" />
                     <StatCard icon={ArrowDownRight} label="2 — Gana Visitante" value={`${pct(s.awayWins, n)}%`} sublabel={`${s.awayWins} de ${n}`} color="blue" />
                 </div>
-
-                {/* Doble oportunidad */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                     <MarketRow label="Doble oportunidad 1X" value={`${pct(s.x1, n)}%`} sublabel={`${s.x1}/${n}`} color="green" trend="up" />
                     <MarketRow label="Doble oportunidad 12" value={`${pct(s.homeWins + s.awayWins, n)}%`} sublabel={`${s.homeWins + s.awayWins}/${n}`} color="primary" trend="up" />
                     <MarketRow label="Doble oportunidad X2" value={`${pct(s.x2, n)}%`} sublabel={`${s.x2}/${n}`} color="blue" trend="up" />
                 </div>
-
-                {/* Empate no válida */}
                 <div className="grid grid-cols-2 gap-2">
                     <MarketRow label="Draw No Bet — Local gana (excl. empates)" value={`${pct(s.homeWins, s.homeWins + s.awayWins)}%`} color="green" />
                     <MarketRow label="Draw No Bet — Visitante gana (excl. empates)" value={`${pct(s.awayWins, s.homeWins + s.awayWins)}%`} color="blue" />
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════════════════
-                2. APUESTAS DE GOLES
-            ══════════════════════════════════════════════════════════════ */}
+            {/* 2. APUESTAS DE GOLES */}
             <section className="space-y-4">
                 <SectionHeader icon={Goal} title="2 · Apuestas de Goles" subtitle="Over/Under · BTTS · Resultado exacto · Primer gol" />
-
-                {/* Over/Under multi-línea */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                     {[
                         { line: '0.5', over: s.over05, color: 'green' },
@@ -349,34 +407,25 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Charts */}
                 <div className="grid gap-4 md:grid-cols-1">
                     <GoalTimeChart matches={matches} />
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════════════════
-                3. APUESTAS DE JUGADORES
-            ══════════════════════════════════════════════════════════════ */}
+            {/* 3. APUESTAS DE JUGADORES */}
             {(topScorers.length > 0 || topShots.length > 0) && (
                 <section className="space-y-4">
                     <SectionHeader icon={Users} title="3 · Apuestas de Jugadores" subtitle="Goleadores · Tiros · Asistencias · Tarjetas" />
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        {/* Top Goleadores */}
                         <PlayerLeaderCard title="Marcador (cualquier momento)" players={topScorers} valueKey="goals" label="goles" color="green" />
-                        {/* Top Asistencias */}
                         <PlayerLeaderCard title="Asistencias" players={topAssists} valueKey="assists" label="asist." color="blue" />
-                        {/* Top Tiros a puerta / 90 */}
                         <PlayerLeaderCard title="Tiros a Puerta /90 min" players={topShots} valueKey="shots_on_target_per_90" label="tiros/90" color="violet" />
-                        {/* Tarjetas */}
                         <PlayerLeaderCard title="Jugador Amonestado" players={topYellows} valueKey="yellow_cards" label="amarillas" color="yellow" />
                     </div>
                 </section>
             )}
 
-            {/* ══════════════════════════════════════════════════════════════
-                4. APUESTAS DE CÓRNERS
-            ══════════════════════════════════════════════════════════════ */}
+            {/* 4. CÓRNERS */}
             <section className="space-y-4">
                 <SectionHeader icon={Zap} title="4 · Apuestas de Córners" subtitle="Totales · Por equipo · Hándicap · Primer córner" />
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -407,9 +456,7 @@ export default function Dashboard() {
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════════════════
-                5. APUESTAS DE TARJETAS
-            ══════════════════════════════════════════════════════════════ */}
+            {/* 5. TARJETAS */}
             <section className="space-y-4">
                 <SectionHeader icon={AlertTriangle} title="5 · Apuestas de Tarjetas" subtitle="Totales · Por equipo · Roja en el partido" />
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -427,62 +474,26 @@ export default function Dashboard() {
                 />
             </section>
 
-            {/* ══════════════════════════════════════════════════════════════
-                6. APUESTAS COMBINADAS
-            ══════════════════════════════════════════════════════════════ */}
+            {/* 6. COMBINADAS */}
             <section className="space-y-4">
                 <SectionHeader icon={Star} title="6 · Apuestas Combinadas" subtitle="Victoria + Goles · Victoria + BTTS" />
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {[
-                        {
-                            label: "Local gana + Over 2.5",
-                            value: pct(matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n),
-                            count: matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length,
-                            color: 'green',
-                        },
-                        {
-                            label: "Local gana + BTTS",
-                            value: pct(matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, n),
-                            count: matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length,
-                            color: 'green',
-                        },
-                        {
-                            label: "Visitante gana + Over 2.5",
-                            value: pct(matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n),
-                            count: matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length,
-                            color: 'blue',
-                        },
-                        {
-                            label: "Visitante gana + BTTS",
-                            value: pct(matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, n),
-                            count: matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length,
-                            color: 'blue',
-                        },
-                        {
-                            label: "BTTS + Over 2.5",
-                            value: pct(matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n),
-                            count: matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length,
-                            color: 'violet',
-                        },
-                        {
-                            label: "BTTS + Under 3.5",
-                            value: pct(matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) <= 3).length, n),
-                            count: matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) <= 3).length,
-                            color: 'indigo',
-                        },
+                        { label: "Local gana + Over 2.5", value: pct(matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n), count: matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, color: 'green' },
+                        { label: "Local gana + BTTS", value: pct(matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, n), count: matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, color: 'green' },
+                        { label: "Visitante gana + Over 2.5", value: pct(matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n), count: matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, color: 'blue' },
+                        { label: "Visitante gana + BTTS", value: pct(matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, n), count: matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, color: 'blue' },
+                        { label: "BTTS + Over 2.5", value: pct(matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n), count: matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, color: 'violet' },
+                        { label: "BTTS + Under 3.5", value: pct(matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) <= 3).length, n), count: matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) <= 3).length, color: 'indigo' },
                     ].map(({ label, value, count, color }) => (
                         <MarketRow key={label} label={label} value={`${value}%`} sublabel={`${count}/${n}`} color={color} />
                     ))}
                 </div>
             </section>
 
-            {/* ══════════════════════════════════════════════════════════════
-                7. APUESTAS ESPECIALES
-            ══════════════════════════════════════════════════════════════ */}
+            {/* 7. ESPECIALES */}
             <section className="space-y-4">
                 <SectionHeader icon={Timer} title="7 · Apuestas Especiales" subtitle="HT/FT · Hándicap asiático · Intervalos · Tiros" />
-
-                {/* HT goal avg */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                     <StatCard icon={Timer} label="Avg Goles 1ª Parte" value={s.avgHtGoals} sublabel="por partido" color="orange" />
                     <StatCard icon={Crosshair} label="Avg Tiros Total" value={s.matchesWithShots > 0 ? avg(s.totalShots, s.matchesWithShots) : '—'} sublabel="por partido" color="primary" />
@@ -490,13 +501,11 @@ export default function Dashboard() {
                     <StatCard icon={TrendingUp} label="Hándicap Asiático Visit. -0.5" value={`${pct(s.awayWins, n)}%`} sublabel="(= visit. gana)" color="blue" />
                 </div>
 
-                {/* Intervalos de tiempo (based on goal distribution) */}
                 <div className="rounded-xl border border-border/50 bg-card p-4">
                     <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Goles por Intervalo de Tiempo</p>
                     <GoalIntervalBars matches={matches} />
                 </div>
 
-                {/* Distribución de tiros */}
                 {s.matchesWithShots > 0 && (
                     <StatDistributionChart
                         matches={matches.filter(m => m.home_shots != null)}
@@ -507,13 +516,128 @@ export default function Dashboard() {
                     />
                 )}
 
-                {/* Resultado al descanso / final (HT/FT) */}
                 <div className="rounded-xl border border-border/50 bg-card p-4">
                     <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Resultado Descanso / Final (HT/FT)</p>
                     <HtFtTable matches={matches} />
                 </div>
             </section>
+        </div>
+    )
+}
 
+// ─── Teams Tab ───────────────────────────────────────────────────────────────
+
+function TeamsTab() {
+    const { data: leagues = [] } = useLeagues()
+    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
+    const activeLeagueId = defaultLeague ? String(defaultLeague.id) : null
+    const { data: matches = [] } = useMatches(activeLeagueId, { playedOnly: true })
+
+    const teamStats = useMemo(() => {
+        if (!matches.length) return []
+        const stats = {}
+
+        matches.forEach(m => {
+            const hName = m.home_team?.name
+            const aName = m.away_team?.name
+            if (!hName || !aName) return
+
+            if (!stats[hName]) stats[hName] = { name: hName, logo: m.home_team?.logo_url, short: m.home_team?.short_name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0 }
+            if (!stats[aName]) stats[aName] = { name: aName, logo: m.away_team?.logo_url, short: m.away_team?.short_name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0 }
+
+            if (m.home_goals == null) return
+
+            const hg = m.home_goals || 0
+            const ag = m.away_goals || 0
+
+            // Home team
+            stats[hName].played++
+            stats[hName].gf += hg
+            stats[hName].ga += ag
+            if (hg > ag) { stats[hName].won++; stats[hName].pts += 3 }
+            else if (hg === ag) { stats[hName].drawn++; stats[hName].pts += 1 }
+            else { stats[hName].lost++ }
+
+            // Away team
+            stats[aName].played++
+            stats[aName].gf += ag
+            stats[aName].ga += hg
+            if (ag > hg) { stats[aName].won++; stats[aName].pts += 3 }
+            else if (ag === hg) { stats[aName].drawn++; stats[aName].pts += 1 }
+            else { stats[aName].lost++ }
+        })
+
+        return Object.values(stats).sort((a, b) => {
+            if (b.pts !== a.pts) return b.pts - a.pts
+            const gdA = a.gf - a.ga
+            const gdB = b.gf - b.ga
+            if (gdB !== gdA) return gdB - gdA
+            return b.gf - a.gf
+        })
+    }, [matches])
+
+    return (
+        <div className="space-y-4">
+            <div className="overflow-hidden rounded-xl border border-border/50 bg-card">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b border-border/50 bg-secondary/30 text-xs text-muted-foreground">
+                                <th className="whitespace-nowrap px-4 py-3 text-center font-semibold uppercase tracking-wider w-10">#</th>
+                                <th className="whitespace-nowrap px-4 py-3 text-left font-semibold uppercase tracking-wider">Equipo</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">PJ</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">G</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">E</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">P</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">GF</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">GC</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider">DG</th>
+                                <th className="whitespace-nowrap px-3 py-3 text-center font-semibold uppercase tracking-wider text-primary">Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {teamStats.map((t, i) => (
+                                <motion.tr
+                                    key={t.name}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.02 }}
+                                    className="group border-b border-border/30 transition-colors hover:bg-primary/5"
+                                >
+                                    <td className="px-4 py-3 text-center">
+                                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold
+                                            ${i < 4 ? 'bg-green-500/20 text-green-400' :
+                                            i < 6 ? 'bg-blue-500/20 text-blue-400' :
+                                            i >= teamStats.length - 3 ? 'bg-red-500/20 text-red-400' :
+                                            'text-muted-foreground'}`}
+                                        >
+                                            {i + 1}
+                                        </span>
+                                    </td>
+                                    <td className="whitespace-nowrap px-4 py-3">
+                                        <div className="flex items-center gap-3">
+                                            {t.logo && <img src={t.logo} alt="" className="h-6 w-6 object-contain" />}
+                                            <span className="text-sm font-semibold text-foreground">{t.short || t.name}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-3 py-3 text-center text-xs text-muted-foreground">{t.played}</td>
+                                    <td className="px-3 py-3 text-center text-xs font-medium text-green-400">{t.won}</td>
+                                    <td className="px-3 py-3 text-center text-xs text-muted-foreground">{t.drawn}</td>
+                                    <td className="px-3 py-3 text-center text-xs font-medium text-red-400">{t.lost}</td>
+                                    <td className="px-3 py-3 text-center text-xs text-muted-foreground">{t.gf}</td>
+                                    <td className="px-3 py-3 text-center text-xs text-muted-foreground">{t.ga}</td>
+                                    <td className="px-3 py-3 text-center text-xs font-medium">
+                                        <span className={t.gf - t.ga > 0 ? 'text-green-400' : t.gf - t.ga < 0 ? 'text-red-400' : 'text-muted-foreground'}>
+                                            {t.gf - t.ga > 0 ? '+' : ''}{t.gf - t.ga}
+                                        </span>
+                                    </td>
+                                    <td className="px-3 py-3 text-center text-base font-black text-primary">{t.pts}</td>
+                                </motion.tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     )
 }

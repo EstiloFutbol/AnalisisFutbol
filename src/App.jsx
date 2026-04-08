@@ -1,11 +1,10 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import { queryClient } from '@/lib/query-client'
 import Navbar from '@/components/layout/Navbar'
 import Dashboard from '@/pages/Dashboard'
-import Matches from '@/pages/Matches'
 import MatchDetail from '@/pages/MatchDetail'
-import Players from '@/pages/Players'
 
 import SelfService from '@/pages/SelfService'
 import Login from '@/pages/Login'
@@ -18,29 +17,51 @@ import { AuthProvider } from '@/context/AuthContext'
 
 function App() {
     return (
-        <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-                <BrowserRouter>
-                    <div className="min-h-screen bg-background">
-                        <Navbar />
-                        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                            <Routes>
-                                <Route path="/" element={<Dashboard />} />
-                                <Route path="/matches" element={<Matches />} />
-                                <Route path="/matches/:matchId" element={<MatchDetail />} />
-                                <Route path="/players" element={<Players />} />
-                                <Route path="/self-service" element={<SelfService />} />
-                                <Route path="/login" element={<Login />} />
-                                <Route path="/admin" element={<Admin />} />
-                                <Route path="/account" element={<Account />} />
-                                <Route path="/betting" element={<Betting />} />
-                                <Route path="/ai" element={<AIAssistant />} />
-                            </Routes>
-                        </main>
-                    </div>
-                </BrowserRouter>
-            </AuthProvider>
-        </QueryClientProvider>
+        <HelmetProvider>
+            <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                    <BrowserRouter>
+                        <div className="min-h-screen bg-background">
+                            <Navbar />
+                            <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                                <Routes>
+                                    {/* Main dashboard with sub-tabs */}
+                                    <Route path="/" element={<Dashboard />} />
+
+                                    {/* Match detail — Spanish SEO route */}
+                                    <Route path="/partido/:matchId" element={<MatchDetail />} />
+                                    {/* Legacy route redirect */}
+                                    <Route path="/matches/:matchId" element={<Navigate to={window.location.pathname.replace('/matches/', '/partido/')} replace />} />
+
+                                    {/* Betting — Spanish SEO route */}
+                                    <Route path="/mis-apuestas" element={<Betting />} />
+                                    <Route path="/betting" element={<Navigate to="/mis-apuestas" replace />} />
+
+                                    {/* AI Bet — Spanish SEO route */}
+                                    <Route path="/ia-bet" element={<AIAssistant />} />
+                                    <Route path="/ai" element={<Navigate to="/ia-bet" replace />} />
+
+                                    {/* Explorar — Spanish SEO route */}
+                                    <Route path="/explorar" element={<SelfService />} />
+                                    <Route path="/self-service" element={<Navigate to="/explorar" replace />} />
+
+                                    {/* Auth & Admin */}
+                                    <Route path="/iniciar-sesion" element={<Login />} />
+                                    <Route path="/login" element={<Navigate to="/iniciar-sesion" replace />} />
+                                    <Route path="/admin" element={<Admin />} />
+                                    <Route path="/cuenta" element={<Account />} />
+                                    <Route path="/account" element={<Navigate to="/cuenta" replace />} />
+
+                                    {/* Legacy route redirects for removed standalone pages */}
+                                    <Route path="/matches" element={<Navigate to="/?tab=partidos" replace />} />
+                                    <Route path="/players" element={<Navigate to="/?tab=jugadores" replace />} />
+                                </Routes>
+                            </main>
+                        </div>
+                    </BrowserRouter>
+                </AuthProvider>
+            </QueryClientProvider>
+        </HelmetProvider>
     )
 }
 

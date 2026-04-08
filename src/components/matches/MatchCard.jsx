@@ -38,7 +38,7 @@ export default function MatchCard({ match, index = 0 }) {
             transition={{ delay: index * 0.03, duration: 0.2 }}
         >
             <Link
-                to={`/matches/${match.id}`}
+                to={`/partido/${match.id}`}
                 className="group block rounded-xl border border-border/50 bg-card p-4 transition-all hover:border-primary/30 hover:bg-card/80 hover:shadow-lg hover:shadow-primary/5"
             >
                 <div className="flex items-center justify-between gap-4">

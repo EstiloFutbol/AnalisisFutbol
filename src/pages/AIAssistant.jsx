@@ -1,13 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Bot, Send, Loader2, TrendingUp, TrendingDown, Minus,
     Trophy, Wallet, Target, Zap, CheckCircle,
-    AlertCircle, Clock, ChevronDown, ChevronUp, Sparkles, TriangleAlert
+    AlertCircle, Clock, ChevronDown, ChevronUp, Sparkles, TriangleAlert,
+    ExternalLink
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useAIBets, useAIBotStats, useGenerateAIBets, useAIChat } from '@/hooks/useAI'
 import { matchHasStarted } from '@/hooks/useBetting'
+import SEO from '@/components/SEO'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -57,14 +60,23 @@ function StatCard({ icon: Icon, label, value, sub = null, accent = false }) {
 
 function AIBetCard({ bet }) {
     const [expanded, setExpanded] = useState(false)
+    const navigate = useNavigate()
     const m = bet.match
     const started = matchHasStarted(m?.match_date, m?.kick_off_time)
+    const isSettled = bet.status === 'won' || bet.status === 'lost'
+
+    const handleCardClick = () => {
+        if (m?.id) navigate(`/partido/${m.id}`)
+    }
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-2xl border border-border/40 bg-card/70 backdrop-blur-sm overflow-hidden"
+            className={`rounded-2xl border border-border/40 bg-card/70 backdrop-blur-sm overflow-hidden transition-all ${
+                isSettled ? 'cursor-pointer hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5' : ''
+            }`}
+            onClick={isSettled ? handleCardClick : undefined}
         >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/30 px-4 py-2.5">
@@ -77,11 +89,26 @@ function AIBetCard({ bet }) {
                             <Clock className="h-2.5 w-2.5" /> En curso
                         </span>
                     )}
+                    {isSettled && (
+                        <span className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                            bet.status === 'won'
+                                ? 'border-green-500/30 bg-green-500/10 text-green-400'
+                                : 'border-red-500/30 bg-red-500/10 text-red-400'
+                        }`}>
+                            {bet.status === 'won' ? <CheckCircle className="h-2.5 w-2.5" /> : <AlertCircle className="h-2.5 w-2.5" />}
+                            {bet.status === 'won' ? 'Acertó' : 'Falló'}
+                        </span>
+                    )}
                 </div>
-                <span className="text-[11px] text-muted-foreground">
-                    {formatDate(m?.match_date)}
-                    {m?.kick_off_time && ` · ${m.kick_off_time.slice(0, 5)}`}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground">
+                        {formatDate(m?.match_date)}
+                        {m?.kick_off_time && ` · ${m.kick_off_time.slice(0, 5)}`}
+                    </span>
+                    {isSettled && (
+                        <ExternalLink className="h-3.5 w-3.5 text-primary/50" />
+                    )}
+                </div>
             </div>
 
             <div className="px-4 py-3 space-y-3">
@@ -118,15 +145,12 @@ function AIBetCard({ bet }) {
 
                 {/* Bet info row */}
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Pick badge */}
                     <span className="rounded-lg border border-primary/30 bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary">
                         🤖 {BET_LABELS[bet.bet_type]} @{bet.odds}
                     </span>
-                    {/* Confidence */}
                     <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${CONF_STYLES[bet.confidence]}`}>
                         Confianza {bet.confidence}
                     </span>
-                    {/* Stake */}
                     <span className="ml-auto text-xs text-muted-foreground">
                         🪙 {formatCoins(bet.stake)} → <span className={`font-semibold ${STATUS_STYLES[bet.status]}`}>
                             {bet.status === 'won'
@@ -142,7 +166,7 @@ function AIBetCard({ bet }) {
                 {/* Expandable reasoning */}
                 {bet.reasoning && (
                     <button
-                        onClick={() => setExpanded(e => !e)}
+                        onClick={(e) => { e.stopPropagation(); setExpanded(e2 => !expanded) }}
                         className="flex w-full items-center gap-1.5 text-left text-xs text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <Sparkles className="h-3 w-3 text-primary/60 shrink-0" />
@@ -170,6 +194,14 @@ function AIBetCard({ bet }) {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
+                {/* CTA for settled bets */}
+                {isSettled && (
+                    <div className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/15 bg-primary/5 py-1.5 text-[11px] font-medium text-primary/70">
+                        <ExternalLink className="h-3 w-3" />
+                        Ver análisis completo del partido
+                    </div>
+                )}
             </div>
         </motion.div>
     )
@@ -328,6 +360,11 @@ export default function AIAssistant() {
 
     return (
         <div className="space-y-8">
+            <SEO
+                title="Predicciones IA La Liga · Robot de Apuestas"
+                description="Robot de apuestas con inteligencia artificial para La Liga 2025-2026. Predicciones automáticas, análisis de resultados, chat IA y estadísticas de rendimiento."
+                path="/ia-bet"
+            />
             {/* ⚠️ Disclaimer banner */}
             <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
                 <TriangleAlert className="h-4 w-4 shrink-0 text-yellow-400 mt-0.5" />
@@ -346,8 +383,8 @@ export default function AIAssistant() {
                             <Bot className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black tracking-tight text-foreground">IA Betting Bot</h1>
-                            <p className="text-sm text-muted-foreground">Análisis y apuestas automáticas usando Gemini AI</p>
+                            <h1 className="text-3xl font-black tracking-tight text-foreground">IA Bet</h1>
+                            <p className="text-sm text-muted-foreground">Predicciones y apuestas automáticas con Inteligencia Artificial</p>
                         </div>
                     </div>
                 </div>

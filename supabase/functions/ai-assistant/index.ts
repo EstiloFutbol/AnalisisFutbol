@@ -199,9 +199,36 @@ async function handleAnalyze(
   }
 
   // Fetch data
-  const [results, upcoming] = await Promise.all([
+  const [results, upcoming, pastBetsRaw, expertReviewsRaw] = await Promise.all([
     getSeasonResults(supabase),
     getUpcomingWithOdds(supabase),
+    // Past AI bets with results (for learning loop)
+    supabase
+      .from('ai_bets')
+      .select(`
+        bet_type, odds, stake, status, confidence, reasoning, post_analysis,
+        match:matches(
+          matchday, home_goals, away_goals,
+          home_team:teams!matches_home_team_id_fkey(name),
+          away_team:teams!matches_away_team_id_fkey(name)
+        )
+      `)
+      .in('status', ['won', 'lost'])
+      .order('created_at', { ascending: false })
+      .limit(30),
+    // Expert reviews (for learning)
+    supabase
+      .from('match_expert_reviews')
+      .select(`
+        content, match_id,
+        match:matches(
+          matchday, home_goals, away_goals,
+          home_team:teams!matches_home_team_id_fkey(name),
+          away_team:teams!matches_away_team_id_fkey(name)
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(15),
   ])
 
   if (!upcoming.length) {
@@ -238,15 +265,54 @@ async function handleAnalyze(
     `ID:${m.id} J${m.matchday} ${m.match_date} — ${m.home_team.name} vs ${m.away_team.name} | Cuotas: Local=${m.home_odds} X=${m.draw_odds} Visit=${m.away_odds}`
   ).join('\n')
 
+  // ── AI Learning Loop: Build feedback from past bets ────────────────────────
+  const pastBets = pastBetsRaw?.data || []
+  const wonBets = pastBets.filter((b: any) => b.status === 'won')
+  const lostBets = pastBets.filter((b: any) => b.status === 'lost')
+  const winRate = pastBets.length > 0
+    ? ((wonBets.length / pastBets.length) * 100).toFixed(0)
+    : '0'
+
+  const pastBetsText = lostBets.slice(0, 10).map((b: any) => {
+    const m = b.match
+    const label = b.bet_type === 'home' ? 'Local' : b.bet_type === 'draw' ? 'Empate' : 'Visitante'
+    return `❌ J${m?.matchday}: ${m?.home_team?.name} ${m?.home_goals}-${m?.away_goals} ${m?.away_team?.name} → Predijiste ${label} @${b.odds}. Razón: "${b.reasoning}"`
+  }).join('\n')
+
+  const expertReviews = (expertReviewsRaw?.data || []).slice(0, 5)
+  const expertText = expertReviews.map((r: any) => {
+    const m = r.match
+    return `📋 J${m?.matchday} ${m?.home_team?.name} ${m?.home_goals}-${m?.away_goals} ${m?.away_team?.name}:\n   Análisis experto: "${r.content.slice(0, 300)}"`
+  }).join('\n')
+
+  const learningBlock = (pastBetsText || expertText) ? `
+
+═══ RETROALIMENTACIÓN Y APRENDIZAJE ═══
+Tu rendimiento actual: ${wonBets.length} ganadas, ${lostBets.length} perdidas (${winRate}% win rate).
+
+${pastBetsText ? `PREDICCIONES FALLIDAS RECIENTES (aprende de estos errores):
+${pastBetsText}` : ''}
+
+${expertText ? `ANÁLISIS DE EXPERTOS (ten en cuenta estas correcciones):
+${expertText}` : ''}
+
+INSTRUCCIONES DE APRENDIZAJE:
+- Analiza POR QUÉ fallaron tus predicciones anteriores
+- Identifica patrones: ¿sobrevaloras el factor local? ¿subestimas empates?
+- Los análisis de expertos contienen correcciones valiosas que debes incorporar
+- Ajusta tu confianza basándote en tu historial con equipos similares
+════════════════════════════════════` : ''
 
   const systemPrompt = `Eres un experto analista de apuestas de fútbol de La Liga española temporada 2025-2026.
 Analiza datos históricos reales de la temporada y haz predicciones fundamentadas.
 REGLA FUNDAMENTAL: Basa tu análisis EXCLUSIVAMENTE en los datos históricos proporcionados.
 Considera: forma reciente, rendimiento local/visitante, tendencia de goles y valor de las cuotas.
+IMPORTANTE: Aprende de tus errores pasados y de los análisis de expertos proporcionados.
 Responde SIEMPRE en español.`
 
   const userPrompt = `Aquí están todos los resultados de la temporada 2025-2026:
 ${resultsText}
+${learningBlock}
 
 Analiza los siguientes partidos y recomienda la mejor apuesta para cada uno.
 Para cada partido considera:
@@ -254,6 +320,8 @@ Para cada partido considera:
 2. Rendimiento jugando en casa vs. fuera
 3. Tendencia de goles (para razonar empates)
 4. Valor real de las cuotas vs. probabilidad estimada
+5. Lecciones de tus predicciones fallidas anteriores
+6. Correcciones de los análisis de expertos
 
 PARTIDOS A ANALIZAR:
 ${upcomingText}
@@ -264,7 +332,7 @@ Responde únicamente con un array JSON válido, un objeto por partido:
     "match_id": <número exacto del ID>,
     "bet_type": "home" | "draw" | "away",
     "confidence": "alta" | "media" | "baja",
-    "reasoning": "<2-3 frases en español explicando tu análisis>",
+    "reasoning": "<2-3 frases en español explicando tu análisis, incluyendo qué aprendiste de errores previos si aplica>",
     "key_factors": ["factor clave 1", "factor clave 2", "factor clave 3"]
   }
 ]

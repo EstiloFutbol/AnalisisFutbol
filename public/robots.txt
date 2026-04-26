@@ -4,4 +4,8 @@ Disallow: /admin
 Disallow: /cuenta
 Disallow: /iniciar-sesion
 
+# Sitemap
 Sitemap: https://analisisfutbol.com/sitemap.xml
+
+# Crawl-delay (optional, be nice to servers)
+Crawl-delay: 1

@@ -383,7 +383,7 @@ export default function AIAssistant() {
                             <Bot className="h-6 w-6 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black tracking-tight text-foreground">IA Bet</h1>
+                            <h1 className="text-3xl font-black tracking-tight title-contrast">IA Bet</h1>
                             <p className="text-sm text-muted-foreground">Predicciones y apuestas automáticas con Inteligencia Artificial</p>
                         </div>
                     </div>

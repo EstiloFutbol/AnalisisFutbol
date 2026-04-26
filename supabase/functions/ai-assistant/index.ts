@@ -86,8 +86,6 @@ async function callGemini(
   const apiKey = Deno.env.get('GEMINI_API_KEY')
   if (!apiKey) throw new Error('GEMINI_API_KEY not set in secrets')
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
-
   const body: Record<string, unknown> = { contents }
   if (systemInstruction) {
     body.systemInstruction = { parts: [{ text: systemInstruction }] }
@@ -96,21 +94,50 @@ async function callGemini(
     body.generationConfig = { responseMimeType: 'application/json' }
   }
 
-  const resp = await fetch(url, {
+  const options = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
-  })
-
-  if (!resp.ok) {
-    const errText = await resp.text()
-    throw new Error(`Gemini API error ${resp.status}: ${errText}`)
   }
 
-  const data = await resp.json()
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-  if (!text) throw new Error('Empty response from Gemini')
-  return text
+  // Lista de modelos alternativos en caso de sobrecarga (estrictamente aquellos a los que tiene acceso la nueva clave)
+  const modelsToTry = [GEMINI_MODEL, 'gemini-2.5-pro', 'gemini-2.0-flash', 'gemini-flash-latest']
+  
+  let lastErrText = ''
+  let lastStatus = 0
+
+  for (const model of modelsToTry) {
+    // 2 intentos por modelo
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+      const resp = await fetch(url, options)
+
+      if (resp.ok) {
+        const data = await resp.json()
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (!text) throw new Error('Empty response from Gemini')
+        return text
+      }
+
+      lastStatus = resp.status
+      lastErrText = await resp.text()
+
+      // Si hay alta demanda o tasa excedida, pausa e inténtalo de nuevo
+      if (resp.status === 503 || resp.status === 429) {
+        if (attempt < 2) {
+          await new Promise(r => setTimeout(r, 1500)) // Espera 1.5s
+          continue 
+        } else {
+          break // Pasa al siguiente modelo disponible
+        }
+      }
+
+      // Si es un error crítico distinto a sobrecarga, interrumpe
+      throw new Error(`Gemini API error ${lastStatus} en modelo ${model}: ${lastErrText}`)
+    }
+  }
+
+  throw new Error(`Todos los modelos experimentaron alta demanda (503/429). Último error: ${lastErrText}`)
 }
 
 // ── Supabase data helpers ────────────────────────────────────────────────────

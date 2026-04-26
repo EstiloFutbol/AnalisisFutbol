@@ -179,7 +179,7 @@ export default function Players() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-foreground">Jugadores</h1>
+                    <h1 className="text-3xl font-black tracking-tight title-contrast">Jugadores</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Estadísticas individuales de la temporada</p>
                 </div>
                 <div className="flex items-center gap-3">

@@ -106,4 +106,9 @@
     opacity: 1;
     transform: translateY(0);
     transition: opacity 200ms ease, transform 200ms ease;
-}
+}
+
+/* High-contrast title text for dark theme */
+html.dark .title-contrast {
+    color: #ffffff;
+}

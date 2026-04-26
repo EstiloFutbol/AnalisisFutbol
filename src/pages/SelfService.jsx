@@ -269,7 +269,7 @@ export default function SelfService() {
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Self-Service Data</h1>
+                <h1 className="text-3xl font-bold tracking-tight title-contrast">Self-Service Data</h1>
                 <p className="text-muted-foreground">Explora, filtra y crea tus propios gráficos personalizados.</p>
             </div>
 

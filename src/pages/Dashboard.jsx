@@ -262,7 +262,7 @@ export default function Dashboard() {
             {/* ── Header ── */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
                 <div className="space-y-1">
-                    <h1 className="text-4xl font-black tracking-tight text-foreground sm:text-5xl">Dashboard</h1>
+                    <h1 className="text-4xl font-black tracking-tight title-contrast sm:text-5xl">Dashboard</h1>
                     <p className="text-sm font-medium text-muted-foreground/80 flex items-center gap-2">
                         <Activity className="h-4 w-4 text-primary" />
                         Análisis completo de La Liga · Temporada 2025-2026

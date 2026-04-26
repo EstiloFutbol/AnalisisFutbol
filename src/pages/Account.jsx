@@ -85,7 +85,7 @@ export default function Account() {
             className="mx-auto max-w-lg space-y-6"
         >
             <div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">Mi cuenta</h1>
+                <h1 className="text-3xl font-black tracking-tight title-contrast">Mi cuenta</h1>
                 <p className="mt-1 text-sm text-muted-foreground">Gestiona tu perfil e información personal</p>
             </div>
 

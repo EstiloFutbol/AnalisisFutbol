@@ -105,7 +105,7 @@ export default function Matches() {
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">
+                <h1 className="text-3xl font-black tracking-tight title-contrast">
                     Partidos
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">

@@ -36,7 +36,7 @@
         rel="stylesheet" />
     <title>Análisis Fútbol — Estadísticas y Predicciones La Liga 2025-2026</title>
 
-    <!-- Structured Data: Organization -->
+    <!-- Enhanced Structured Data: Organization -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -51,6 +51,60 @@
             "target": "https://analisisfutbol.com/?tab=partidos&q={search_term_string}",
             "query-input": "required name=search_term_string"
         }
+    }
+    </script>
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Análisis Fútbol",
+        "url": "https://analisisfutbol.com",
+        "logo": "https://analisisfutbol.com/logo.png",
+        "description": "Plataforma de análisis estadístico de fútbol español con IA",
+        "sameAs": [
+            "https://twitter.com/analisisfutbol"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+34",
+            "contactType": "customer service",
+            "availableLanguage": "Spanish"
+        },
+        "areaServed": {
+            "@type": "Country",
+            "name": "Spain"
+        },
+        "inLanguage": "es"
+    }
+    </script>
+    <!-- FAQ Schema for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [{
+            "@type": "Question",
+            "name": "¿Cómo funcionan las predicciones de IA para La Liga?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Análisis Fútbol utiliza inteligencia artificial para analizar estadísticas históricas, forma de los equipos, lesiones y otros factores para generar predicciones de partidos de La Liga."
+            }
+        }, {
+            "@type": "Question",
+            "name": "¿Qué estadísticas incluye la plataforma?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Ofrecemos estadísticas completas incluyendo goles, córners, tarjetas, posesión, shots, xG, clasificación, goleadores y más para todos los partidos de La Liga 2025-2026."
+            }
+        }, {
+            "@type": "Question",
+            "name": "¿Es gratis usar Análisis Fútbol?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí, la plataforma es gratuita. Solo necesitas registrarte para acceder a funciones avanzadas como el seguimiento de apuestas y el asistente de IA."
+            }
+        }]
     }
     </script>
 </head>

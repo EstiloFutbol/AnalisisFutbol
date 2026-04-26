@@ -281,7 +281,7 @@ export default function Betting() {
             {/* Header */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tight text-foreground">Mis Apuestas</h1>
+                    <h1 className="text-3xl font-black tracking-tight title-contrast">Mis Apuestas</h1>
                     <p className="mt-1 text-sm text-muted-foreground">Apuesta con monedas virtuales en los próximos partidos</p>
                 </div>
                 {/* Balance card */}

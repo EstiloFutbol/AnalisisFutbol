@@ -131,7 +131,7 @@ export default function Landing() {
                         {/* Headline */}
                         <motion.h1
                             variants={fadeUp}
-                            className="text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl text-black dark:text-white"
+                            className="text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl text-foreground"
                         >
                             Análisis Fútbol{' '}
                             <span
@@ -161,7 +161,7 @@ export default function Landing() {
                             <Link
                                 to="/dashboard"
                                 id="cta-dashboard"
-                                className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                                className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
                                 style={{
                                     background: 'linear-gradient(135deg, #bc6c25, #dda15e)',
                                     boxShadow: '0 4px 24px rgba(188,108,37,0.35)',
@@ -276,7 +276,7 @@ export default function Landing() {
                 {/* ── HOW IT WORKS ── */}
                 <section className="space-y-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl text-black dark:text-white">¿Cómo funciona?</h2>
+                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl text-foreground">¿Cómo funciona?</h2>
                         <p className="mt-2 text-sm text-muted-foreground">
                             Tres pasos para mejorar tus análisis
                         </p>
@@ -335,10 +335,10 @@ export default function Landing() {
                         className="pointer-events-none absolute inset-0"
                         style={{ background: 'radial-gradient(circle at 70% 40%, rgba(221,161,94,0.25) 0%, transparent 60%)' }}
                     />
-                    <h2 className="relative text-2xl font-black tracking-tight text-white sm:text-3xl">
+                    <h2 className="relative text-2xl font-black tracking-tight text-foreground sm:text-3xl">
                         ¿Listo para analizar como un profesional?
                     </h2>
-                    <p className="relative mt-3 text-sm font-medium text-white/70">
+                    <p className="relative mt-3 text-sm font-medium text-muted-foreground">
                         Accede gratis a todas las estadísticas de La Liga 2025-2026
                     </p>
                     <div className="relative mt-6 flex flex-wrap justify-center gap-3">
@@ -353,7 +353,7 @@ export default function Landing() {
                         <Link
                             to="/iniciar-sesion"
                             id="cta-bottom-login"
-                            className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background/10 px-6 py-3 text-sm font-bold text-foreground backdrop-blur-sm transition-all hover:bg-background/20"
                         >
                             Crear cuenta
                         </Link>

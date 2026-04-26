@@ -232,7 +232,7 @@ export default function BettingCalculator({ matches = [] }) {
                         <div className="grid gap-3 sm:grid-cols-4">
                             <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 text-center">
                                 <p className="text-xs text-muted-foreground mb-1">Partidos Analizados</p>
-                                <p className="text-2xl font-bold text-white">{stats.totalMatches}</p>
+                                <p className="text-2xl font-bold text-foreground">{stats.totalMatches}</p>
                             </div>
                             <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 text-center">
                                 <p className="text-xs text-muted-foreground mb-1">Aciertos / Fallos</p>
@@ -302,7 +302,7 @@ export default function BettingCalculator({ matches = [] }) {
                                 <div className="grid gap-3 sm:grid-cols-3 pt-2">
                                     <div className="text-center">
                                         <p className="text-xs text-muted-foreground">Beneficio por Acierto</p>
-                                        <p className="text-lg font-bold text-white">+{profitCalc.profit.toFixed(2)}€</p>
+                                        <p className="text-lg font-bold text-foreground">+{profitCalc.profit.toFixed(2)}€</p>
                                     </div>
                                     <div className="text-center">
                                         <p className="text-xs text-muted-foreground">Valor Esperado por Apuesta</p>
@@ -330,7 +330,7 @@ export default function BettingCalculator({ matches = [] }) {
                                 <div className="grid gap-3 sm:grid-cols-4 text-center">
                                     <div>
                                         <p className="text-xs text-muted-foreground">Inversión Total</p>
-                                        <p className="text-lg font-semibold text-white">{(betAmount * 100).toFixed(0)}€</p>
+                                        <p className="text-lg font-semibold text-foreground">{(betAmount * 100).toFixed(0)}€</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-muted-foreground">Aciertos Esperados</p>

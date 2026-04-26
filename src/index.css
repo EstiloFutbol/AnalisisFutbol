@@ -2,28 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ──────────────────────────────────────────────────────────────────────────────
+   DARK THEME (default) — earthy dark palette
+   Palette: #283618 (deep forest), #606c38 (olive), #dda15e (warm sand accent),
+            #bc6c25 (terracotta primary), #fefae0 (cream foreground)
+────────────────────────────────────────────────────────────────────────────── */
 @layer base {
-    :root {
-        --background: 222 47% 6%;
-        --foreground: 210 40% 98%;
-        --card: 222 47% 8%;
-        --card-foreground: 210 40% 98%;
-        --popover: 222 47% 8%;
-        --popover-foreground: 210 40% 98%;
-        --primary: 142 70% 45%;
-        --primary-foreground: 222 47% 6%;
-        --secondary: 217 33% 17%;
-        --secondary-foreground: 210 40% 98%;
-        --muted: 217 33% 17%;
-        --muted-foreground: 215 20% 55%;
-        --accent: 217 33% 17%;
-        --accent-foreground: 210 40% 98%;
+    :root,
+    html.dark {
+        --background: 0 0% 4%;           /* ~#0a0a0a  near-black */
+        --foreground: 54 89% 95%;        /* ~#fefae0  cream */
+        --card: 91 20% 9%;               /* very dark earthy card */
+        --card-foreground: 54 89% 95%;
+        --popover: 91 20% 9%;
+        --popover-foreground: 54 89% 95%;
+        --primary: 27 67% 45%;           /* ~#bc6c25  terracotta */
+        --primary-foreground: 54 89% 95%;
+        --secondary: 91 25% 14%;         /* dark olive secondary */
+        --secondary-foreground: 54 89% 95%;
+        --muted: 91 20% 13%;             /* dark muted */
+        --muted-foreground: 54 35% 60%;  /* muted cream */
+        --accent: 91 25% 14%;
+        --accent-foreground: 54 89% 95%;
         --destructive: 0 62% 50%;
-        --destructive-foreground: 210 40% 98%;
-        --border: 217 33% 17%;
-        --input: 217 33% 17%;
-        --ring: 142 70% 45%;
+        --destructive-foreground: 54 89% 95%;
+        --border: 91 20% 14%;
+        --input: 91 20% 14%;
+        --ring: 27 67% 45%;
         --radius: 0.75rem;
+
+        /* Brand palette tokens */
+        --brand-forest: #283618;
+        --brand-olive: #606c38;
+        --brand-cream: #fefae0;
+        --brand-sand: #dda15e;
+        --brand-terra: #bc6c25;
+    }
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   LIGHT THEME — white / cream background
+────────────────────────────────────────────────────────────────────────────── */
+    html.light {
+        --background: 54 89% 95%;        /* ~#fefae0  cream */
+        --foreground: 100 33% 10%;       /* ~#161e0c  deep text */
+        --card: 54 60% 90%;              /* slightly darker cream card */
+        --card-foreground: 100 33% 10%;
+        --popover: 54 60% 90%;
+        --popover-foreground: 100 33% 10%;
+        --primary: 27 67% 45%;           /* terracotta stays */
+        --primary-foreground: 54 89% 97%;
+        --secondary: 91 25% 85%;         /* light olive tint */
+        --secondary-foreground: 100 33% 12%;
+        --muted: 54 40% 88%;
+        --muted-foreground: 100 20% 35%;
+        --accent: 91 25% 85%;
+        --accent-foreground: 100 33% 12%;
+        --destructive: 0 62% 50%;
+        --destructive-foreground: 54 89% 95%;
+        --border: 54 30% 80%;
+        --input: 54 30% 80%;
+        --ring: 27 67% 45%;
     }
 }
 
@@ -35,6 +73,7 @@
     body {
         @apply bg-background text-foreground;
         font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
 }
 
@@ -54,7 +93,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--primary));
 }
 
 /* Smooth page transitions */
@@ -67,4 +106,4 @@
     opacity: 1;
     transform: translateY(0);
     transition: opacity 200ms ease, transform 200ms ease;
-}
+}

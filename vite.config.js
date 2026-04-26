@@ -10,7 +10,7 @@ export default defineConfig({
         },
     },
     server: {
-        host: '127.0.0.1',  // Force IPv4 to fix localhost not loading on Windows
+        host: '127.0.0.1',  // Force IPv4 — fixes localhost not loading on Windows (IPv6 conflict)
         port: 5173,
         strictPort: false,
     },

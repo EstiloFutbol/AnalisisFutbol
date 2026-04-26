@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users, UserCircle, LogOut, ChevronDown, Trophy, Bot } from 'lucide-react'
+import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users, UserCircle, LogOut, ChevronDown, Trophy, Bot, Sun, Moon } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useTheme } from '@/context/ThemeContext'
 
 const navItems = [
-    { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/mis-apuestas', label: 'Mis Apuestas', icon: Trophy },
     { path: '/ia-bet', label: 'IA Bet', icon: Bot },
     { path: '/explorar', label: 'Explorar', icon: BarChart3 },
@@ -29,6 +30,7 @@ export default function Navbar() {
     const [userMenuOpen, setUserMenuOpen] = useState(false)
     const userMenuRef = useRef(null)
     const { session, user, userProfile, isAdmin, signOut } = useAuth()
+    const { theme, toggleTheme } = useTheme()
 
     // Close user menu on outside click
     useEffect(() => {
@@ -96,6 +98,18 @@ export default function Navbar() {
 
                 {/* Right side: user area */}
                 <div className="flex items-center gap-2">
+                    {/* Theme toggle */}
+                    <button
+                        onClick={toggleTheme}
+                        id="theme-toggle-btn"
+                        aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/50 bg-card/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-card hover:text-primary"
+                    >
+                        {theme === 'dark'
+                            ? <Sun className="h-4 w-4" />
+                            : <Moon className="h-4 w-4" />}
+                    </button>
+
                     {/* Admin badge (only for admins) */}
                     {isAdmin && (
                         <Link

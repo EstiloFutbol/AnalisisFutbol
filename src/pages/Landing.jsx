@@ -131,7 +131,7 @@ export default function Landing() {
                         {/* Headline */}
                         <motion.h1
                             variants={fadeUp}
-                            className="text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl"
+                            className="text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl text-black dark:text-white"
                         >
                             Análisis Fútbol{' '}
                             <span
@@ -225,7 +225,7 @@ export default function Landing() {
                 {/* ── FEATURES ── */}
                 <section className="space-y-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl">
+                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl text-black dark:text-white">
                             Todo lo que necesitas en un solo lugar
                         </h2>
                         <p className="mt-2 text-sm text-muted-foreground">
@@ -276,7 +276,7 @@ export default function Landing() {
                 {/* ── HOW IT WORKS ── */}
                 <section className="space-y-6">
                     <div className="text-center">
-                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl">¿Cómo funciona?</h2>
+                        <h2 className="text-2xl font-black tracking-tight sm:text-3xl text-black dark:text-white">¿Cómo funciona?</h2>
                         <p className="mt-2 text-sm text-muted-foreground">
                             Tres pasos para mejorar tus análisis
                         </p>

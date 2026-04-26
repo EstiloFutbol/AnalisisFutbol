@@ -59,16 +59,16 @@ const colorMap = {
         hover: 'hover:border-[#dda15e]/60 hover:shadow-[#dda15e]/10',
     },
     olive: {
-        bg: 'bg-[#606c38]/10 dark:bg-[#606c38]/15',
-        border: 'border-[#606c38]/30',
-        icon: 'text-[#606c38] dark:text-[#8a9a52]',
-        hover: 'hover:border-[#606c38]/60 hover:shadow-[#606c38]/10',
+        bg: 'bg-[#283618]/10 dark:bg-[#283618]/15',
+        border: 'border-[#283618]/30',
+        icon: 'text-[#283618] dark:text-[#4a5c2e]',
+        hover: 'hover:border-[#283618]/60 hover:shadow-[#283618]/10',
     },
     forest: {
         bg: 'bg-[#283618]/10 dark:bg-[#283618]/30',
-        border: 'border-[#283618]/30 dark:border-[#606c38]/40',
-        icon: 'text-[#283618] dark:text-[#606c38]',
-        hover: 'hover:border-[#606c38]/60 hover:shadow-[#606c38]/10',
+        border: 'border-[#283618]/30 dark:border-[#283618]/40',
+        icon: 'text-[#283618] dark:text-[#4a5c2e]',
+        hover: 'hover:border-[#283618]/60 hover:shadow-[#283618]/10',
     },
 }
 
@@ -137,7 +137,7 @@ export default function Landing() {
                             <span
                                 className="block"
                                 style={{
-                                    background: 'linear-gradient(135deg, #bc6c25 0%, #dda15e 50%, #606c38 100%)',
+                                    background: 'linear-gradient(135deg, #bc6c25 0%, #dda15e 50%, #283618 100%)',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
                                     backgroundClip: 'text',
@@ -175,8 +175,8 @@ export default function Landing() {
                                 id="cta-ia"
                                 className="inline-flex items-center gap-2 rounded-xl border px-6 py-3 text-sm font-bold transition-all hover:-translate-y-0.5"
                                 style={{
-                                    borderColor: 'rgba(96,108,56,0.5)',
-                                    color: '#606c38',
+                                    borderColor: 'rgba(40,54,24,0.5)',
+                                    color: '#283618',
                                 }}
                             >
                                 <Bot className="h-4 w-4" />
@@ -327,7 +327,7 @@ export default function Landing() {
                     transition={{ duration: 0.5 }}
                     className="relative overflow-hidden rounded-3xl p-10 text-center"
                     style={{
-                        background: 'linear-gradient(135deg, #283618 0%, #606c38 60%, #bc6c25 100%)',
+                        background: 'linear-gradient(135deg, #283618 0%, #283618 60%, #bc6c25 100%)',
                     }}
                 >
                     <div

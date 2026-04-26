@@ -107,9 +107,7 @@ export default function CookieConsent() {
                                 <p className="text-sm text-muted-foreground max-w-2xl">
                                     Utilizamos cookies propias y de terceros para mejorar tu experiencia de navegación, 
                                     mostrarte contenido personalizado, analizar nuestro tráfico y proporcionar funciones de redes sociales. 
-                                    Según el <a href="https://www.aepd.es/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">RGPD</a> y la 
-                                    <a href="https://www.mindef.gob.es/portal/delegacionprotecciondedatos/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline"> LOPDGDD</a>, 
-                                    necesitamos tu consentimiento explícito para usar cookies no esenciales.
+                                    Según el RGPD y la LOPDGDD, necesitamos tu consentimiento explícito para usar cookies no esenciales.
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     Puedes aceptar todas, rechazar las no esenciales o personalizar tu preferencias.

@@ -16,6 +16,7 @@ import AIAssistant from '@/pages/AIAssistant'
 
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import CookieConsent from '@/components/CookieConsent'
 
 function App() {
     return (
@@ -26,6 +27,7 @@ function App() {
                         <BrowserRouter>
                             <div className="min-h-screen bg-background">
                                 <Navbar />
+                                <CookieConsent />
                                 <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                                     <Routes>
                                         {/* Landing page */}

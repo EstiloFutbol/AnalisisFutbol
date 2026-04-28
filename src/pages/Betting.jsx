@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Coins, Loader2, CheckCircle, AlertCircle, Lock, TrendingUp, Wallet, Clock, Plus, X, BarChart3, Euro } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { useBettableMatches, useUserBets, usePlaceBet, useRealBets, useAddRealBet, useSettleRealBet } from '@/hooks/useBetting'
+import { useBettableMatches, useUserBets, usePlaceBet, useRealBets, useAddRealBet, useSettleRealBet, useSeasons, useMatchesByJornada } from '@/hooks/useBetting'
+import { useLeagues } from '@/hooks/useMatches'
 import SEO from '@/components/SEO'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -25,8 +26,102 @@ function formatEur(n) {
     return Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
 }
 
-const BET_TYPES = ['1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas', 'Hándicap', 'Doble Oportunidad', 'Otro']
-const EMPTY_FORM = { match_info: '', league: '', bet_type: '1X2', selection: '', odds: '', stake: '', bookmaker: '', match_date: '' }
+const BET_TYPES   = ['1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas', 'Hándicap', 'Doble Oportunidad', 'Otro']
+const BOOKMAKERS  = ['Bet365', 'William Hill', 'Betway', 'Codere', 'Marca Apuestas', 'Bwin', 'Betfair', 'Sportium', '888sport', 'Unibet', 'Winamax', 'Betclic', 'Pinnacle', 'Otro']
+const EMPTY_FORM  = {
+    league_id: '', season: '', matchday: '', match_id: '',
+    match_info: '', league_name: '', match_date: '',
+    bet_type: '1X2',
+    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
+    odds: '', stake: '', bookmaker: '',
+}
+
+function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
+    switch (form.bet_type) {
+        case '1X2':               return form.outcome
+        case 'Más/Menos Goles':   return form.amount   ? `${form.direction} ${form.amount} goles`    : ''
+        case 'BTTS':              return form.outcome   ? `Ambos marcan: ${form.outcome}`             : ''
+        case 'Córners':           return form.amount   ? `${form.direction} ${form.amount} córners`   : ''
+        case 'Tarjetas':          return form.amount   ? `${form.direction} ${form.amount} tarjetas`  : ''
+        case 'Hándicap':          return `${form.hand_team === 'Local' ? homeTeam : awayTeam} ${form.hand_value}`
+        case 'Doble Oportunidad': return form.outcome
+        default:                  return form.free_text
+    }
+}
+
+function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
+    switch (form.bet_type) {
+        case '1X2':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Selecciona resultado…</option>
+                    <option value={`${homeTeam} gana`}>{homeTeam} gana (Local)</option>
+                    <option value="Empate">Empate</option>
+                    <option value={`${awayTeam} gana`}>{awayTeam} gana (Visitante)</option>
+                </select>
+            )
+        case 'Más/Menos Goles':
+            return (
+                <div className="flex gap-2">
+                    <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option>Más de</option><option>Menos de</option>
+                    </select>
+                    <select value={form.amount} onChange={e => set('amount', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option value="">Goles…</option>
+                        {['0.5','1.5','2.5','3.5','4.5','5.5'].map(v => <option key={v} value={v}>{v} goles</option>)}
+                    </select>
+                </div>
+            )
+        case 'BTTS':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Selecciona…</option>
+                    <option value="Sí">Sí — Ambos marcan</option>
+                    <option value="No">No</option>
+                </select>
+            )
+        case 'Córners':
+        case 'Tarjetas': {
+            const unit = form.bet_type === 'Córners' ? 'córners' : 'tarjetas'
+            return (
+                <div className="flex gap-2">
+                    <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option>Más de</option><option>Menos de</option><option>Exactamente</option>
+                    </select>
+                    <input type="number" step="0.5" min="0" value={form.amount}
+                        onChange={e => set('amount', e.target.value)}
+                        placeholder={`Núm. ${unit}`} className={`${inputCls} flex-1`} />
+                </div>
+            )
+        }
+        case 'Hándicap':
+            return (
+                <div className="flex gap-2">
+                    <select value={form.hand_team} onChange={e => set('hand_team', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option value="Local">{homeTeam} (Local)</option>
+                        <option value="Visitante">{awayTeam} (Visitante)</option>
+                    </select>
+                    <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-28`}>
+                        {['-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+            )
+        case 'Doble Oportunidad':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Selecciona…</option>
+                    <option value="1X">1X — {homeTeam} o Empate</option>
+                    <option value="X2">X2 — Empate o {awayTeam}</option>
+                    <option value="12">12 — {homeTeam} o {awayTeam}</option>
+                </select>
+            )
+        default:
+            return (
+                <input value={form.free_text} onChange={e => set('free_text', e.target.value)}
+                    placeholder="Describe tu selección" className={inputCls} />
+            )
+    }
+}
 
 const BET_LABELS = { home: 'Local', draw: 'Empate', away: 'Visitante' }
 const STATUS_STYLES = {
@@ -84,16 +179,21 @@ function RealBetsTab({ realBets, isLoading }) {
     const [showForm, setShowForm] = useState(false)
     const [form, setForm] = useState(EMPTY_FORM)
     const [error, setError] = useState(null)
+
+    const { data: leagues = [] } = useLeagues()
+    const { data: seasons = [] } = useSeasons(form.league_id)
+    const { data: matchOptions = [], isLoading: matchesLoading } = useMatchesByJornada(form.league_id, form.season, form.matchday)
     const { mutate: addBet, isPending: isAdding } = useAddRealBet()
     const { mutate: settleBet } = useSettleRealBet()
 
-    const settled  = realBets.filter(b => b.status !== 'pending')
-    const won      = realBets.filter(b => b.status === 'won')
+    // ── Stats ──────────────────────────────────────────────────────────────────
+    const settled       = realBets.filter(b => b.status !== 'pending')
+    const won           = realBets.filter(b => b.status === 'won')
     const settledStaked = settled.reduce((s, b) => s + Number(b.stake), 0)
     const totalReturn   = won.reduce((s, b) => s + Number(b.potential_payout), 0)
-    const netProfit = totalReturn - settledStaked
-    const winRate   = settled.length > 0 ? Math.round(won.length / settled.length * 100) : null
-    const roi       = settledStaked > 0 ? ((netProfit / settledStaked) * 100).toFixed(1) : null
+    const netProfit     = totalReturn - settledStaked
+    const winRate       = settled.length > 0 ? Math.round(won.length / settled.length * 100) : null
+    const roi           = settledStaked > 0 ? ((netProfit / settledStaked) * 100).toFixed(1) : null
 
     const typeStats = Object.entries(
         realBets.reduce((acc, b) => {
@@ -107,21 +207,41 @@ function RealBetsTab({ realBets, isLoading }) {
     ).filter(([, s]) => s.settled > 0)
      .sort((a, b) => (b[1].won / b[1].settled) - (a[1].won / a[1].settled))
 
+    // ── Form helpers ───────────────────────────────────────────────────────────
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+    const handleLeagueChange = (leagueId) => {
+        const league = leagues.find(l => String(l.id) === leagueId)
+        setForm(f => ({ ...f, league_id: leagueId, league_name: league?.name || '', season: '', matchday: '', match_id: '', match_info: '', match_date: '' }))
+    }
+    const handleSeasonChange   = (v) => setForm(f => ({ ...f, season: v,   matchday: '', match_id: '', match_info: '', match_date: '' }))
+    const handleMatchdayChange = (v) => setForm(f => ({ ...f, matchday: v, match_id: '', match_info: '', match_date: '' }))
+    const handleMatchChange    = (matchId) => {
+        const m = matchOptions.find(m => String(m.id) === matchId)
+        setForm(f => ({ ...f, match_id: matchId, match_info: m ? `${m.home_team?.name} vs ${m.away_team?.name}` : '', match_date: m?.match_date || '' }))
+    }
+    const handleBetTypeChange  = (v) => setForm(f => ({
+        ...f, bet_type: v, outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
+    }))
+
+    const selectedMatch = matchOptions.find(m => String(m.id) === form.match_id)
+    const homeTeam = selectedMatch?.home_team?.short_name || 'Local'
+    const awayTeam = selectedMatch?.away_team?.short_name || 'Visitante'
+
     const handleAdd = () => {
-        if (!form.match_info.trim() || !form.selection.trim() || !form.odds || !form.stake) {
-            setError('Rellena los campos obligatorios: partido, selección, cuota y apuesta.')
+        const selection = buildSelection(form, homeTeam, awayTeam)
+        if (!form.match_info.trim() || !selection.trim() || !form.odds || !form.stake) {
+            setError('Rellena todos los campos obligatorios.')
             return
         }
         addBet({
             match_info: form.match_info.trim(),
-            league:     form.league.trim() || null,
+            league:     form.league_name || null,
             bet_type:   form.bet_type,
-            selection:  form.selection.trim(),
+            selection:  selection.trim(),
             odds:       parseFloat(form.odds),
             stake:      parseFloat(form.stake),
-            bookmaker:  form.bookmaker.trim() || null,
+            bookmaker:  form.bookmaker || null,
             match_date: form.match_date || null,
         }, {
             onSuccess: () => { setShowForm(false); setForm(EMPTY_FORM); setError(null) },
@@ -129,7 +249,7 @@ function RealBetsTab({ realBets, isLoading }) {
         })
     }
 
-    const inputCls = "w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    const inputCls = "w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-40"
     const labelCls = "text-xs font-semibold text-muted-foreground mb-1 block"
 
     if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
@@ -139,15 +259,14 @@ function RealBetsTab({ realBets, isLoading }) {
             {/* Stats summary */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                    { label: 'Picks registrados', value: realBets.length,                              icon: BarChart3, cls: '' },
-                    { label: 'Tasa de acierto',   value: winRate != null ? `${winRate}%` : '—',        icon: TrendingUp, cls: '' },
-                    { label: 'ROI',               value: roi != null ? `${roi}%` : '—',                icon: Coins,    cls: roi == null ? '' : Number(roi) >= 0 ? 'text-green-400' : 'text-red-400' },
-                    { label: 'Beneficio neto',    value: settledStaked > 0 ? formatEur(netProfit) : '—', icon: Euro,   cls: netProfit >= 0 ? 'text-green-400' : 'text-red-400' },
+                    { label: 'Picks registrados', value: realBets.length,                                icon: BarChart3,  cls: '' },
+                    { label: 'Tasa de acierto',   value: winRate != null ? `${winRate}%` : '—',          icon: TrendingUp, cls: '' },
+                    { label: 'ROI',               value: roi != null ? `${roi}%` : '—',                  icon: Coins,      cls: roi == null ? '' : Number(roi) >= 0 ? 'text-green-400' : 'text-red-400' },
+                    { label: 'Beneficio neto',    value: settledStaked > 0 ? formatEur(netProfit) : '—', icon: Euro,       cls: netProfit >= 0 ? 'text-green-400' : 'text-red-400' },
                 ].map(({ label, value, icon: Icon, cls }) => (
                     <div key={label} className="rounded-xl border border-border/40 bg-card/60 px-4 py-3">
                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                            <Icon className="h-3.5 w-3.5" />
-                            <span className="text-[11px]">{label}</span>
+                            <Icon className="h-3.5 w-3.5" /><span className="text-[11px]">{label}</span>
                         </div>
                         <p className={`text-lg font-bold ${cls || 'text-foreground'}`}>{value}</p>
                     </div>
@@ -193,7 +312,7 @@ function RealBetsTab({ realBets, isLoading }) {
             <AnimatePresence>
                 {showForm && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                        <div className="rounded-2xl border border-border/50 bg-card/80 p-5 space-y-4">
+                        <div className="rounded-2xl border border-border/50 bg-card/80 p-5 space-y-5">
                             <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-bold text-foreground">Nuevo pick real</h3>
                                 <button onClick={() => { setShowForm(false); setError(null) }}
@@ -201,52 +320,83 @@ function RealBetsTab({ realBets, isLoading }) {
                                     <X className="h-4 w-4" />
                                 </button>
                             </div>
-                            <div>
-                                <label className={labelCls}>Partido <span className="text-red-400">*</span></label>
-                                <input value={form.match_info} onChange={e => set('match_info', e.target.value)}
-                                    placeholder="ej. Real Madrid vs Barcelona" className={inputCls} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
+
+                            {/* ── Partido ── */}
+                            <div className="space-y-3">
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Partido</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className={labelCls}>Liga <span className="text-red-400">*</span></label>
+                                        <select value={form.league_id} onChange={e => handleLeagueChange(e.target.value)} className={inputCls}>
+                                            <option value="">Selecciona liga…</option>
+                                            {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className={labelCls}>Temporada <span className="text-red-400">*</span></label>
+                                        <select value={form.season} onChange={e => handleSeasonChange(e.target.value)} className={inputCls} disabled={!form.league_id}>
+                                            <option value="">Selecciona temporada…</option>
+                                            {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
                                 <div>
-                                    <label className={labelCls}>Tipo de apuesta <span className="text-red-400">*</span></label>
-                                    <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
+                                    <label className={labelCls}>Jornada <span className="text-red-400">*</span></label>
+                                    <select value={form.matchday} onChange={e => handleMatchdayChange(e.target.value)} className={inputCls} disabled={!form.season}>
+                                        <option value="">Selecciona jornada…</option>
+                                        {Array.from({ length: 38 }, (_, i) => i + 1).map(j => (
+                                            <option key={j} value={j}>Jornada {j}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Partido <span className="text-red-400">*</span></label>
+                                    <select value={form.match_id} onChange={e => handleMatchChange(e.target.value)} className={inputCls} disabled={!form.matchday || matchesLoading}>
+                                        <option value="">
+                                            {matchesLoading ? 'Cargando partidos…' : matchOptions.length === 0 && form.matchday ? 'Sin partidos para esta jornada' : 'Selecciona partido…'}
+                                        </option>
+                                        {matchOptions.map(m => (
+                                            <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* ── Apuesta ── */}
+                            <div className="space-y-3">
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Apuesta</p>
+                                <div>
+                                    <label className={labelCls}>Tipo <span className="text-red-400">*</span></label>
+                                    <select value={form.bet_type} onChange={e => handleBetTypeChange(e.target.value)} className={inputCls}>
                                         {BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                                     </select>
                                 </div>
                                 <div>
                                     <label className={labelCls}>Selección <span className="text-red-400">*</span></label>
-                                    <input value={form.selection} onChange={e => set('selection', e.target.value)}
-                                        placeholder="ej. Local gana" className={inputCls} />
+                                    <AdaptiveFields form={form} set={set} homeTeam={homeTeam} awayTeam={awayTeam} inputCls={inputCls} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className={labelCls}>Cuota <span className="text-red-400">*</span></label>
+                                        <input type="number" step="0.01" min="1" value={form.odds} onChange={e => set('odds', e.target.value)} placeholder="ej. 1.85" className={inputCls} />
+                                    </div>
+                                    <div>
+                                        <label className={labelCls}>Apuesta (€) <span className="text-red-400">*</span></label>
+                                        <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)} placeholder="ej. 10.00" className={inputCls} />
+                                    </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className={labelCls}>Cuota <span className="text-red-400">*</span></label>
-                                    <input type="number" step="0.01" min="1" value={form.odds} onChange={e => set('odds', e.target.value)}
-                                        placeholder="ej. 1.85" className={inputCls} />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Apuesta (€) <span className="text-red-400">*</span></label>
-                                    <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)}
-                                        placeholder="ej. 10.00" className={inputCls} />
-                                </div>
+
+                            {/* ── Casa de apuestas ── */}
+                            <div className="space-y-2">
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Casa de apuestas</p>
+                                <select value={form.bookmaker} onChange={e => set('bookmaker', e.target.value)} className={inputCls}>
+                                    <option value="">Sin especificar</option>
+                                    {BOOKMAKERS.map(b => <option key={b} value={b}>{b}</option>)}
+                                </select>
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                    <label className={labelCls}>Liga</label>
-                                    <input value={form.league} onChange={e => set('league', e.target.value)}
-                                        placeholder="ej. La Liga" className={inputCls} />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Casa de apuestas</label>
-                                    <input value={form.bookmaker} onChange={e => set('bookmaker', e.target.value)}
-                                        placeholder="ej. Bet365" className={inputCls} />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>Fecha del partido</label>
-                                    <input type="date" value={form.match_date} onChange={e => set('match_date', e.target.value)} className={inputCls} />
-                                </div>
-                            </div>
+
+                            {/* Payout preview */}
                             {form.odds && form.stake && parseFloat(form.odds) > 0 && parseFloat(form.stake) > 0 && (
                                 <p className="text-xs text-muted-foreground">
                                     Ganancia potencial: <strong className="text-green-400">
@@ -254,6 +404,7 @@ function RealBetsTab({ realBets, isLoading }) {
                                     </strong>
                                 </p>
                             )}
+
                             {error && (
                                 <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
                                     <AlertCircle className="h-4 w-4 shrink-0" />{error}

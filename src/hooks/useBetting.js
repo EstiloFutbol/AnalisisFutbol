@@ -85,6 +85,46 @@ export function useUserBets() {
     })
 }
 
+/** Distinct seasons available for a league (newest first) */
+export function useSeasons(leagueId) {
+    return useQuery({
+        queryKey: ['seasons', leagueId],
+        enabled: !!leagueId,
+        staleTime: 5 * 60 * 1000,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('matches')
+                .select('season')
+                .eq('league_id', leagueId)
+            if (error) throw error
+            return [...new Set((data || []).map(m => m.season).filter(Boolean))].sort().reverse()
+        },
+    })
+}
+
+/** All matches for a specific league + season + matchday */
+export function useMatchesByJornada(leagueId, season, matchday) {
+    return useQuery({
+        queryKey: ['matches-by-jornada', leagueId, season, matchday],
+        enabled: !!(leagueId && season && matchday),
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`
+                    id, matchday, match_date, kick_off_time,
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name)
+                `)
+                .eq('league_id', leagueId)
+                .eq('season', season)
+                .eq('matchday', Number(matchday))
+                .order('match_date', { ascending: true })
+            if (error) throw error
+            return data || []
+        },
+    })
+}
+
 /** All real (bookmaker) bets for the current user */
 export function useRealBets() {
     const { user } = useAuth()

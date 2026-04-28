@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Coins, Loader2, CheckCircle, AlertCircle, Lock, TrendingUp, Wallet, Clock } from 'lucide-react'
+import { Trophy, Coins, Loader2, CheckCircle, AlertCircle, Lock, TrendingUp, Wallet, Clock, Plus, X, BarChart3, Euro } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { useBettableMatches, useUserBets, usePlaceBet } from '@/hooks/useBetting'
+import { useBettableMatches, useUserBets, usePlaceBet, useRealBets, useAddRealBet, useSettleRealBet } from '@/hooks/useBetting'
 import SEO from '@/components/SEO'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -20,6 +20,14 @@ function formatDate(dateStr) {
     })
 }
 
+function formatEur(n) {
+    if (n == null) return '—'
+    return Number(n).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+}
+
+const BET_TYPES = ['1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas', 'Hándicap', 'Doble Oportunidad', 'Otro']
+const EMPTY_FORM = { match_info: '', league: '', bet_type: '1X2', selection: '', odds: '', stake: '', bookmaker: '', match_date: '' }
+
 const BET_LABELS = { home: 'Local', draw: 'Empate', away: 'Visitante' }
 const STATUS_STYLES = {
     pending: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-400',
@@ -28,6 +36,254 @@ const STATUS_STYLES = {
     void: 'border-border/40 bg-secondary text-muted-foreground',
 }
 const STATUS_LABELS = { pending: 'Pendiente', won: '¡Ganada!', lost: 'Perdida', void: 'Anulada' }
+
+// ─── Real Bets ────────────────────────────────────────────────────────────────
+
+function RealBetRow({ bet, onSettle }) {
+    return (
+        <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/60 p-4 sm:flex-row sm:items-center">
+            <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">{bet.match_info}</span>
+                    {bet.league && <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">{bet.league}</span>}
+                    {bet.match_date && <span className="text-[11px] text-muted-foreground">{formatDate(bet.match_date)}</span>}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                    <span className="font-semibold text-foreground/80">{bet.bet_type} · {bet.selection}</span>
+                    <span>@{Number(bet.odds).toFixed(2)}</span>
+                    <span>{formatEur(bet.stake)}</span>
+                    <span className="text-green-400/80">→ {formatEur(bet.potential_payout)}</span>
+                    {bet.bookmaker && <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px]">{bet.bookmaker}</span>}
+                </div>
+            </div>
+            {bet.status === 'pending' ? (
+                <div className="flex gap-1.5 shrink-0">
+                    <button onClick={() => onSettle({ id: bet.id, status: 'won' })}
+                        className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-bold text-green-400 hover:bg-green-500/20 transition-colors">
+                        Ganada
+                    </button>
+                    <button onClick={() => onSettle({ id: bet.id, status: 'lost' })}
+                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-bold text-red-400 hover:bg-red-500/20 transition-colors">
+                        Perdida
+                    </button>
+                    <button onClick={() => onSettle({ id: bet.id, status: 'void' })}
+                        className="rounded-lg border border-border/40 bg-secondary px-3 py-1.5 text-[11px] font-bold text-muted-foreground hover:bg-secondary/80 transition-colors">
+                        Anulada
+                    </button>
+                </div>
+            ) : (
+                <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLES[bet.status]}`}>
+                    {STATUS_LABELS[bet.status]}
+                </span>
+            )}
+        </div>
+    )
+}
+
+function RealBetsTab({ realBets, isLoading }) {
+    const [showForm, setShowForm] = useState(false)
+    const [form, setForm] = useState(EMPTY_FORM)
+    const [error, setError] = useState(null)
+    const { mutate: addBet, isPending: isAdding } = useAddRealBet()
+    const { mutate: settleBet } = useSettleRealBet()
+
+    const settled  = realBets.filter(b => b.status !== 'pending')
+    const won      = realBets.filter(b => b.status === 'won')
+    const settledStaked = settled.reduce((s, b) => s + Number(b.stake), 0)
+    const totalReturn   = won.reduce((s, b) => s + Number(b.potential_payout), 0)
+    const netProfit = totalReturn - settledStaked
+    const winRate   = settled.length > 0 ? Math.round(won.length / settled.length * 100) : null
+    const roi       = settledStaked > 0 ? ((netProfit / settledStaked) * 100).toFixed(1) : null
+
+    const typeStats = Object.entries(
+        realBets.reduce((acc, b) => {
+            if (!acc[b.bet_type]) acc[b.bet_type] = { won: 0, settled: 0 }
+            if (b.status !== 'pending') {
+                acc[b.bet_type].settled++
+                if (b.status === 'won') acc[b.bet_type].won++
+            }
+            return acc
+        }, {})
+    ).filter(([, s]) => s.settled > 0)
+     .sort((a, b) => (b[1].won / b[1].settled) - (a[1].won / a[1].settled))
+
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+    const handleAdd = () => {
+        if (!form.match_info.trim() || !form.selection.trim() || !form.odds || !form.stake) {
+            setError('Rellena los campos obligatorios: partido, selección, cuota y apuesta.')
+            return
+        }
+        addBet({
+            match_info: form.match_info.trim(),
+            league:     form.league.trim() || null,
+            bet_type:   form.bet_type,
+            selection:  form.selection.trim(),
+            odds:       parseFloat(form.odds),
+            stake:      parseFloat(form.stake),
+            bookmaker:  form.bookmaker.trim() || null,
+            match_date: form.match_date || null,
+        }, {
+            onSuccess: () => { setShowForm(false); setForm(EMPTY_FORM); setError(null) },
+            onError:   (e) => setError(e.message),
+        })
+    }
+
+    const inputCls = "w-full rounded-lg border border-border bg-background/80 px-3 py-2 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+    const labelCls = "text-xs font-semibold text-muted-foreground mb-1 block"
+
+    if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+
+    return (
+        <div className="space-y-6">
+            {/* Stats summary */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                    { label: 'Picks registrados', value: realBets.length,                              icon: BarChart3, cls: '' },
+                    { label: 'Tasa de acierto',   value: winRate != null ? `${winRate}%` : '—',        icon: TrendingUp, cls: '' },
+                    { label: 'ROI',               value: roi != null ? `${roi}%` : '—',                icon: Coins,    cls: roi == null ? '' : Number(roi) >= 0 ? 'text-green-400' : 'text-red-400' },
+                    { label: 'Beneficio neto',    value: settledStaked > 0 ? formatEur(netProfit) : '—', icon: Euro,   cls: netProfit >= 0 ? 'text-green-400' : 'text-red-400' },
+                ].map(({ label, value, icon: Icon, cls }) => (
+                    <div key={label} className="rounded-xl border border-border/40 bg-card/60 px-4 py-3">
+                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                            <Icon className="h-3.5 w-3.5" />
+                            <span className="text-[11px]">{label}</span>
+                        </div>
+                        <p className={`text-lg font-bold ${cls || 'text-foreground'}`}>{value}</p>
+                    </div>
+                ))}
+            </div>
+
+            {/* Performance by bet type */}
+            {typeStats.length > 0 && (
+                <div className="rounded-xl border border-border/40 bg-card/60 p-4">
+                    <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">Rendimiento por tipo de apuesta</h3>
+                    <div className="space-y-2.5">
+                        {typeStats.map(([type, s]) => {
+                            const rate = Math.round(s.won / s.settled * 100)
+                            return (
+                                <div key={type} className="flex items-center gap-3">
+                                    <span className="w-40 text-xs font-medium text-foreground truncate">{type}</span>
+                                    <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+                                        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${rate}%` }} />
+                                    </div>
+                                    <span className="w-10 text-right text-xs font-bold text-foreground">{rate}%</span>
+                                    <span className="w-10 text-right text-[11px] text-muted-foreground">{s.won}/{s.settled}</span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Header + add button */}
+            <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">
+                    {realBets.length > 0 ? `${realBets.length} picks registrados` : 'Sin picks registrados aún'}
+                </p>
+                {!showForm && (
+                    <button onClick={() => setShowForm(true)}
+                        className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+                        <Plus className="h-4 w-4" /> Añadir pick
+                    </button>
+                )}
+            </div>
+
+            {/* Add form */}
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                        <div className="rounded-2xl border border-border/50 bg-card/80 p-5 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-foreground">Nuevo pick real</h3>
+                                <button onClick={() => { setShowForm(false); setError(null) }}
+                                    className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                            <div>
+                                <label className={labelCls}>Partido <span className="text-red-400">*</span></label>
+                                <input value={form.match_info} onChange={e => set('match_info', e.target.value)}
+                                    placeholder="ej. Real Madrid vs Barcelona" className={inputCls} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className={labelCls}>Tipo de apuesta <span className="text-red-400">*</span></label>
+                                    <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
+                                        {BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Selección <span className="text-red-400">*</span></label>
+                                    <input value={form.selection} onChange={e => set('selection', e.target.value)}
+                                        placeholder="ej. Local gana" className={inputCls} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className={labelCls}>Cuota <span className="text-red-400">*</span></label>
+                                    <input type="number" step="0.01" min="1" value={form.odds} onChange={e => set('odds', e.target.value)}
+                                        placeholder="ej. 1.85" className={inputCls} />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Apuesta (€) <span className="text-red-400">*</span></label>
+                                    <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)}
+                                        placeholder="ej. 10.00" className={inputCls} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label className={labelCls}>Liga</label>
+                                    <input value={form.league} onChange={e => set('league', e.target.value)}
+                                        placeholder="ej. La Liga" className={inputCls} />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Casa de apuestas</label>
+                                    <input value={form.bookmaker} onChange={e => set('bookmaker', e.target.value)}
+                                        placeholder="ej. Bet365" className={inputCls} />
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Fecha del partido</label>
+                                    <input type="date" value={form.match_date} onChange={e => set('match_date', e.target.value)} className={inputCls} />
+                                </div>
+                            </div>
+                            {form.odds && form.stake && parseFloat(form.odds) > 0 && parseFloat(form.stake) > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                    Ganancia potencial: <strong className="text-green-400">
+                                        {formatEur(Math.round(parseFloat(form.stake) * parseFloat(form.odds) * 100) / 100)}
+                                    </strong>
+                                </p>
+                            )}
+                            {error && (
+                                <div className="flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                                    <AlertCircle className="h-4 w-4 shrink-0" />{error}
+                                </div>
+                            )}
+                            <button onClick={handleAdd} disabled={isAdding}
+                                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50">
+                                {isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                                Guardar pick
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* History */}
+            {realBets.length === 0 ? (
+                <div className="rounded-2xl border border-border/40 bg-card/60 py-16 text-center">
+                    <BarChart3 className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
+                    <p className="text-muted-foreground">Aún no has registrado ningún pick real.</p>
+                    <p className="mt-1 text-sm text-muted-foreground/60">Añade tus apuestas para analizar tu rendimiento.</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {realBets.map(bet => <RealBetRow key={bet.id} bet={bet} onSettle={settleBet} />)}
+                </div>
+            )}
+        </div>
+    )
+}
 
 // ─── Match Card ───────────────────────────────────────────────────────────────
 
@@ -239,7 +495,8 @@ export default function Betting() {
     const { session, userProfile, loading } = useAuth()
     const { data: matches = [], isLoading: matchesLoading } = useBettableMatches()
     const { data: userBets = [], isLoading: betsLoading } = useUserBets()
-    const [tab, setTab] = useState('available') // 'available' | 'mybets'
+    const { data: realBets = [], isLoading: realBetsLoading } = useRealBets()
+    const [tab, setTab] = useState('available') // 'available' | 'mybets' | 'real_bets'
 
     // Map match_id → user's existing bet for quick lookup
     const betByMatchId = Object.fromEntries(userBets.map(b => [b.match_id, b]))
@@ -319,8 +576,9 @@ export default function Betting() {
             {/* Tabs */}
             <div className="flex rounded-lg border border-border/50 bg-background/50 p-1 w-fit">
                 {[
-                    { id: 'available', label: `Disponibles (${openMatches.length})` },
-                    { id: 'mybets', label: `Mis apuestas (${userBets.length})` },
+                    { id: 'available',  label: `Disponibles (${openMatches.length})` },
+                    { id: 'mybets',    label: `Virtuales (${userBets.length})` },
+                    { id: 'real_bets', label: `Picks Reales (${realBets.length})` },
                 ].map(t => (
                     <button
                         key={t.id}
@@ -386,6 +644,10 @@ export default function Betting() {
                         </div>
                     )}
                 </>
+            )}
+
+            {tab === 'real_bets' && (
+                <RealBetsTab realBets={realBets} isLoading={realBetsLoading} />
             )}
 
             {tab === 'mybets' && (

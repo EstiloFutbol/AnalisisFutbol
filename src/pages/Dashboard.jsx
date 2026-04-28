@@ -85,7 +85,7 @@ function MarketRow({ label, value, sublabel = null, trend = null, color = 'prima
     const TrendIcon = trend === 'up' ? ArrowUpRight : trend === 'down' ? ArrowDownRight : Minus
     return (
         <div className="flex items-center justify-between rounded-xl border border-border/30 bg-card/40 px-4 py-3 transition-colors hover:bg-card/70">
-            <span className="text-sm text-muted-foreground">{label}</span>
+            <span className="text-sm text-foreground">{label}</span>
             <div className="flex items-center gap-2">
                 {sublabel && <span className="text-xs text-muted-foreground/60">{sublabel}</span>}
                 <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-0.5 text-sm font-black ${cls}`}>

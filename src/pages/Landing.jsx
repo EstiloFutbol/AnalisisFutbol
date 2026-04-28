@@ -6,8 +6,8 @@ import SEO from '@/components/SEO'
 const features = [
     {
         icon: BarChart3,
-        title: 'Estadísticas en Tiempo Real',
-        description: 'Accede a datos actualizados de goles, córners, tarjetas y mucho más para cada jornada de la liga.',
+        title: 'Estadísticas Históricas',
+        description: 'Datos de goles, córners, tarjetas y xG actualizados semanalmente con cada jornada de La Liga.',
         link: '/dashboard',
         linkLabel: 'Ver Dashboard',
         color: 'terra',
@@ -61,13 +61,13 @@ const colorMap = {
     olive: {
         bg: 'bg-[#283618]/10 dark:bg-[#283618]/15',
         border: 'border-[#283618]/30',
-        icon: 'text-[#283618] dark:text-[#4a5c2e]',
+        icon: 'text-[#606c38] dark:text-[#dda15e]',
         hover: 'hover:border-[#283618]/60 hover:shadow-[#283618]/10',
     },
     forest: {
         bg: 'bg-[#283618]/10 dark:bg-[#283618]/30',
         border: 'border-[#283618]/30 dark:border-[#283618]/40',
-        icon: 'text-[#283618] dark:text-[#4a5c2e]',
+        icon: 'text-[#606c38] dark:text-[#dda15e]',
         hover: 'hover:border-[#283618]/60 hover:shadow-[#283618]/10',
     },
 }
@@ -173,11 +173,7 @@ export default function Landing() {
                             <Link
                                 to="/ia-bet"
                                 id="cta-ia"
-                                className="inline-flex items-center gap-2 rounded-xl border px-6 py-3 text-sm font-bold transition-all hover:-translate-y-0.5"
-                                style={{
-                                    borderColor: 'rgba(40,54,24,0.5)',
-                                    color: '#283618',
-                                }}
+                                className="inline-flex items-center gap-2 rounded-xl border border-foreground/20 px-6 py-3 text-sm font-bold text-foreground transition-all hover:-translate-y-0.5 hover:bg-foreground/5"
                             >
                                 <Bot className="h-4 w-4" />
                                 Probar IA

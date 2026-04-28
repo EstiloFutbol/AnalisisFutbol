@@ -79,7 +79,7 @@ export default function Navbar() {
                                 to={path}
                                 className={`relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${isActive
                                     ? 'text-primary'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                    : 'text-foreground hover:text-foreground'
                                     }`}
                             >
                                 <Icon className="h-4 w-4" />
@@ -216,7 +216,7 @@ export default function Navbar() {
                                         onClick={() => setMobileOpen(false)}
                                         className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive
                                             ? 'bg-primary/10 text-primary'
-                                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                            : 'text-foreground hover:bg-secondary hover:text-foreground'
                                             }`}
                                     >
                                         <Icon className="h-4 w-4" />

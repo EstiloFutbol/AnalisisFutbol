@@ -85,6 +85,58 @@ export function useUserBets() {
     })
 }
 
+/** All real (bookmaker) bets for the current user */
+export function useRealBets() {
+    const { user } = useAuth()
+    return useQuery({
+        queryKey: ['real-bets', user?.id],
+        enabled: !!user,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('real_bets')
+                .select('*')
+                .order('created_at', { ascending: false })
+            if (error) throw error
+            return data || []
+        },
+    })
+}
+
+/** Insert a new real bet */
+export function useAddRealBet() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async (bet) => {
+            const { data, error } = await supabase
+                .from('real_bets')
+                .insert([{ ...bet, potential_payout: Math.round(bet.stake * bet.odds * 100) / 100 }])
+                .select()
+                .single()
+            if (error) throw new Error(error.message)
+            return data
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['real-bets'] }),
+    })
+}
+
+/** Mark a real bet as won / lost / void */
+export function useSettleRealBet() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, status }) => {
+            const { data, error } = await supabase
+                .from('real_bets')
+                .update({ status, settled_at: status !== 'pending' ? new Date().toISOString() : null })
+                .eq('id', id)
+                .select()
+                .single()
+            if (error) throw new Error(error.message)
+            return data
+        },
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['real-bets'] }),
+    })
+}
+
 /** Place a bet — calls the secure place_bet() RPC */
 export function usePlaceBet() {
     const qc = useQueryClient()

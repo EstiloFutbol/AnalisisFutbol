@@ -102,15 +102,19 @@ def normalize(name: str) -> str:
 
 def next_jornada_days_away(sb) -> int | None:
     """
-    Return how many days until the first match of the next jornada.
-    Returns None if no upcoming matches are found.
+    Return how many days until the first FUTURE match of the next jornada
+    (only considers matches whose match_date >= today, so an ongoing jornada
+    does not block detection of the next one).
+    Returns None if no future matches are found.
     """
+    today_str = date.today().isoformat()
     result = (
         sb.from_("matches")
         .select("match_date")
         .eq("season", SEASON)
         .is_("home_goals", "null")
         .not_.is_("match_date", "null")
+        .gte("match_date", today_str)
         .order("match_date")
         .limit(1)
         .execute()

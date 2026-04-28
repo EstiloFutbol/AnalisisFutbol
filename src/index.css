@@ -112,3 +112,8 @@
 html.dark .title-contrast {
     color: #ffffff;
 }
+
+/* Darker title color for light theme */
+html.light .title-contrast {
+    color: #283618;
+}

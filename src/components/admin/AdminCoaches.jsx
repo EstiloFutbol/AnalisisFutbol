@@ -61,7 +61,7 @@ export default function AdminCoaches() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Entrenadores ({coaches.length})</h3>
+                <h3 className="text-lg font-semibold text-foreground">Entrenadores ({coaches.length})</h3>
                 <Button onClick={() => setIsCreating(true)} size="sm">
                     <Plus className="mr-2 h-4 w-4" /> Nuevo Entrenador
                 </Button>

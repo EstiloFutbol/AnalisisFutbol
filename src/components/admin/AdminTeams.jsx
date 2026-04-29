@@ -56,7 +56,7 @@ export default function AdminTeams() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Equipos ({teams.length})</h3>
+                <h3 className="text-lg font-semibold text-foreground">Equipos ({teams.length})</h3>
                 <Button onClick={() => setIsCreating(true)} size="sm">
                     <Plus className="mr-2 h-4 w-4" /> Nuevo Equipo
                 </Button>

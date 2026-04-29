@@ -61,7 +61,7 @@ export default function AdminReferees() {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Árbitros ({referees.length})</h3>
+                <h3 className="text-lg font-semibold text-foreground">Árbitros ({referees.length})</h3>
                 <Button onClick={() => setIsCreating(true)} size="sm">
                     <Plus className="mr-2 h-4 w-4" /> Nuevo Árbitro
                 </Button>

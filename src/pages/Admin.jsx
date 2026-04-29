@@ -36,7 +36,7 @@ export default function Admin() {
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Panel de Administración</h1>
+                    <h1 className="text-3xl font-bold tracking-tight title-contrast">Panel de Administración</h1>
                     <p className="text-muted-foreground">
                         Gestiona partidos, equipos, árbitros y configuraciones del sistema.
                     </p>

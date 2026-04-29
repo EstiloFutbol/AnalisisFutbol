@@ -321,14 +321,11 @@ export default function Landing() {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.5 }}
-                    className="relative overflow-hidden rounded-3xl p-10 text-center"
-                    style={{
-                        background: 'linear-gradient(135deg, #283618 0%, #283618 60%, #bc6c25 100%)',
-                    }}
+                    className="cta-section relative overflow-hidden rounded-3xl p-10 text-center"
                 >
                     <div
                         aria-hidden
-                        className="pointer-events-none absolute inset-0"
+                        className="pointer-events-none absolute inset-0 hidden dark:block"
                         style={{ background: 'radial-gradient(circle at 70% 40%, rgba(221,161,94,0.25) 0%, transparent 60%)' }}
                     />
                     <h2 className="relative text-2xl font-black tracking-tight text-foreground sm:text-3xl">
@@ -349,7 +346,7 @@ export default function Landing() {
                         <Link
                             to="/iniciar-sesion"
                             id="cta-bottom-login"
-                            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background/10 px-6 py-3 text-sm font-bold text-foreground backdrop-blur-sm transition-all hover:bg-background/20"
+                            className="inline-flex items-center gap-2 rounded-xl border border-foreground/20 bg-white/60 dark:bg-background/10 px-6 py-3 text-sm font-bold text-foreground backdrop-blur-sm transition-all hover:bg-white/90 dark:hover:bg-background/20"
                         >
                             Crear cuenta
                         </Link>

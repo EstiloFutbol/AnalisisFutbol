@@ -366,9 +366,9 @@ export default function AIAssistant() {
                 path="/ia-bet"
             />
             {/* ⚠️ Disclaimer banner */}
-            <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
-                <TriangleAlert className="h-4 w-4 shrink-0 text-yellow-400 mt-0.5" />
-                <p className="text-xs text-yellow-300/90 leading-relaxed">
+            <div className="flex items-start gap-3 rounded-xl border border-yellow-500/40 bg-yellow-500/10 px-4 py-3">
+                <TriangleAlert className="h-4 w-4 shrink-0 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <p className="text-xs text-yellow-900 dark:text-yellow-300/90 leading-relaxed">
                     <span className="font-semibold">Aviso importante:</span> Las predicciones de la IA son experimentales y pueden fallar.
                     Este sistema usa <em>monedas virtuales</em> sin valor real.
                     <span className="font-semibold"> No uses estas recomendaciones para apuestas con dinero real.</span>

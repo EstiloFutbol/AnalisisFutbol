@@ -148,7 +148,7 @@ export default function BettingCalculator({ matches = [] }) {
     const selectClass = "w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
 
     return (
-        <Card className="border-amber-500/20 bg-gradient-to-br from-background to-amber-950/10">
+        <Card className="border-amber-500/20 bg-gradient-to-br from-background to-amber-500/5">
             <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                     <Calculator className="h-5 w-5 text-amber-400" />
@@ -164,7 +164,7 @@ export default function BettingCalculator({ matches = [] }) {
                 <div className="grid gap-4 sm:grid-cols-3">
                     {/* Bet Type */}
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium text-slate-300">Tipo de Apuesta</Label>
+                        <Label className="text-sm font-medium text-foreground">Tipo de Apuesta</Label>
                         <select
                             className={selectClass}
                             value={betType}
@@ -200,7 +200,7 @@ export default function BettingCalculator({ matches = [] }) {
 
                     {/* Bet Amount */}
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium text-slate-300">Cantidad a Apostar (€)</Label>
+                        <Label className="text-sm font-medium text-foreground">Cantidad a Apostar (€)</Label>
                         <Input
                             type="number"
                             min="1"
@@ -213,7 +213,7 @@ export default function BettingCalculator({ matches = [] }) {
 
                     {/* Bookmaker Odds (optional) */}
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium text-slate-300">Cuota del Bookmaker (opcional)</Label>
+                        <Label className="text-sm font-medium text-foreground">Cuota del Bookmaker (opcional)</Label>
                         <Input
                             type="number"
                             min="1"
@@ -230,11 +230,11 @@ export default function BettingCalculator({ matches = [] }) {
                     <div className="space-y-4">
                         {/* Historical Stats */}
                         <div className="grid gap-3 sm:grid-cols-4">
-                            <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 text-center">
+                            <div className="rounded-lg bg-muted/40 border border-border/50 p-3 text-center">
                                 <p className="text-xs text-muted-foreground mb-1">Partidos Analizados</p>
                                 <p className="text-2xl font-bold text-foreground">{stats.totalMatches}</p>
                             </div>
-                            <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 text-center">
+                            <div className="rounded-lg bg-muted/40 border border-border/50 p-3 text-center">
                                 <p className="text-xs text-muted-foreground mb-1">Aciertos / Fallos</p>
                                 <p className="text-2xl font-bold">
                                     <span className="text-green-400">{stats.wins}</span>
@@ -242,13 +242,13 @@ export default function BettingCalculator({ matches = [] }) {
                                     <span className="text-red-400">{stats.losses}</span>
                                 </p>
                             </div>
-                            <div className="rounded-lg bg-slate-800/60 border border-slate-700/50 p-3 text-center">
+                            <div className="rounded-lg bg-muted/40 border border-border/50 p-3 text-center">
                                 <p className="text-xs text-muted-foreground mb-1">Tasa de Acierto</p>
                                 <p className="text-2xl font-bold text-amber-400">{(stats.winRate * 100).toFixed(1)}%</p>
                             </div>
                             <div className="rounded-lg bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 p-3 text-center">
-                                <p className="text-xs text-amber-300/80 mb-1">Cuota Mínima Rentable</p>
-                                <p className="text-2xl font-bold text-amber-400">{stats.safeMinOdds === Infinity ? '∞' : stats.safeMinOdds.toFixed(2)}</p>
+                                <p className="text-xs text-amber-800 dark:text-amber-300/80 mb-1">Cuota Mínima Rentable</p>
+                                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.safeMinOdds === Infinity ? '∞' : stats.safeMinOdds.toFixed(2)}</p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">Incluye 5% margen seguridad</p>
                             </div>
                         </div>
@@ -259,7 +259,7 @@ export default function BettingCalculator({ matches = [] }) {
                                 <span>Distribución histórica</span>
                                 <span>{(stats.winRate * 100).toFixed(1)}% acierto</span>
                             </div>
-                            <div className="h-3 rounded-full bg-slate-700/50 overflow-hidden flex">
+                            <div className="h-3 rounded-full bg-muted/60 overflow-hidden flex">
                                 <div
                                     className="bg-gradient-to-r from-green-500 to-green-400 transition-all duration-500 rounded-l-full"
                                     style={{ width: `${stats.winRate * 100}%` }}
@@ -322,8 +322,8 @@ export default function BettingCalculator({ matches = [] }) {
 
                         {/* 100-Bet Simulation */}
                         {profitCalc && bookmakerOdds && (
-                            <div className="rounded-lg bg-slate-800/40 border border-slate-700/50 p-4 space-y-2">
-                                <h4 className="text-sm font-medium flex items-center gap-2 text-slate-300">
+                            <div className="rounded-lg bg-muted/30 border border-border/50 p-4 space-y-2">
+                                <h4 className="text-sm font-medium flex items-center gap-2 text-foreground">
                                     <TrendingUp className="h-4 w-4" />
                                     Simulación: 100 apuestas de {betAmount}€ a cuota {Number(bookmakerOdds).toFixed(2)}
                                 </h4>
@@ -351,10 +351,10 @@ export default function BettingCalculator({ matches = [] }) {
                         )}
 
                         {/* Info Note */}
-                        <div className="flex items-start gap-2 text-xs text-muted-foreground bg-slate-800/30 rounded-lg p-3 border border-slate-700/30">
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/20 rounded-lg p-3 border border-border/30">
                             <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <div>
-                                <p>La <strong>cuota mínima rentable</strong> se calcula como <code className="text-amber-400">1 / tasa_acierto × 1.05</code> (con 5% de margen de seguridad).</p>
+                                <p>La <strong>cuota mínima rentable</strong> se calcula como <code className="text-amber-600 dark:text-amber-400">1 / tasa_acierto × 1.05</code> (con 5% de margen de seguridad).</p>
                                 <p className="mt-1">Solo deberías apostar cuando la cuota del bookmaker sea <strong>mayor</strong> que la cuota mínima rentable. Los filtros de la página afectan el análisis — filtra por equipo o liga para datos más específicos.</p>
                             </div>
                         </div>

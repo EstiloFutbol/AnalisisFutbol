@@ -103,7 +103,7 @@ const DASHBOARD_TABS = [
     { id: 'mercados', label: 'Mercados', icon: BarChart3 },
     { id: 'jugadores', label: 'Jugadores', icon: Users },
     { id: 'partidos', label: 'Partidos', icon: CalendarDays },
-    { id: 'equipos', label: 'Equipos', icon: ShieldCheck },
+    { id: 'clasificacion', label: 'Clasificación', icon: ShieldCheck },
 ]
 
 // ─── Main component ──────────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ export default function Dashboard() {
         mercados: 'Análisis completo de La Liga: goles, córners, tarjetas y mercados de apuestas con datos reales de la temporada 2025-2026.',
         jugadores: 'Estadísticas de jugadores de La Liga 2025-2026: goleadores, asistencias, tarjetas, tiros y porteros.',
         partidos: 'Resultados y estadísticas de todos los partidos de La Liga 2025-2026.',
-        equipos: 'Equipos de La Liga 2025-2026: plantillas, estadísticas y rendimiento.',
+        clasificacion: 'Clasificación de La Liga 2025-2026: posiciones, puntos y estadísticas por equipo.',
     }
 
     // ── Core computed stats (for mercados tab) ──
@@ -292,7 +292,7 @@ export default function Dashboard() {
                             key={tab.id}
                             onClick={() => handleTabChange(tab.id)}
                             className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-all
-                                ${active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                ${active ? 'text-primary' : 'text-foreground/60 hover:text-foreground'}`}
                         >
                             {active && (
                                 <motion.div
@@ -312,7 +312,7 @@ export default function Dashboard() {
             {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} topScorers={topScorers} topAssists={topAssists} topShots={topShots} topYellows={topYellows} />}
             {activeTab === 'jugadores' && <PlayersTab />}
             {activeTab === 'partidos' && <MatchesTab />}
-            {activeTab === 'equipos' && <TeamsTab />}
+            {activeTab === 'clasificacion' && <TeamsTab matches={matches} />}
         </div>
     )
 }
@@ -527,25 +527,19 @@ function MercadosContent({ s, matches, topScorers, topAssists, topShots, topYell
 
 // ─── Teams Tab ───────────────────────────────────────────────────────────────
 
-function TeamsTab() {
-    const { data: leagues = [] } = useLeagues()
-    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
-    const activeLeagueId = defaultLeague ? String(defaultLeague.id) : null
-    const { data: matches = [] } = useMatches(activeLeagueId, { playedOnly: true })
-
+function TeamsTab({ matches = [] }) {
     const teamStats = useMemo(() => {
-        if (!matches.length) return []
+        const played = matches.filter(m => m.home_goals != null)
+        if (!played.length) return []
         const stats = {}
 
-        matches.forEach(m => {
+        played.forEach(m => {
             const hName = m.home_team?.name
             const aName = m.away_team?.name
             if (!hName || !aName) return
 
             if (!stats[hName]) stats[hName] = { name: hName, logo: m.home_team?.logo_url, short: m.home_team?.short_name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0 }
             if (!stats[aName]) stats[aName] = { name: aName, logo: m.away_team?.logo_url, short: m.away_team?.short_name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0 }
-
-            if (m.home_goals == null) return
 
             const hg = m.home_goals || 0
             const ag = m.away_goals || 0

@@ -115,5 +115,13 @@ html.dark .title-contrast {
 
 /* Darker title color for light theme */
 html.light .title-contrast {
-    color: #283618;
+    color: #111111;
+}
+
+/* Landing bottom CTA section background */
+.cta-section {
+    background: linear-gradient(135deg, #283618 0%, #283618 60%, #bc6c25 100%);
+}
+html.light .cta-section {
+    background: linear-gradient(135deg, #f0efec 0%, #e8e4df 60%, #dfd9d1 100%);
 }

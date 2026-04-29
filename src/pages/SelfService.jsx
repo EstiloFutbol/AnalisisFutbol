@@ -289,7 +289,7 @@ export default function SelfService() {
 
                         {/* 1. Chart Type */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-300">Tipo de Gráfico</label>
+                            <label className="text-sm font-medium text-foreground">Tipo de Gráfico</label>
                             <div className="grid grid-cols-4 gap-2">
                                 {CHART_TYPES.map(type => (
                                     <button
@@ -311,7 +311,7 @@ export default function SelfService() {
 
                         {/* 2. Dimensions & Metrics */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-300">Eje X (Dimensión)</label>
+                            <label className="text-sm font-medium text-foreground">Eje X (Dimensión)</label>
                             <select
                                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                 value={xAxis}
@@ -324,7 +324,7 @@ export default function SelfService() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-300 flex justify-between">
+                            <label className="text-sm font-medium text-foreground flex justify-between">
                                 Eje Y (Métricas)
                                 <span className="text-xs text-muted-foreground">{yAxes.length} selec.</span>
                             </label>
@@ -345,7 +345,7 @@ export default function SelfService() {
 
                         {/* 3. Aggregation */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-300">Agregación</label>
+                            <label className="text-sm font-medium text-foreground">Agregación</label>
                             <div className="flex rounded-md shadow-sm">
                                 {['sum', 'avg', 'none'].map((mode, i) => (
                                     <button
@@ -373,7 +373,7 @@ export default function SelfService() {
 
                         {/* 4. Filters */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
                                 <Filter className="h-4 w-4" /> Filtros Globales
                             </h3>
 

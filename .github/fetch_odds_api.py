@@ -163,11 +163,22 @@ def _get(path: str, params: dict) -> list:
 
 
 def fetch_odds() -> list:
-    print("[→] Fetching odds (h2h + totals + btts)…")
-    return _get(
-        f"/sports/{SPORT}/odds/",
-        {"regions": "eu", "markets": "h2h,totals,btts", "oddsFormat": "decimal"},
-    )
+    """Fetch odds, falling back to fewer markets if the API rejects a combination."""
+    # Some markets (btts) may not be available depending on the plan/region.
+    # Try in decreasing richness so we always get at least h2h.
+    for markets in ["h2h,totals,btts", "h2h,totals", "h2h"]:
+        print(f"[→] Fetching odds ({markets})…")
+        try:
+            return _get(
+                f"/sports/{SPORT}/odds/",
+                {"regions": "eu", "markets": markets, "oddsFormat": "decimal"},
+            )
+        except requests.exceptions.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 422:
+                print(f"  [WARN] Market combo '{markets}' rejected (422) — trying fewer markets")
+                continue
+            raise
+    return []
 
 
 def fetch_scores() -> list:

@@ -363,7 +363,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── Tab Content ── */}
-            {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} topScorers={topScorers} topAssists={topAssists} topShots={topShots} topYellows={topYellows} />}
+            {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} />}
             {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
             {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
             {activeTab === 'clasificacion' && <TeamsTab matches={matches} />}
@@ -371,9 +371,69 @@ export default function Dashboard() {
     )
 }
 
-// ─── Mercados (original Dashboard content) ──────────────────────────────────
+// ─── Mercados redesign ───────────────────────────────────────────────────────
 
-function MercadosContent({ s, matches, topScorers, topAssists, topShots, topYellows }) {
+// Colour helpers for probability bars and text
+function probColor(p) {
+    const n = parseInt(p, 10)
+    if (n >= 65) return { bar: 'bg-green-500', text: 'text-green-500 dark:text-green-400' }
+    if (n >= 45) return { bar: 'bg-amber-500', text: 'text-amber-500 dark:text-amber-400' }
+    return { bar: 'bg-slate-400', text: 'text-muted-foreground' }
+}
+
+// Hero metric card — big number, label, icon
+function HeroCard({ icon: Icon, label, value, iconColor = 'text-primary' }) {
+    return (
+        <div className="flex flex-col items-start gap-3 rounded-2xl border border-border/50 bg-card p-5 shadow-sm">
+            <div className={`rounded-xl bg-primary/10 p-2.5 ${iconColor}`}>
+                <Icon className="h-5 w-5" />
+            </div>
+            <div>
+                <p className="text-4xl font-black tracking-tight text-foreground">{value}</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+            </div>
+        </div>
+    )
+}
+
+// Single market row: label | bar | pct / count
+function ProbRow({ label, pctVal, count, total, isNumStat = false }) {
+    const { bar, text } = probColor(pctVal)
+    const width = Math.min(100, Math.max(0, parseInt(pctVal, 10)))
+    return (
+        <div className="flex items-center gap-4 px-4 py-3.5 border-b border-border/30 last:border-0 hover:bg-primary/5 transition-colors">
+            <span className="w-52 shrink-0 text-sm font-medium text-foreground">{label}</span>
+            {isNumStat ? (
+                <div className="flex-1" />
+            ) : (
+                <div className="flex-1 rounded-full bg-border/30 h-2 overflow-hidden">
+                    <div
+                        className={`h-full rounded-full ${bar} transition-all duration-500`}
+                        style={{ width: `${width}%` }}
+                    />
+                </div>
+            )}
+            <div className="w-20 text-right shrink-0">
+                <p className={`text-sm font-black tabular-nums ${isNumStat ? 'text-foreground' : text}`}>{pctVal}{isNumStat ? '' : '%'}</p>
+                {count != null && total != null && !isNumStat && (
+                    <p className="text-[10px] text-muted-foreground tabular-nums">{count}/{total}</p>
+                )}
+            </div>
+        </div>
+    )
+}
+
+const MARKET_TABS = [
+    { id: 'resultado', label: 'Resultado' },
+    { id: 'goles', label: 'Goles' },
+    { id: 'corners', label: 'Córners' },
+    { id: 'tarjetas', label: 'Tarjetas' },
+    { id: 'especiales', label: 'Especiales' },
+]
+
+function MercadosContent({ s, matches }) {
+    const [activeMarket, setActiveMarket] = useState('resultado')
+
     if (!s) return (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 py-32 text-center">
             <Trophy className="h-12 w-12 text-muted-foreground/30 mb-4" />
@@ -385,196 +445,154 @@ function MercadosContent({ s, matches, topScorers, topAssists, topShots, topYell
     const n = s.n
 
     return (
-        <div className="space-y-10">
-            {/* 1. APUESTAS AL RESULTADO */}
-            <section className="space-y-4">
-                <SectionHeader icon={Trophy} title="1 · Apuestas al Resultado" subtitle="1X2 · Doble oportunidad · Empate no válida" />
-                <div className="grid grid-cols-3 gap-3">
-                    <StatCard icon={ArrowUpRight} label="1 — Gana Local" value={`${pct(s.homeWins, n)}%`} sublabel={`${s.homeWins} de ${n}`} color="green" />
-                    <StatCard icon={Minus} label="X — Empate" value={`${pct(s.draws, n)}%`} sublabel={`${s.draws} de ${n}`} color="orange" />
-                    <StatCard icon={ArrowDownRight} label="2 — Gana Visitante" value={`${pct(s.awayWins, n)}%`} sublabel={`${s.awayWins} de ${n}`} color="blue" />
-                </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    <MarketRow label="Doble oportunidad 1X" value={`${pct(s.x1, n)}%`} sublabel={`${s.x1}/${n}`} color="green" trend="up" />
-                    <MarketRow label="Doble oportunidad 12" value={`${pct(s.homeWins + s.awayWins, n)}%`} sublabel={`${s.homeWins + s.awayWins}/${n}`} color="primary" trend="up" />
-                    <MarketRow label="Doble oportunidad X2" value={`${pct(s.x2, n)}%`} sublabel={`${s.x2}/${n}`} color="blue" trend="up" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <MarketRow label="Draw No Bet — Local gana (excl. empates)" value={`${pct(s.homeWins, s.homeWins + s.awayWins)}%`} color="green" />
-                    <MarketRow label="Draw No Bet — Visitante gana (excl. empates)" value={`${pct(s.awayWins, s.homeWins + s.awayWins)}%`} color="blue" />
-                </div>
-            </section>
+        <div className="space-y-6">
+            {/* ── Hero strip ── */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <HeroCard icon={Goal} label="Goles / Partido" value={avg(s.totalGoals, n)} iconColor="text-green-500 dark:text-green-400" />
+                <HeroCard icon={Target} label="BTTS" value={`${pct(s.btts, n)}%`} iconColor="text-violet-500 dark:text-violet-400" />
+                <HeroCard icon={ArrowUpRight} label="Victoria Local" value={`${pct(s.homeWins, n)}%`} iconColor="text-amber-500 dark:text-amber-400" />
+                <HeroCard icon={TrendingUp} label="Over 2.5" value={`${pct(s.over25, n)}%`} iconColor="text-blue-500 dark:text-blue-400" />
+            </div>
 
-            {/* 2. APUESTAS DE GOLES */}
-            <section className="space-y-4">
-                <SectionHeader icon={Goal} title="2 · Apuestas de Goles" subtitle="Over/Under · BTTS · Resultado exacto · Primer gol" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    {[
-                        { line: '0.5', over: s.over05, color: 'green' },
-                        { line: '1.5', over: s.over15, color: 'green' },
-                        { line: '2.5', over: s.over25, color: 'primary' },
-                        { line: '3.5', over: s.over35, color: 'orange' },
-                        { line: '4.5', over: s.over45, color: 'red' },
-                    ].map(({ line, over, color }) => (
-                        <div key={line} className={`rounded-xl border p-3 text-center ${COLORS[color].split(' ').slice(1).join(' ')}`}>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Over {line}</p>
-                            <p className={`text-xl font-black ${COLORS[color].split(' ')[0]}`}>{pct(over, n)}%</p>
-                            <p className="text-[10px] text-muted-foreground">{over}/{n}</p>
+            {/* ── Market tabs ── */}
+            <div className="rounded-2xl border border-border/50 bg-card overflow-hidden">
+                {/* Tab bar */}
+                <div className="flex overflow-x-auto border-b border-border/50 bg-secondary/20">
+                    {MARKET_TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveMarket(tab.id)}
+                            className={`whitespace-nowrap px-5 py-3.5 text-sm font-semibold transition-all border-b-2
+                                ${activeMarket === tab.id
+                                    ? 'border-primary text-primary bg-primary/5'
+                                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-primary/5'
+                                }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab content */}
+                <div className="divide-y-0">
+
+                    {/* RESULTADO */}
+                    {activeMarket === 'resultado' && (
+                        <div>
+                            <ProbRow label="1 Local" pctVal={pct(s.homeWins, n)} count={s.homeWins} total={n} />
+                            <ProbRow label="X Empate" pctVal={pct(s.draws, n)} count={s.draws} total={n} />
+                            <ProbRow label="2 Visitante" pctVal={pct(s.awayWins, n)} count={s.awayWins} total={n} />
+                            <ProbRow label="Doble oportunidad 1X" pctVal={pct(s.x1, n)} count={s.x1} total={n} />
+                            <ProbRow label="Doble oportunidad X2" pctVal={pct(s.x2, n)} count={s.x2} total={n} />
+                            <ProbRow label="Doble oportunidad 12" pctVal={pct(s.homeWins + s.awayWins, n)} count={s.homeWins + s.awayWins} total={n} />
+                            <ProbRow label="Local anota primero" pctVal={pct(s.homeScoresFirst, n)} count={s.homeScoresFirst} total={n} />
+                            <ProbRow label="Visitante anota primero" pctVal={pct(s.awayScoresFirst, n)} count={s.awayScoresFirst} total={n} />
                         </div>
-                    ))}
-                </div>
+                    )}
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatCard icon={Target} label="BTTS Sí" value={`${pct(s.btts, n)}%`} sublabel={`${s.btts}/${n} partidos`} color="violet" />
-                    <StatCard icon={Shield} label="BTTS No" value={`${pct(n - s.btts, n)}%`} sublabel={`${n - s.btts}/${n} partidos`} color="indigo" />
-                    <StatCard icon={Goal} label="Goles Avg" value={avg(s.totalGoals, n)} sublabel="por partido" color="green" />
-                    <StatCard icon={TrendingUp} label="Total Goles" value={s.totalGoals} sublabel="en la temporada" />
-                </div>
+                    {/* GOLES */}
+                    {activeMarket === 'goles' && (
+                        <div>
+                            <ProbRow label="Over 0.5" pctVal={pct(s.over05, n)} count={s.over05} total={n} />
+                            <ProbRow label="Over 1.5" pctVal={pct(s.over15, n)} count={s.over15} total={n} />
+                            <ProbRow label="Over 2.5" pctVal={pct(s.over25, n)} count={s.over25} total={n} />
+                            <ProbRow label="Over 3.5" pctVal={pct(s.over35, n)} count={s.over35} total={n} />
+                            <ProbRow label="Over 4.5" pctVal={pct(s.over45, n)} count={s.over45} total={n} />
+                            <ProbRow label="BTTS Si" pctVal={pct(s.btts, n)} count={s.btts} total={n} />
+                            <ProbRow label="BTTS No" pctVal={pct(n - s.btts, n)} count={n - s.btts} total={n} />
 
-                {/* Resultado exacto top 5 */}
-                <div className="rounded-xl border border-border/50 bg-card p-4">
-                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Resultado Exacto — Más Frecuentes</p>
-                    <div className="grid gap-2 sm:grid-cols-5">
-                        {s.topScores.map(({ score, count, pct: p }) => (
-                            <div key={score} className="rounded-xl border border-border/40 bg-secondary/30 p-3 text-center">
-                                <p className="text-lg font-black text-foreground">{score}</p>
-                                <p className="text-xs text-primary font-bold">{p}%</p>
-                                <p className="text-[10px] text-muted-foreground">{count}x</p>
+                            {/* Top 5 exact scores */}
+                            {s.topScores.length > 0 && (
+                                <div className="px-4 py-4 border-t border-border/30">
+                                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Top 5 resultados exactos</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {s.topScores.map(({ score, count: c, pct: p }) => (
+                                            <div key={score} className="flex flex-col items-center rounded-xl border border-border/40 bg-secondary/30 px-4 py-2.5 min-w-[64px]">
+                                                <span className="text-base font-black text-foreground">{score}</span>
+                                                <span className="text-xs font-bold text-primary">{p}%</span>
+                                                <span className="text-[10px] text-muted-foreground">{c}x</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Goal time chart */}
+                            <div className="px-4 py-4 border-t border-border/30">
+                                <GoalTimeChart matches={matches} />
                             </div>
-                        ))}
-                    </div>
-                </div>
+                        </div>
+                    )}
 
-                {/* Primer equipo en marcar */}
-                <div className="grid grid-cols-2 gap-2">
-                    <MarketRow label="Primer gol — Local" value={`${pct(s.homeScoresFirst, n)}%`} sublabel={`${s.homeScoresFirst}/${n}`} color="green" trend="up" />
-                    <MarketRow label="Primer gol — Visitante" value={`${pct(s.awayScoresFirst, n)}%`} sublabel={`${s.awayScoresFirst}/${n}`} color="blue" trend="up" />
-                </div>
+                    {/* CORNERS */}
+                    {activeMarket === 'corners' && (
+                        <div>
+                            <ProbRow label="Over 8.5 Córners" pctVal={pct(s.over85c, n)} count={s.over85c} total={n} />
+                            <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, n)} count={s.over105c} total={n} />
+                            <ProbRow
+                                label="Córners local > visitante"
+                                pctVal={pct(matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length, n)}
+                                count={matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length}
+                                total={n}
+                            />
+                            <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, n)} isNumStat />
+                        </div>
+                    )}
 
-                {/* Minuto del primer gol */}
-                <div className="rounded-xl border border-border/50 bg-card p-4">
-                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Minuto Primer Gol</p>
-                    <div className="grid grid-cols-3 gap-3">
-                        <MarketRow label="0'–30'" value={`${pct(s.fgUnder30, s.firstGoalMinsCount)}%`} color="green" />
-                        <MarketRow label="31'–60'" value={`${pct(s.fg3060, s.firstGoalMinsCount)}%`} color="orange" />
-                        <MarketRow label="+60'" value={`${pct(s.fgOver60, s.firstGoalMinsCount)}%`} color="red" />
-                    </div>
-                </div>
+                    {/* TARJETAS */}
+                    {activeMarket === 'tarjetas' && (
+                        <div>
+                            <ProbRow label="Over 1.5 Tarjetas" pctVal={pct(s.over15yc, n)} count={s.over15yc} total={n} />
+                            <ProbRow label="Over 3.5 Tarjetas" pctVal={pct(s.over35yc, n)} count={s.over35yc} total={n} />
+                            <ProbRow label="Roja en el partido" pctVal={pct(s.matchesWithRed, n)} count={s.matchesWithRed} total={n} />
+                            <ProbRow label="Avg tarjetas / partido" pctVal={avg(s.yc, n)} isNumStat />
+                        </div>
+                    )}
 
-                <div className="grid gap-4 md:grid-cols-1">
-                    <GoalTimeChart matches={matches} />
-                </div>
-            </section>
+                    {/* ESPECIALES */}
+                    {activeMarket === 'especiales' && (
+                        <div>
+                            <ProbRow
+                                label="Primer gol antes del min 30"
+                                pctVal={pct(s.fgUnder30, s.firstGoalMinsCount)}
+                                count={s.fgUnder30}
+                                total={s.firstGoalMinsCount}
+                            />
+                            <ProbRow
+                                label="Primer gol min 31–60"
+                                pctVal={pct(s.fg3060, s.firstGoalMinsCount)}
+                                count={s.fg3060}
+                                total={s.firstGoalMinsCount}
+                            />
+                            <ProbRow
+                                label="Primer gol tras el min 60"
+                                pctVal={pct(s.fgOver60, s.firstGoalMinsCount)}
+                                count={s.fgOver60}
+                                total={s.firstGoalMinsCount}
+                            />
+                            <ProbRow
+                                label="Local anota primero"
+                                pctVal={pct(s.homeScoresFirst, n)}
+                                count={s.homeScoresFirst}
+                                total={n}
+                            />
+                            <ProbRow
+                                label="Visitante anota primero"
+                                pctVal={pct(s.awayScoresFirst, n)}
+                                count={s.awayScoresFirst}
+                                total={n}
+                            />
+                            <ProbRow label="Avg goles 1a parte" pctVal={s.avgHtGoals} isNumStat />
+                        </div>
+                    )}
 
-            {/* 3. APUESTAS DE JUGADORES */}
-            {(topScorers.length > 0 || topShots.length > 0) && (
-                <section className="space-y-4">
-                    <SectionHeader icon={Users} title="3 · Apuestas de Jugadores" subtitle="Goleadores · Tiros · Asistencias · Tarjetas" />
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        <PlayerLeaderCard title="Marcador (cualquier momento)" players={topScorers} valueKey="goals" label="goles" color="green" />
-                        <PlayerLeaderCard title="Asistencias" players={topAssists} valueKey="assists" label="asist." color="blue" />
-                        <PlayerLeaderCard title="Tiros a Puerta /90 min" players={topShots} valueKey="shots_on_target_per_90" label="tiros/90" color="violet" />
-                        <PlayerLeaderCard title="Jugador Amonestado" players={topYellows} valueKey="yellow_cards" label="amarillas" color="yellow" />
-                    </div>
-                </section>
-            )}
+                </div>
+            </div>
 
-            {/* 4. CÓRNERS */}
-            <section className="space-y-4">
-                <SectionHeader icon={Zap} title="4 · Apuestas de Córners" subtitle="Totales · Por equipo · Hándicap · Primer córner" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatCard icon={BarChart3} label="Córners Avg" value={avg(s.totalCorners, n)} sublabel="por partido" color="blue" />
-                    <StatCard icon={Zap} label="Over 8.5 Córners" value={`${pct(s.over85c, n)}%`} sublabel={`${s.over85c}/${n}`} color="primary" />
-                    <StatCard icon={Zap} label="Over 10.5 Córners" value={`${pct(s.over105c, n)}%`} sublabel={`${s.over105c}/${n}`} color="orange" />
-                    <StatCard icon={CreditCard} label="Total Córners" value={s.totalCorners} sublabel="temporada" />
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                    <MarketRow label="Avg Córners — Local" value={avg(s.homeCorners, n)} sublabel="por partido" color="green" />
-                    <MarketRow label="Avg Córners — Visitante" value={avg(s.awayCorners, n)} sublabel="por partido" color="blue" />
-                    <MarketRow label="Hándicap Córners (Local -2)"
-                        value={`${pct(matches.filter(m => {
-                            const hc = m.home_corners || 0
-                            const ac = m.away_corners || 0
-                            return hc - 2 > ac
-                        }).length, n)}%`}
-                        color="indigo" />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-1">
-                    <StatDistributionChart
-                        matches={matches}
-                        homeKey="home_corners"
-                        awayKey="away_corners"
-                        title="Distribución de Córners por Equipo"
-                        description="Local vs Visitante — distribución"
-                    />
-                </div>
-            </section>
-
-            {/* 5. TARJETAS */}
-            <section className="space-y-4">
-                <SectionHeader icon={AlertTriangle} title="5 · Apuestas de Tarjetas" subtitle="Totales · Por equipo · Roja en el partido" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatCard icon={AlertTriangle} label="Amarillas Avg" value={avg(s.yc, n)} sublabel="por partido" color="yellow" />
-                    <StatCard icon={AlertTriangle} label="Over 1.5 Tarj." value={`${pct(s.over15yc, n)}%`} sublabel={`${s.over15yc}/${n}`} color="orange" />
-                    <StatCard icon={AlertTriangle} label="Over 3.5 Tarj." value={`${pct(s.over35yc, n)}%`} sublabel={`${s.over35yc}/${n}`} color="red" />
-                    <StatCard icon={CreditCard} label="Roja en partido" value={`${pct(s.matchesWithRed, n)}%`} sublabel={`${s.matchesWithRed}/${n}`} color="red" />
-                </div>
-                <StatDistributionChart
-                    matches={matches}
-                    homeKey="home_yellow_cards"
-                    awayKey="away_yellow_cards"
-                    title="Amarillas por Equipo"
-                    description="Local vs Visitante — distribución por partido"
-                />
-            </section>
-
-            {/* 6. COMBINADAS */}
-            <section className="space-y-4">
-                <SectionHeader icon={Star} title="6 · Apuestas Combinadas" subtitle="Victoria + Goles · Victoria + BTTS" />
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {[
-                        { label: "Local gana + Over 2.5", value: pct(matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n), count: matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, color: 'green' },
-                        { label: "Local gana + BTTS", value: pct(matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, n), count: matches.filter(m => (m.home_goals || 0) > (m.away_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, color: 'green' },
-                        { label: "Visitante gana + Over 2.5", value: pct(matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n), count: matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, color: 'blue' },
-                        { label: "Visitante gana + BTTS", value: pct(matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, n), count: matches.filter(m => (m.away_goals || 0) > (m.home_goals || 0) && (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0).length, color: 'blue' },
-                        { label: "BTTS + Over 2.5", value: pct(matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, n), count: matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) > 2.5).length, color: 'violet' },
-                        { label: "BTTS + Under 3.5", value: pct(matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) <= 3).length, n), count: matches.filter(m => (m.home_goals || 0) > 0 && (m.away_goals || 0) > 0 && (m.home_goals || 0) + (m.away_goals || 0) <= 3).length, color: 'indigo' },
-                    ].map(({ label, value, count, color }) => (
-                        <MarketRow key={label} label={label} value={`${value}%`} sublabel={`${count}/${n}`} color={color} />
-                    ))}
-                </div>
-            </section>
-
-            {/* 7. ESPECIALES */}
-            <section className="space-y-4">
-                <SectionHeader icon={Timer} title="7 · Apuestas Especiales" subtitle="HT/FT · Hándicap asiático · Intervalos · Tiros" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <StatCard icon={Timer} label="Avg Goles 1ª Parte" value={s.avgHtGoals} sublabel="por partido" color="orange" />
-                    <StatCard icon={Crosshair} label="Avg Tiros Total" value={s.matchesWithShots > 0 ? avg(s.totalShots, s.matchesWithShots) : '—'} sublabel="por partido" color="primary" />
-                    <StatCard icon={TrendingUp} label="Hándicap Asiático Local -0.5" value={`${pct(s.homeWins, n)}%`} sublabel="(= local gana)" color="green" />
-                    <StatCard icon={TrendingUp} label="Hándicap Asiático Visit. -0.5" value={`${pct(s.awayWins, n)}%`} sublabel="(= visit. gana)" color="blue" />
-                </div>
-
-                <div className="rounded-xl border border-border/50 bg-card p-4">
-                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Goles por Intervalo de Tiempo</p>
-                    <GoalIntervalBars matches={matches} />
-                </div>
-
-                {s.matchesWithShots > 0 && (
-                    <StatDistributionChart
-                        matches={matches.filter(m => m.home_shots != null)}
-                        homeKey="home_shots"
-                        awayKey="away_shots"
-                        title="Tiros Totales por Partido"
-                        description="Local vs Visitante — distribución"
-                    />
-                )}
-
-                <div className="rounded-xl border border-border/50 bg-card p-4">
-                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Resultado Descanso / Final (HT/FT)</p>
-                    <HtFtTable matches={matches} />
-                </div>
-            </section>
+            {/* Sample size footnote */}
+            <p className="text-center text-[11px] text-muted-foreground/60">
+                Basado en {n} partido{n === 1 ? '' : 's'} jugado{n === 1 ? '' : 's'}
+            </p>
         </div>
     )
 }

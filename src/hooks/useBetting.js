@@ -145,11 +145,12 @@ export function useRealBets() {
 /** Insert a new real bet */
 export function useAddRealBet() {
     const qc = useQueryClient()
+    const { user } = useAuth()
     return useMutation({
         mutationFn: async (bet) => {
             const { data, error } = await supabase
                 .from('real_bets')
-                .insert([{ ...bet, potential_payout: Math.round(bet.stake * bet.odds * 100) / 100 }])
+                .insert([{ ...bet, user_id: user.id, potential_payout: Math.round(bet.stake * bet.odds * 100) / 100 }])
                 .select()
                 .single()
             if (error) throw new Error(error.message)

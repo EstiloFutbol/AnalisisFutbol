@@ -34,6 +34,7 @@ const EMPTY_FORM  = {
     bet_type: '1X2',
     outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
     odds: '', stake: '', bookmaker: '',
+    bet_timing: 'pre', bet_minute: '',
 }
 
 function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
@@ -149,6 +150,10 @@ function RealBetRow({ bet, onSettle }) {
                     <span>{formatEur(bet.stake)}</span>
                     <span className="text-green-400/80">→ {formatEur(bet.potential_payout)}</span>
                     {bet.bookmaker && <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px]">{bet.bookmaker}</span>}
+                    {bet.bet_minute != null
+                        ? <span className="rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 text-[10px] text-orange-400">⚡ En vivo · min. {bet.bet_minute}</span>
+                        : <span className="rounded-full border border-border/40 bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">Pre-partido</span>
+                    }
                 </div>
             </div>
             {bet.status === 'pending' ? (
@@ -243,6 +248,7 @@ function RealBetsTab({ realBets, isLoading }) {
             stake:      parseFloat(form.stake),
             bookmaker:  form.bookmaker || null,
             match_date: form.match_date || null,
+            bet_minute: form.bet_timing === 'live' && form.bet_minute ? parseInt(form.bet_minute, 10) : null,
         }, {
             onSuccess: () => { setShowForm(false); setForm(EMPTY_FORM); setError(null) },
             onError:   (e) => setError(e.message),
@@ -384,6 +390,25 @@ function RealBetsTab({ realBets, isLoading }) {
                                         <label className={labelCls}>Apuesta (€) <span className="text-red-400">*</span></label>
                                         <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)} placeholder="ej. 10.00" className={inputCls} />
                                     </div>
+                                </div>
+                                <div>
+                                    <label className={labelCls}>Momento de la apuesta</label>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={() => set('bet_timing', 'pre')}
+                                            className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${form.bet_timing === 'pre' ? 'border-primary/40 bg-primary/10 text-primary' : 'border-border/50 text-muted-foreground hover:text-foreground'}`}>
+                                            Antes del partido
+                                        </button>
+                                        <button type="button" onClick={() => set('bet_timing', 'live')}
+                                            className={`flex-1 rounded-lg border py-2 text-sm font-medium transition-colors ${form.bet_timing === 'live' ? 'border-orange-500/40 bg-orange-500/10 text-orange-400' : 'border-border/50 text-muted-foreground hover:text-foreground'}`}>
+                                            ⚡ En vivo
+                                        </button>
+                                    </div>
+                                    {form.bet_timing === 'live' && (
+                                        <input type="number" min="1" max="120" value={form.bet_minute}
+                                            onChange={e => set('bet_minute', e.target.value)}
+                                            placeholder="Minuto (ej. 35)"
+                                            className={`mt-2 ${inputCls}`} />
+                                    )}
                                 </div>
                             </div>
 

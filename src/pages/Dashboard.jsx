@@ -117,6 +117,42 @@ export default function Dashboard() {
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
 
+    // Derive the active league object to split name + season for the two dropdowns
+    const activeLeagueObj = leagues.find(l => String(l.id) === activeLeagueId) || null
+
+    // Unique league names in the order they first appear
+    const uniqueLeagueNames = useMemo(() => {
+        const seen = new Set()
+        return leagues.filter(l => {
+            if (seen.has(l.name)) return false
+            seen.add(l.name)
+            return true
+        }).map(l => l.name)
+    }, [leagues])
+
+    // Seasons available for the currently selected league name
+    const selectedLeagueName = activeLeagueObj?.name || uniqueLeagueNames[0] || ''
+    const seasonsForName = useMemo(
+        () => leagues.filter(l => l.name === selectedLeagueName).map(l => l.season),
+        [leagues, selectedLeagueName]
+    )
+
+    const handleLeagueNameChange = (name) => {
+        // Pick the first league entry that matches the new name
+        const match = leagues.find(l => l.name === name)
+        if (match) {
+            setSearchParams(prev => { prev.set('league', String(match.id)); return prev })
+        }
+    }
+
+    const handleSeasonChange = (season) => {
+        // Find the league entry with the current name + new season
+        const match = leagues.find(l => l.name === selectedLeagueName && l.season === season)
+        if (match) {
+            setSearchParams(prev => { prev.set('league', String(match.id)); return prev })
+        }
+    }
+
     useEffect(() => {
         if (!selectedLeagueId && defaultLeague) {
             setSearchParams(prev => {
@@ -269,15 +305,33 @@ export default function Dashboard() {
                     </p>
                 </div>
                 {leagues.length > 0 && (
-                    <div className="relative inline-block">
-                        <select
-                            value={activeLeagueId || ''}
-                            onChange={e => setSearchParams(prev => { prev.set('league', e.target.value); return prev })}
-                            className="appearance-none rounded-xl border border-border bg-card/50 px-6 py-3 pr-10 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        >
-                            {leagues.map(l => <option key={l.id} value={l.id}>{l.name} {l.season}</option>)}
-                        </select>
-                        <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <div className="flex items-center gap-2">
+                        {/* League name selector */}
+                        <div className="relative inline-block">
+                            <select
+                                value={selectedLeagueName}
+                                onChange={e => handleLeagueNameChange(e.target.value)}
+                                className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            >
+                                {uniqueLeagueNames.map(name => (
+                                    <option key={name} value={name}>{name}</option>
+                                ))}
+                            </select>
+                            <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        </div>
+                        {/* Season selector — only shows seasons for the selected league */}
+                        <div className="relative inline-block">
+                            <select
+                                value={activeLeagueObj?.season || ''}
+                                onChange={e => handleSeasonChange(e.target.value)}
+                                className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            >
+                                {seasonsForName.map(season => (
+                                    <option key={season} value={season}>{season}</option>
+                                ))}
+                            </select>
+                            <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        </div>
                     </div>
                 )}
             </div>
@@ -310,8 +364,8 @@ export default function Dashboard() {
 
             {/* ── Tab Content ── */}
             {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} topScorers={topScorers} topAssists={topAssists} topShots={topShots} topYellows={topYellows} />}
-            {activeTab === 'jugadores' && <PlayersTab />}
-            {activeTab === 'partidos' && <MatchesTab />}
+            {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
+            {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
             {activeTab === 'clasificacion' && <TeamsTab matches={matches} />}
         </div>
     )

@@ -677,7 +677,7 @@ export default function MatchDetail() {
                     Volver
                 </button>
                 {session && (
-                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                    <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="text-foreground">
                         <Edit className="mr-2 h-4 w-4" />
                         Editar Partido
                     </Button>

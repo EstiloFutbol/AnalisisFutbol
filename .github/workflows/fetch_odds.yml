@@ -42,6 +42,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ODDS_API_KEY:              ${{ secrets.ODDS_API_KEY }}
 
+      - name: Sync match dates from football-data.org
+        if: ${{ secrets.FOOTBALL_DATA_API_KEY != '' }}
+        env:
+          VITE_SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FOOTBALL_DATA_API_KEY:          ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python tools/sync_match_dates.py --upload --scores
+
       - name: Fetch and upload odds + scores
         env:
           SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}

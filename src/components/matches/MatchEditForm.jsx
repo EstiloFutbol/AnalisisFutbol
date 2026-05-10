@@ -159,7 +159,7 @@ export default function MatchEditForm({ match, onClose }) {
         <Card className="border-primary/50 shadoaw-lg animate-in fade-in zoom-in-95 duration-200">
             <form onSubmit={handleSubmit}>
                 <CardHeader>
-                    <CardTitle>Editar Partido</CardTitle>
+                    <CardTitle className="text-foreground">Editar Partido</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 max-h-[70vh] overflow-y-auto">
 

@@ -4,7 +4,7 @@ import { useMatches, useLeagues } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
 import { Search, Filter, CalendarDays } from 'lucide-react'
 
-export default function Matches() {
+export default function Matches({ hideLeagueSelector = false, leagueId = null }) {
     const [searchParams, setSearchParams] = useSearchParams()
     const { data: leagues = [] } = useLeagues()
 
@@ -13,19 +13,20 @@ export default function Matches() {
     const selectedMatchday = searchParams.get('matchday')
     const searchTerm = searchParams.get('q') || ''
 
-    // Determine active league (URL param > default league > first available)
+    // Parent leagueId takes priority; otherwise fall back to URL param or default
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
-    const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
+    const activeLeagueId = leagueId || selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
 
-    // Sync default league to URL if not present
+    // Only sync URL when running standalone (no parent leagueId)
     useEffect(() => {
+        if (leagueId) return
         if (!selectedLeagueId && defaultLeague) {
             setSearchParams(prev => {
                 prev.set('league', String(defaultLeague.id))
                 return prev
             }, { replace: true })
         }
-    }, [selectedLeagueId, defaultLeague, setSearchParams])
+    }, [leagueId, selectedLeagueId, defaultLeague, setSearchParams])
 
     const { data: matches = [], isLoading } = useMatches(activeLeagueId)
 
@@ -127,8 +128,8 @@ export default function Matches() {
                     />
                 </div>
 
-                {/* League selector */}
-                {leagues.length > 0 && (
+                {/* League selector — hidden when rendered as a Dashboard sub-tab */}
+                {!hideLeagueSelector && leagues.length > 0 && (
                     <select
                         value={activeLeagueId || ''}
                         onChange={(e) => handleLeagueChange(e.target.value)}

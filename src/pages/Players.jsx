@@ -128,7 +128,7 @@ function PlayerRow({ player, rank, tab, delay }) {
     )
 }
 
-export default function Players() {
+export default function Players({ hideLeagueSelector = false, leagueId = null }) {
     const { data: leagues = [] } = useLeagues()
     const [selectedLeagueId, setSelectedLeagueId] = useState(null)
     const [activeTab, setActiveTab] = useState('goals')
@@ -136,7 +136,8 @@ export default function Players() {
     const [search, setSearch] = useState('')
 
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
-    const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
+    // When a parent passes leagueId, use it directly; otherwise fall back to internal selection
+    const activeLeagueId = leagueId || selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
     const { data: players = [], isLoading } = usePlayerLeaderboard(activeLeagueId)
 
     const currentTab = TABS.find(t => t.id === activeTab) || TABS[0]
@@ -176,26 +177,28 @@ export default function Players() {
 
     return (
         <div className="space-y-6 animate-fade-in">
-            {/* Header */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 className="text-3xl font-black tracking-tight title-contrast">Jugadores</h1>
-                    <p className="mt-1 text-sm text-muted-foreground">Estadísticas individuales de la temporada</p>
+            {/* Header — hidden when rendered as a sub-tab inside Dashboard */}
+            {!hideLeagueSelector && (
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tight title-contrast">Jugadores</h1>
+                        <p className="mt-1 text-sm text-muted-foreground">Estadísticas individuales de la temporada</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {leagues.length > 0 && (
+                            <select
+                                value={activeLeagueId || ''}
+                                onChange={(e) => setSelectedLeagueId(e.target.value)}
+                                className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none"
+                            >
+                                {leagues.map(l => (
+                                    <option key={l.id} value={l.id}>{l.name} {l.season}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    {leagues.length > 0 && (
-                        <select
-                            value={activeLeagueId || ''}
-                            onChange={(e) => setSelectedLeagueId(e.target.value)}
-                            className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none"
-                        >
-                            {leagues.map(l => (
-                                <option key={l.id} value={l.id}>{l.name} {l.season}</option>
-                            ))}
-                        </select>
-                    )}
-                </div>
-            </div>
+            )}
 
             {/* Tabs */}
             <div className="flex gap-1 overflow-x-auto rounded-xl border border-border/50 bg-card/50 p-1">

@@ -38,6 +38,12 @@ dist-ssr
 *.sw?
 
 # ============================================
+# Claude Code agent configuration (local only)
+# ============================================
+CLAUDE.md
+.claude/
+
+# ============================================
 # Sensitive / internal folders (NOT for public repo)
 # These contain database migrations, match data,
 # import scripts, and internal tooling.

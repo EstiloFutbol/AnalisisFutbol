@@ -1,21 +1,24 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { BarChart3, Trophy, Bot, Search, TrendingUp, Shield, ArrowRight, Activity } from 'lucide-react'
+import {
+    BarChart3, Trophy, Bot, Search, TrendingUp, Shield,
+    ArrowRight, Activity, Heart, AlertTriangle, BookOpen, Phone
+} from 'lucide-react'
 import SEO from '@/components/SEO'
 
 const features = [
     {
         icon: BarChart3,
         title: 'Estadísticas Históricas',
-        description: 'Datos de goles, córners, tarjetas y xG actualizados semanalmente con cada jornada de La Liga.',
+        description: 'Datos de goles, córners, tarjetas y xG actualizados con cada jornada. Toma decisiones con contexto real, no con suposiciones.',
         link: '/dashboard',
         linkLabel: 'Ver Dashboard',
         color: 'terra',
     },
     {
         icon: Trophy,
-        title: 'Mis Apuestas',
-        description: 'Registra y gestiona tus apuestas deportivas. Lleva un histórico de tus picks y analiza tu rendimiento.',
+        title: 'Seguimiento de Apuestas',
+        description: 'Registra tus picks y analiza tu rendimiento histórico. Detecta qué mercados te funcionan y cuáles no.',
         link: '/mis-apuestas',
         linkLabel: 'Mis Apuestas',
         color: 'sand',
@@ -23,7 +26,7 @@ const features = [
     {
         icon: Bot,
         title: 'IA Bet Assistant',
-        description: 'Nuestro asistente de inteligencia artificial analiza patrones históricos y te sugiere picks razonados.',
+        description: 'Asistente de inteligencia artificial que analiza patrones históricos y sugiere picks razonados con argumentos transparentes.',
         link: '/ia-bet',
         linkLabel: 'Probar IA',
         color: 'olive',
@@ -31,7 +34,7 @@ const features = [
     {
         icon: Search,
         title: 'Explorar Datos',
-        description: 'Filtra y cruza estadísticas por equipo, jornada o mercado. Crea tu propio análisis personalizado.',
+        description: 'Filtra y cruza estadísticas por equipo, jornada o mercado. El análisis que hagas aquí es tuyo — nosotros solo te damos los datos.',
         link: '/explorar',
         linkLabel: 'Explorar',
         color: 'forest',
@@ -40,9 +43,9 @@ const features = [
 
 const stats = [
     { value: '+380', label: 'Partidos analizados' },
-    { value: '7', label: 'Mercados de apuestas' },
-    { value: '99%', label: 'Datos verificados' },
-    { value: 'IA', label: 'Asistente inteligente' },
+    { value: '7',    label: 'Mercados de apuestas' },
+    { value: '99%',  label: 'Datos verificados' },
+    { value: 'IA',   label: 'Asistente inteligente' },
 ]
 
 const colorMap = {
@@ -74,12 +77,12 @@ const colorMap = {
 
 const fadeUp = {
     hidden: { opacity: 0, y: 24 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    show:   { opacity: 1, y: 0, transition: { duration: 0.5 } },
 }
 
 const stagger = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.12 } },
+    show:   { transition: { staggerChildren: 0.12 } },
 }
 
 export default function Landing() {
@@ -87,7 +90,7 @@ export default function Landing() {
         <>
             <SEO
                 title="Inicio — Análisis Fútbol"
-                description="Plataforma de análisis de fútbol con estadísticas avanzadas, asistente IA de apuestas y explorador de datos para La Liga 2025-2026."
+                description="Plataforma de análisis de fútbol con estadísticas avanzadas y asistente IA para tomar decisiones de apuestas informadas. Apuesta con responsabilidad."
                 path="/"
             />
 
@@ -95,7 +98,6 @@ export default function Landing() {
 
                 {/* ── HERO ── */}
                 <section className="relative overflow-hidden pt-10 pb-4">
-                    {/* Decorative background blobs */}
                     <div
                         aria-hidden
                         className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full"
@@ -119,8 +121,8 @@ export default function Landing() {
                                 className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
                                 style={{
                                     borderColor: 'rgba(188,108,37,0.4)',
-                                    background: 'rgba(188,108,37,0.08)',
-                                    color: '#bc6c25',
+                                    background:  'rgba(188,108,37,0.08)',
+                                    color:        '#bc6c25',
                                 }}
                             >
                                 <Activity className="h-3.5 w-3.5" />
@@ -133,7 +135,7 @@ export default function Landing() {
                             variants={fadeUp}
                             className="text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl text-foreground"
                         >
-                            Análisis Fútbol{' '}
+                            Apuesta con{' '}
                             <span
                                 className="block"
                                 style={{
@@ -143,7 +145,7 @@ export default function Landing() {
                                     backgroundClip: 'text',
                                 }}
                             >
-                                con Datos Puros
+                                Datos Reales
                             </span>
                         </motion.h1>
 
@@ -152,8 +154,9 @@ export default function Landing() {
                             variants={fadeUp}
                             className="max-w-xl text-base font-medium text-muted-foreground sm:text-lg"
                         >
-                            Estadísticas avanzadas de La Liga, asistente de inteligencia artificial para apuestas y
-                            un explorador de datos para que tomes decisiones fundamentadas.
+                            Estadísticas avanzadas de La Liga y asistente IA para que tomes{' '}
+                            <strong className="text-foreground">decisiones fundamentadas</strong>, no impulsivas.
+                            La información es poder — úsala con responsabilidad.
                         </motion.p>
 
                         {/* CTAs */}
@@ -163,8 +166,8 @@ export default function Landing() {
                                 id="cta-dashboard"
                                 className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
                                 style={{
-                                    background: 'linear-gradient(135deg, #bc6c25, #dda15e)',
-                                    boxShadow: '0 4px 24px rgba(188,108,37,0.35)',
+                                    background:  'linear-gradient(135deg, #bc6c25, #dda15e)',
+                                    boxShadow:   '0 4px 24px rgba(188,108,37,0.35)',
                                 }}
                             >
                                 Ver Dashboard
@@ -182,6 +185,34 @@ export default function Landing() {
                     </motion.div>
                 </section>
 
+                {/* ── PURPOSE STATEMENT ── */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="rounded-2xl border border-primary/20 bg-primary/5 px-6 py-8 sm:px-10"
+                >
+                    <div className="mx-auto max-w-2xl text-center space-y-3">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                            <BookOpen className="h-3.5 w-3.5" />
+                            Nuestra filosofía
+                        </div>
+                        <h2 className="text-xl font-black text-foreground sm:text-2xl">
+                            Datos para decidir mejor, no para apostar más
+                        </h2>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            Esta plataforma existe para que comprendas el fútbol en profundidad y puedas
+                            evaluar una apuesta con contexto real. <strong className="text-foreground">No predecimos resultados
+                            garantizados</strong> — nadie puede hacerlo. Lo que ofrecemos son tendencias,
+                            patrones y probabilidades históricas que te ayudan a razonar mejor.
+                        </p>
+                        <p className="text-sm font-semibold text-foreground/80">
+                            Un análisis sólido no elimina el riesgo, pero sí reduce las decisiones impulsivas.
+                        </p>
+                    </div>
+                </motion.section>
+
                 {/* ── STATS STRIP ── */}
                 <motion.section
                     initial="hidden"
@@ -197,7 +228,7 @@ export default function Landing() {
                             className="flex flex-col items-center justify-center rounded-2xl border p-6 text-center"
                             style={{
                                 borderColor: 'rgba(96,108,56,0.25)',
-                                background: 'rgba(96,108,56,0.06)',
+                                background:  'rgba(96,108,56,0.06)',
                             }}
                         >
                             <span
@@ -245,11 +276,10 @@ export default function Landing() {
                                     className={`group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${c.border} ${c.hover}`}
                                     style={{ background: 'hsl(var(--card))' }}
                                 >
-                                    {/* Glow blob */}
                                     <div
                                         aria-hidden
                                         className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                                        style={{ background: `radial-gradient(circle, rgba(188,108,37,0.12) 0%, transparent 70%)` }}
+                                        style={{ background: 'radial-gradient(circle, rgba(188,108,37,0.12) 0%, transparent 70%)' }}
                                     />
                                     <div className={`mb-4 inline-flex rounded-xl border p-3 ${c.bg} ${c.border}`}>
                                         <Icon className={`h-5 w-5 ${c.icon}`} />
@@ -286,9 +316,9 @@ export default function Landing() {
                         className="grid gap-4 sm:grid-cols-3"
                     >
                         {[
-                            { step: '01', icon: TrendingUp, title: 'Explora los datos', desc: 'Consulta estadísticas históricas de partidos, equipos y jugadores de la temporada.' },
-                            { step: '02', icon: Bot, title: 'Consulta la IA', desc: 'El asistente analiza los patrones y te ofrece picks razonados para la próxima jornada.' },
-                            { step: '03', icon: Shield, title: 'Registra tus apuestas', desc: 'Guarda tus picks, sigue tu rendimiento y aprende de cada resultado.' },
+                            { step: '01', icon: TrendingUp, title: 'Explora los datos', desc: 'Consulta estadísticas históricas de partidos, equipos y jugadores. Entiende el contexto antes de decidir.' },
+                            { step: '02', icon: Bot,        title: 'Consulta la IA',    desc: 'El asistente analiza los patrones y te ofrece picks razonados con argumentos claros y transparentes.' },
+                            { step: '03', icon: Shield,     title: 'Decide con cabeza', desc: 'Registra tus picks, sigue tu rendimiento y aprende de cada resultado. La disciplina es tu mejor herramienta.' },
                         ].map(({ step, icon: Icon, title, desc }) => (
                             <motion.div
                                 key={step}
@@ -314,6 +344,69 @@ export default function Landing() {
                         ))}
                     </motion.div>
                 </section>
+
+                {/* ── RESPONSIBLE GAMBLING ── */}
+                <motion.section
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="rounded-3xl border border-amber-500/20 bg-amber-500/5 p-8 sm:p-10"
+                >
+                    <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+                        {/* Icon */}
+                        <div className="shrink-0 flex h-16 w-16 items-center justify-center rounded-2xl border border-amber-500/30 bg-amber-500/10">
+                            <Heart className="h-8 w-8 text-amber-500" />
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 space-y-3">
+                            <h2 className="text-xl font-black text-foreground sm:text-2xl">
+                                Las apuestas pueden ser un problema
+                            </h2>
+                            <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">
+                                Las apuestas deportivas son una forma de entretenimiento, pero para algunas personas
+                                pueden convertirse en una adicción. Si sientes que estás apostando más de lo que puedes
+                                permitirte, que tus apuestas afectan tu vida personal o económica, o que es difícil
+                                parar — <strong className="text-foreground">busca ayuda ahora</strong>.
+                            </p>
+
+                            {/* Warning signs */}
+                            <div className="grid gap-2 sm:grid-cols-3 pt-1">
+                                {[
+                                    'Apostas para recuperar pérdidas',
+                                    'Piensas en apuestas constantemente',
+                                    'Mientes sobre cuánto apuestas',
+                                ].map(sign => (
+                                    <div key={sign} className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-left">
+                                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 shrink-0" />
+                                        <span className="text-xs text-muted-foreground">{sign}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Help resources */}
+                            <div className="flex flex-wrap gap-3 pt-2">
+                                <a
+                                    href="https://www.jugarbien.es"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500/20"
+                                >
+                                    <BookOpen className="h-3.5 w-3.5" />
+                                    JugarBien.es
+                                </a>
+                                <a
+                                    href="tel:900200225"
+                                    className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500/20"
+                                >
+                                    <Phone className="h-3.5 w-3.5" />
+                                    900 200 225 · Ayuda gratuita 24h
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </motion.section>
 
                 {/* ── BOTTOM CTA ── */}
                 <motion.section
@@ -351,6 +444,13 @@ export default function Landing() {
                             Crear cuenta
                         </Link>
                     </div>
+
+                    {/* Responsible gambling footer note */}
+                    <p className="relative mt-8 text-[11px] text-muted-foreground/50 max-w-md mx-auto leading-relaxed">
+                        Esta plataforma es una herramienta de análisis. No garantiza resultados ni ganancias.
+                        Las apuestas implican riesgo económico. Apuesta solo lo que puedas permitirte perder.
+                        +18 · Juega con responsabilidad.
+                    </p>
                 </motion.section>
 
             </div>

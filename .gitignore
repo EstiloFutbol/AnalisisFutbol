@@ -54,6 +54,9 @@ data/
 scripts/
 docs/
 
+# ML generated data (CSVs and trained model files — reproducible, not committed)
+ml/data/
+
 # Large assets
 src/frontend/assets/Logos_teams/
 src/frontend/assets/Logos_teams

@@ -52,7 +52,7 @@ jobs:
           VITE_SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           FOOTBALL_DATA_API_KEY:          ${{ secrets.FOOTBALL_DATA_API_KEY }}
-        run: python tools/sync_match_dates.py --upload --scores
+        run: python .github/sync_match_dates.py --upload --scores
 
       - name: Fetch and upload odds + scores
         env:

@@ -1,16 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CalendarDays, LayoutDashboard, Menu, X, ShieldCheck, Users, UserCircle, LogOut, ChevronDown, Trophy, Bot, Sun, Moon, Brain } from 'lucide-react'
+import { LayoutDashboard, Menu, X, ShieldCheck, UserCircle, LogOut, ChevronDown, Trophy, Sun, Moon, Brain } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 
 const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/predicciones', label: 'Predicciones', icon: Brain },
+    { path: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
+    { path: '/analisis',     label: 'Análisis IA',  icon: Brain },
     { path: '/mis-apuestas', label: 'Mis Apuestas', icon: Trophy },
-    { path: '/ia-bet', label: 'IA Bet', icon: Bot },
-    { path: '/explorar', label: 'Explorar', icon: BarChart3 },
 ]
 
 function UserAvatar({ name, email }) {

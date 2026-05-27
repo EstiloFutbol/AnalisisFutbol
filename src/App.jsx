@@ -7,13 +7,11 @@ import Landing from '@/pages/Landing'
 import Dashboard from '@/pages/Dashboard'
 import MatchDetail from '@/pages/MatchDetail'
 
-import SelfService from '@/pages/SelfService'
+import Analisis from '@/pages/Analisis'
 import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
-import AIAssistant from '@/pages/AIAssistant'
-import MLPredictions from '@/pages/MLPredictions'
 
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
@@ -46,17 +44,15 @@ function App() {
                                         <Route path="/mis-apuestas" element={<Betting />} />
                                         <Route path="/betting" element={<Navigate to="/mis-apuestas" replace />} />
 
-                                        {/* AI Bet — Spanish SEO route */}
-                                        <Route path="/ia-bet" element={<AIAssistant />} />
-                                        <Route path="/ai" element={<Navigate to="/ia-bet" replace />} />
-
-                                        {/* ML Predictions — Spanish SEO route */}
-                                        <Route path="/predicciones" element={<MLPredictions />} />
-                                        <Route path="/ml-predictions" element={<Navigate to="/predicciones" replace />} />
-
-                                        {/* Explorar — Spanish SEO route */}
-                                        <Route path="/explorar" element={<SelfService />} />
-                                        <Route path="/self-service" element={<Navigate to="/explorar" replace />} />
+                                        {/* Análisis IA — unified page */}
+                                        <Route path="/analisis" element={<Analisis />} />
+                                        {/* Legacy redirects → /analisis */}
+                                        <Route path="/predicciones" element={<Navigate to="/analisis" replace />} />
+                                        <Route path="/ml-predictions" element={<Navigate to="/analisis" replace />} />
+                                        <Route path="/ia-bet" element={<Navigate to="/analisis" replace />} />
+                                        <Route path="/ai" element={<Navigate to="/analisis" replace />} />
+                                        <Route path="/explorar" element={<Navigate to="/analisis" replace />} />
+                                        <Route path="/self-service" element={<Navigate to="/analisis" replace />} />
 
                                         {/* Auth & Admin */}
                                         <Route path="/iniciar-sesion" element={<Login />} />

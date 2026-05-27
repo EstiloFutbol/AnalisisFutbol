@@ -2,7 +2,32 @@ import { useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMatches, useLeagues } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
-import { Search, Filter, CalendarDays } from 'lucide-react'
+import { Search, Filter, CalendarDays, Trophy } from 'lucide-react'
+
+// ── World Cup round labels ────────────────────────────────────────────────────
+const WC_ROUND_LABELS = {
+    1: 'Fase de Grupos · J1',
+    2: 'Fase de Grupos · J2',
+    3: 'Fase de Grupos · J3',
+    4: 'Ronda de 32',
+    5: 'Octavos de Final',
+    6: 'Cuartos de Final',
+    7: 'Semifinales',
+    8: '3er y 4to Puesto',
+    9: 'Final',
+}
+
+const WC_CHIP_LABELS = {
+    1: 'GF·J1',
+    2: 'GF·J2',
+    3: 'GF·J3',
+    4: 'R32',
+    5: 'Octavos',
+    6: 'Cuartos',
+    7: 'Semis',
+    8: '3°/4°',
+    9: 'Final',
+}
 
 export default function Matches({ hideLeagueSelector = false, leagueId = null }) {
     const [searchParams, setSearchParams] = useSearchParams()
@@ -16,6 +41,8 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
     // Parent leagueId takes priority; otherwise fall back to URL param or default
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     const activeLeagueId = leagueId || selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
+    const activeLeagueObj = leagues.find(l => String(l.id) === String(activeLeagueId)) || null
+    const isWC = activeLeagueObj?.code === 'WC'
 
     // Only sync URL when running standalone (no parent leagueId)
     useEffect(() => {
@@ -58,10 +85,10 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
     }, [matches, selectedMatchday, searchTerm])
 
     // Handlers for updating URL params
-    const handleLeagueChange = (leagueId) => {
+    const handleLeagueChange = (lId) => {
         setSearchParams(prev => {
-            prev.set('league', leagueId)
-            prev.delete('matchday') // Reset matchday on league change
+            prev.set('league', lId)
+            prev.delete('matchday')
             return prev
         })
     }
@@ -79,18 +106,22 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
             if (term) prev.set('q', term)
             else prev.delete('q')
             return prev
-        }, { replace: true }) // Replace history for search typing
+        }, { replace: true })
     }
 
-
-    // Group matches by matchday (for display)
+    // Group matches by matchday
+    // WC: sort ascending (group stage → knockouts); league: sort descending (latest first)
     const matchesByMatchday = useMemo(() => {
         const groups = {}
         const sorted = [...filteredMatches].sort((a, b) => {
-            // If filtered by specific matchday, sort by date? 
-            // Default sort by matchday desc
-            if (b.matchday !== a.matchday) return Number(b.matchday || 0) - Number(a.matchday || 0)
-            return new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+            if (a.matchday !== b.matchday) {
+                return isWC
+                    ? Number(a.matchday || 0) - Number(b.matchday || 0)
+                    : Number(b.matchday || 0) - Number(a.matchday || 0)
+            }
+            const dA = a.match_date ? new Date(a.match_date).getTime() : 0
+            const dB = b.match_date ? new Date(b.match_date).getTime() : 0
+            return dA - dB
         })
 
         sorted.forEach(match => {
@@ -100,7 +131,10 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
         })
 
         return Object.entries(groups)
-    }, [filteredMatches])
+    }, [filteredMatches, isWC])
+
+    const getRoundLabel = (md) => isWC ? (WC_ROUND_LABELS[md] || `Ronda ${md}`) : `Jornada ${md}`
+    const getChipLabel  = (md) => isWC ? (WC_CHIP_LABELS[md]  || `R${md}`)      : `J${md}`
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -141,20 +175,20 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
                     </select>
                 )}
 
-                {/* Matchday selector */}
+                {/* Matchday / round selector */}
                 <select
                     value={selectedMatchday || ''}
                     onChange={(e) => handleMatchdayChange(e.target.value)}
                     className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                    <option value="">Todas las jornadas</option>
+                    <option value="">{isWC ? 'Todas las rondas' : 'Todas las jornadas'}</option>
                     {availableMatchdays.map((md) => (
-                        <option key={md} value={md}>Jornada {md}</option>
+                        <option key={md} value={md}>{getRoundLabel(md)}</option>
                     ))}
                 </select>
             </div>
 
-            {/* Matchday chips (horizontal scroll) */}
+            {/* Round chips (horizontal scroll) */}
             {availableMatchdays.length > 0 && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     <button
@@ -175,7 +209,7 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
                                     ? 'bg-primary/20 text-primary border-primary/40'
                                     : 'border-border/50 bg-card text-muted-foreground hover:border-primary/30 hover:text-primary'}`}
                             >
-                                J{md}
+                                {getChipLabel(md)}
                             </button>
                         )
                     })}
@@ -189,21 +223,24 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
                 </div>
             )}
 
-            {/* Match list grouped by matchday */}
+            {/* Match list grouped by round / matchday */}
             {matchesByMatchday.map(([matchday, mdMatches]) => (
                 <div key={matchday}>
                     <div className="mb-3 flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4 text-primary" />
+                        {isWC
+                            ? <Trophy className="h-4 w-4 text-primary" />
+                            : <CalendarDays className="h-4 w-4 text-primary" />
+                        }
                         <h2 className="text-sm font-bold text-foreground">
-                            Jornada {matchday}
+                            {matchday === 'Pendiente' ? 'Pendiente' : getRoundLabel(Number(matchday))}
                         </h2>
                         <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {mdMatches.length} partidos
+                            {mdMatches.length} partido{mdMatches.length !== 1 ? 's' : ''}
                         </span>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                         {mdMatches.map((match, i) => (
-                            <MatchCard key={match.id} match={match} index={i} />
+                            <MatchCard key={match.id} match={match} index={i} isWC={isWC} />
                         ))}
                     </div>
                 </div>

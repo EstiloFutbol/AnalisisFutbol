@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useMatches, useLeagues } from '@/hooks/useMatches'
+import { useMatches, useLeagues, useGroupStandings } from '@/hooks/useMatches'
 import { usePlayerLeaderboard } from '@/hooks/usePlayerStats'
 import {
     Trophy, Goal, Target, TrendingUp, Activity,
@@ -366,7 +366,7 @@ export default function Dashboard() {
             {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} />}
             {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
             {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
-            {activeTab === 'clasificacion' && <TeamsTab matches={matches} />}
+            {activeTab === 'clasificacion' && <TeamsTab matches={matches} leagueObj={activeLeagueObj} activeLeagueId={activeLeagueId} />}
         </div>
     )
 }
@@ -599,7 +599,144 @@ function MercadosContent({ s, matches }) {
 
 // ─── Teams Tab ───────────────────────────────────────────────────────────────
 
-function TeamsTab({ matches = [] }) {
+function TeamsTab({ matches = [], leagueObj, activeLeagueId }) {
+    const isWC = leagueObj?.code === 'WC'
+
+    if (isWC) {
+        return <WCGroupStandings leagueId={activeLeagueId} />
+    }
+
+    return <LeagueStandingsTable matches={matches} />
+}
+
+// World Cup: 12 group tables from tournament_standings
+function WCGroupStandings({ leagueId }) {
+    const { data: rows = [], isLoading } = useGroupStandings(leagueId)
+
+    if (isLoading) return (
+        <div className="flex items-center justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+    )
+
+    if (!rows.length) return (
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 py-20 text-center">
+            <Trophy className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <p className="text-sm text-muted-foreground">No hay datos de clasificación disponibles</p>
+        </div>
+    )
+
+    // Group rows by group_name
+    const byGroup = {}
+    rows.forEach(r => {
+        if (!byGroup[r.group_name]) byGroup[r.group_name] = []
+        byGroup[r.group_name].push(r)
+    })
+
+    const groups = Object.keys(byGroup).sort()
+
+    return (
+        <div className="space-y-4">
+            {/* Compact legend */}
+            <div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground px-1">
+                <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-green-500/60 inline-block" />
+                    Clasificado directamente
+                </span>
+                <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60 inline-block" />
+                    Posible clasificado (3°)
+                </span>
+            </div>
+
+            {/* 12 groups in a responsive grid */}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {groups.map(g => {
+                    const gRows = byGroup[g]
+                    return (
+                        <div key={g} className="overflow-hidden rounded-xl border border-border/50 bg-card">
+                            {/* Group header */}
+                            <div className="flex items-center gap-2 border-b border-border/50 bg-secondary/30 px-4 py-2.5">
+                                <Trophy className="h-3.5 w-3.5 text-primary" />
+                                <span className="text-xs font-black uppercase tracking-widest text-foreground">
+                                    Grupo {g}
+                                </span>
+                            </div>
+                            {/* Table */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-xs">
+                                    <thead>
+                                        <tr className="text-[10px] text-muted-foreground/70">
+                                            <th className="px-3 py-2 text-left font-semibold uppercase tracking-wider w-6">#</th>
+                                            <th className="px-2 py-2 text-left font-semibold uppercase tracking-wider">Equipo</th>
+                                            <th className="px-2 py-2 text-center font-semibold uppercase tracking-wider w-7">PJ</th>
+                                            <th className="px-2 py-2 text-center font-semibold uppercase tracking-wider w-7">G</th>
+                                            <th className="px-2 py-2 text-center font-semibold uppercase tracking-wider w-7">E</th>
+                                            <th className="px-2 py-2 text-center font-semibold uppercase tracking-wider w-7">P</th>
+                                            <th className="px-2 py-2 text-center font-semibold uppercase tracking-wider w-12">GF:GC</th>
+                                            <th className="px-2 py-2 text-center font-semibold uppercase tracking-wider text-primary w-8">Pts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {gRows.map((r, i) => {
+                                            const team = r.team || {}
+                                            const gd = r.goals_for - r.goals_against
+                                            // Top 2 advance; 3rd may advance as best 3rd
+                                            const rowBg = i < 2
+                                                ? 'border-l-2 border-l-green-500/60'
+                                                : i === 2
+                                                    ? 'border-l-2 border-l-amber-500/40'
+                                                    : ''
+                                            return (
+                                                <tr key={r.team_id || i}
+                                                    className={`border-b border-border/20 last:border-0 hover:bg-primary/5 transition-colors ${rowBg}`}
+                                                >
+                                                    <td className="px-3 py-2 text-center">
+                                                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold
+                                                            ${i < 2 ? 'bg-green-500/20 text-green-400' :
+                                                            i === 2 ? 'bg-amber-500/15 text-amber-400' :
+                                                            'text-muted-foreground'}`}
+                                                        >
+                                                            {i + 1}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-2 py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            {team.logo_url && (
+                                                                <img src={team.logo_url} alt="" className="h-5 w-5 object-contain shrink-0" />
+                                                            )}
+                                                            <span className="font-medium text-foreground truncate max-w-[90px]">
+                                                                {team.short_name || team.name || '—'}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center text-muted-foreground">{r.played}</td>
+                                                    <td className="px-2 py-2 text-center font-medium text-green-400">{r.won}</td>
+                                                    <td className="px-2 py-2 text-center text-muted-foreground">{r.drawn}</td>
+                                                    <td className="px-2 py-2 text-center font-medium text-red-400">{r.lost}</td>
+                                                    <td className="px-2 py-2 text-center text-muted-foreground">
+                                                        {r.goals_for}:{r.goals_against}
+                                                        <span className={`ml-1 text-[10px] ${gd > 0 ? 'text-green-400' : gd < 0 ? 'text-red-400' : 'text-muted-foreground/50'}`}>
+                                                            ({gd > 0 ? '+' : ''}{gd})
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center font-black text-primary">{r.points}</td>
+                                                </tr>
+                                            )
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+// Regular league: compute standings from match results
+function LeagueStandingsTable({ matches = [] }) {
     const teamStats = useMemo(() => {
         const played = matches.filter(m => m.home_goals != null)
         if (!played.length) return []
@@ -616,7 +753,6 @@ function TeamsTab({ matches = [] }) {
             const hg = m.home_goals || 0
             const ag = m.away_goals || 0
 
-            // Home team
             stats[hName].played++
             stats[hName].gf += hg
             stats[hName].ga += ag
@@ -624,7 +760,6 @@ function TeamsTab({ matches = [] }) {
             else if (hg === ag) { stats[hName].drawn++; stats[hName].pts += 1 }
             else { stats[hName].lost++ }
 
-            // Away team
             stats[aName].played++
             stats[aName].gf += ag
             stats[aName].ga += hg

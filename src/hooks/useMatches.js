@@ -124,3 +124,25 @@ export function useMatchdays(leagueId) {
         enabled: true,
     })
 }
+
+// Group standings for tournament formats (World Cup, etc.)
+export function useGroupStandings(leagueId) {
+    return useQuery({
+        queryKey: ['group_standings', leagueId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('tournament_standings')
+                .select(`
+                    *,
+                    team:teams(id, name, short_name, logo_url)
+                `)
+                .eq('league_id', leagueId)
+                .order('group_name', { ascending: true })
+                .order('points', { ascending: false })
+                .order('goals_for', { ascending: false })
+            if (error) throw error
+            return data || []
+        },
+        enabled: !!leagueId,
+    })
+}

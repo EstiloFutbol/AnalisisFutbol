@@ -16,6 +16,10 @@ jobs:
   fetch-odds:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # Exposed at job level so steps can reference it in `if:` conditions.
+      # Secrets context is not allowed inside `if:` expressions.
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -43,7 +47,7 @@ jobs:
           ODDS_API_KEY:              ${{ secrets.ODDS_API_KEY }}
 
       - name: Sync match dates from football-data.org
-        if: ${{ secrets.FOOTBALL_DATA_API_KEY != '' }}
+        if: env.FOOTBALL_DATA_API_KEY != ''
         env:
           VITE_SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

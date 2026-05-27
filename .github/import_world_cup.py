@@ -160,22 +160,15 @@ def main():
     print(f"\n[3/4] Importing {len(matches)} matches...")
     ok = skip = 0
 
-    for m in matches:
-        stage    = m.get("stage", "")
-        group    = m.get("group")          # "GROUP_A" or None
-        api_md   = m.get("matchday")
+    # Separate group-stage and knockout matches for different upsert strategies
+    group_stage  = [m for m in matches if m.get("group")]
+    knockout_raw = [m for m in matches if not m.get("group")]
 
-        if group:
-            md         = api_md             # 1, 2, or 3
-            group_name = group.replace("GROUP_", "")
-        else:
-            md         = STAGE_MATCHDAY.get(stage)
-            group_name = None
-
-        if md is None:
-            print(f"  [!] Unknown stage '{stage}' — skipped")
-            skip += 1
-            continue
+    # ── Group-stage: upsert by (league_id, matchday, home_team_id, away_team_id) ──
+    for m in group_stage:
+        group    = m["group"]
+        md       = m.get("matchday")
+        group_name = group.replace("GROUP_", "")
 
         home_name = (m["homeTeam"].get("name") or "").strip() or None
         away_name = (m["awayTeam"].get("name") or "").strip() or None
@@ -205,27 +198,62 @@ def main():
             "away_team_id":  away_id,
         }
 
-        # Upsert: group-stage by team pair; knockout by date+matchday
-        if home_id and away_id:
-            existing_m = (sb.from_("matches").select("id")
-                          .eq("league_id", wc_league_id)
-                          .eq("matchday", md)
-                          .eq("home_team_id", home_id)
-                          .eq("away_team_id", away_id)
-                          .execute())
-        else:
-            existing_m = (sb.from_("matches").select("id")
-                          .eq("league_id", wc_league_id)
-                          .eq("matchday", md)
-                          .eq("match_date", match_date)
-                          .is_("home_team_id", "null")
-                          .execute())
+        existing_m = (sb.from_("matches").select("id")
+                      .eq("league_id", wc_league_id)
+                      .eq("matchday", md)
+                      .eq("home_team_id", home_id)
+                      .eq("away_team_id", away_id)
+                      .execute())
 
         if existing_m.data:
             sb.from_("matches").update(payload).eq("id", existing_m.data[0]["id"]).execute()
         else:
             sb.from_("matches").insert(payload).execute()
         ok += 1
+
+    # ── Knockout TBD slots: delete-and-replace strategy ──────────────────────
+    # Multiple games can share the same (matchday, match_date) so a unique-key
+    # lookup on that pair is ambiguous. Instead: delete all current TBD slots
+    # and re-insert from the API. Once teams are determined, their IDs will be
+    # filled in by sync_match_dates.py using the normal team-pair lookup.
+    knockout_to_insert = []
+    for m in knockout_raw:
+        stage = m.get("stage", "")
+        md    = STAGE_MATCHDAY.get(stage)
+        if md is None:
+            print(f"  [!] Unknown stage '{stage}' — skipped")
+            skip += 1
+            continue
+
+        home_name = (m["homeTeam"].get("name") or "").strip() or None
+        away_name = (m["awayTeam"].get("name") or "").strip() or None
+        home_id   = team_name_to_id.get(home_name) if home_name else None
+        away_id   = team_name_to_id.get(away_name) if away_name else None
+
+        utc_date = m.get("utcDate", "")
+        match_date, kick_off_time = utc_to_madrid(utc_date) if utc_date else (None, None)
+
+        knockout_to_insert.append({
+            "league_id":     wc_league_id,
+            "season":        WC_SEASON,
+            "matchday":      md,
+            "group_name":    None,
+            "match_date":    match_date,
+            "kick_off_time": kick_off_time,
+            "home_team_id":  home_id,
+            "away_team_id":  away_id,
+        })
+
+    if knockout_to_insert:
+        # Delete existing TBD slots; preserve rows that already have real teams
+        (sb.from_("matches").delete()
+           .eq("league_id", wc_league_id)
+           .gte("matchday", 4)
+           .is_("home_team_id", "null")
+           .execute())
+        for row in knockout_to_insert:
+            sb.from_("matches").insert(row).execute()
+            ok += 1
 
     print(f"  Done: {ok} matches upserted, {skip} skipped")
 

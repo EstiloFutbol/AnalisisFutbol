@@ -388,13 +388,13 @@ export default function Landing() {
                             {/* Help resources */}
                             <div className="flex flex-wrap gap-3 pt-2">
                                 <a
-                                    href="https://www.jugarbien.es"
+                                    href="https://www.ordenacionjuego.es/participantes-juego/juego-seguro/comportamientos-riesgo"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 transition-colors hover:bg-amber-500/20"
                                 >
                                     <BookOpen className="h-3.5 w-3.5" />
-                                    JugarBien.es
+                                    Juego Responsable
                                 </a>
                                 <a
                                     href="tel:900200225"

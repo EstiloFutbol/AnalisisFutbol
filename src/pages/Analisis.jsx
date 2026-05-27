@@ -1171,7 +1171,8 @@ function ModeloTab() {
                         Las predicciones son orientativas y no constituyen consejo financiero.
                         El rendimiento pasado no garantiza resultados futuros.
                         Las apuestas conllevan riesgo de pérdida. Juega con responsabilidad.
-                        Mayores de 18 años. Si tienes problemas con el juego, llama al <strong>900 200 225</strong> (JugarBien.es, gratuito y confidencial).
+                        Mayores de 18 años. Si tienes problemas con el juego, llama al <strong>900 200 225</strong> (gratuito y confidencial) o visita{' '}
+                        <a href="https://www.ordenacionjuego.es/participantes-juego/juego-seguro/comportamientos-riesgo" target="_blank" rel="noopener noreferrer" className="underline">ordenacionjuego.es</a>.
                     </p>
                 </div>
             </div>

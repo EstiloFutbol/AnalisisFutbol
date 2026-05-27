@@ -15,6 +15,7 @@ import Betting from '@/pages/Betting'
 
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { LeagueProvider } from '@/context/LeagueContext'
 import CookieConsent from '@/components/CookieConsent'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <HelmetProvider>
             <QueryClientProvider client={queryClient}>
                 <ThemeProvider>
+                    <LeagueProvider>
                     <AuthProvider>
                         <BrowserRouter>
                             <div className="min-h-screen bg-background">
@@ -69,6 +71,7 @@ function App() {
                             </div>
                         </BrowserRouter>
                     </AuthProvider>
+                    </LeagueProvider>
                 </ThemeProvider>
             </QueryClientProvider>
         </HelmetProvider>

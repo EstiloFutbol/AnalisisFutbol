@@ -292,8 +292,10 @@ def build_bk_rows(match_id, h2h, totals, btts):
 
 def detect_active_sport(sb):
     """
-    Returns ('wc', wc_league_id) when WC has matches within ±7 days.
+    Returns ('wc', wc_league_id) when WC has matches within ±30 days.
     Returns ('league', None) otherwise.
+    Extended from ±7 to ±30 days so odds are fetched in the weeks before
+    the tournament starts (bookmakers open WC markets 3-4 weeks in advance).
     Keeps the two competitions mutually exclusive to avoid duplicate API calls.
     """
     wc = sb.from_("leagues").select("id").eq("code", WC_LEAGUE_CODE).execute()
@@ -302,7 +304,7 @@ def detect_active_sport(sb):
 
     wc_id      = wc.data[0]["id"]
     window_lo  = (date.today() - timedelta(days=3)).isoformat()
-    window_hi  = (date.today() + timedelta(days=7)).isoformat()
+    window_hi  = (date.today() + timedelta(days=30)).isoformat()  # extended: 30 days ahead
 
     res = (sb.from_("matches").select("id")
            .eq("league_id", wc_id)
@@ -371,13 +373,14 @@ def main():
     if args.auto:
         do_scores = has_recent_matches(sb, league_id=league_id, season=season_key)
         days      = next_match_days_away(sb, league_id=league_id, season=season_key)
-        do_odds   = days is not None and 0 <= days <= 7
+        odds_window = 30 if mode == "wc" else 7  # WC odds available weeks in advance
+        do_odds   = days is not None and 0 <= days <= odds_window
 
         print("[AUTO] Endpoint check:")
         print(f"  Scores -> {'YES' if do_scores else 'NO — no matches in last 3 days'}")
-        if days is None:       print("  Odds   -> NO — no upcoming matches")
-        elif days > 7:         print(f"  Odds   -> NO — next match in {days}d (>7d window)")
-        else:                  print(f"  Odds   -> YES — next match in {days}d")
+        if days is None:                   print("  Odds   -> NO — no upcoming matches")
+        elif days > odds_window:           print(f"  Odds   -> NO — next match in {days}d (>{odds_window}d window)")
+        else:                              print(f"  Odds   -> YES — next match in {days}d")
 
         if not do_scores and not do_odds:
             print("[AUTO] Nothing to fetch today.")

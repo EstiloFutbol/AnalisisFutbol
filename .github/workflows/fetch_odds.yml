@@ -65,3 +65,14 @@ jobs:
         #   Odds    → called only if the next jornada starts within 7 days
         # A typical post-jornada day (results in, next game still a week out)
         # costs 1 call instead of 2. International breaks cost 0.
+
+      - name: Sync WC player stats
+        if: env.FOOTBALL_DATA_API_KEY != ''
+        env:
+          VITE_SUPABASE_URL:              ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FOOTBALL_DATA_API_KEY:          ${{ secrets.FOOTBALL_DATA_API_KEY }}
+        run: python .github/sync_wc_players.py
+        # Fetches lineups + scorers for all played WC matches that don't yet
+        # have player stats. Respects free-tier rate limit (6 s between calls).
+        # Silently skips if WC league is not in DB or no matches are played yet.

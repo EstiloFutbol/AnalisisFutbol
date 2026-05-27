@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useLeagueContext } from '@/context/LeagueContext'
 import { motion } from 'framer-motion'
 import { useMatches, useLeagues, useGroupStandings } from '@/hooks/useMatches'
 import { usePlayerLeaderboard } from '@/hooks/usePlayerStats'
@@ -110,6 +111,7 @@ const DASHBOARD_TABS = [
 
 export default function Dashboard() {
     const [searchParams, setSearchParams] = useSearchParams()
+    const { setActiveLeagueId: setGlobalLeagueId } = useLeagueContext()
     const { data: leagues = [] } = useLeagues()
 
     const selectedLeagueId = searchParams.get('league')
@@ -161,6 +163,11 @@ export default function Dashboard() {
             }, { replace: true })
         }
     }, [selectedLeagueId, defaultLeague, setSearchParams])
+
+    // Sync active league to global context so other pages (Analisis) remember it
+    useEffect(() => {
+        if (activeLeagueId) setGlobalLeagueId(parseInt(activeLeagueId, 10))
+    }, [activeLeagueId, setGlobalLeagueId])
 
     const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados' })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)

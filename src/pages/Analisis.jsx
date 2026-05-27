@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLeagueContext } from '@/context/LeagueContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Brain, TrendingUp, TrendingDown, Target, Database, ChevronDown, ChevronUp,
@@ -276,16 +277,49 @@ function PicksEmptyState() {
 // ─── Tab 1: Picks ─────────────────────────────────────────────────────────────
 
 function PicksTab() {
+    const { activeLeagueId: globalLeagueId } = useLeagueContext()
     const { data: leagues = [] } = useLeagues()
-    const laLigaLeagues = leagues.filter(l => l.code === 'PD' || l.code === null)
-    const defaultLeague = laLigaLeagues.find(l => l.is_default) || laLigaLeagues[0]
-    const [activeLeagueId, setActiveLeagueId] = useState(null)
-    const leagueId = activeLeagueId ?? defaultLeague?.id ?? null
 
-    const { data: matches = [], isLoading, error } = useMLPredictions({ leagueId, upcoming: true })
+    // Only La Liga leagues are valid for the ML model
+    const laLigaLeagues = leagues.filter(l => l.code === 'PD' || l.code === null)
+    const defaultLeague  = laLigaLeagues.find(l => l.is_default) || laLigaLeagues[0]
+
+    // Local pick: prefer the global choice if it's a La Liga league, else fall back to default
+    const [activeLeagueId, setActiveLeagueId] = useState(null)
+    const resolvedId = activeLeagueId
+        ?? (laLigaLeagues.some(l => l.id === globalLeagueId) ? globalLeagueId : null)
+        ?? defaultLeague?.id
+        ?? null
+
+    // Detect if the user arrived from WC context
+    const globalLeagueObj = leagues.find(l => l.id === globalLeagueId)
+    const isWCContext = globalLeagueObj?.code === 'WC'
+
+    const { data: matches = [], isLoading, error } = useMLPredictions({ leagueId: resolvedId, upcoming: true })
 
     return (
         <div className="space-y-6">
+            {/* La Liga only notice — shown when user came from WC */}
+            {isWCContext && (
+                <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 px-4 py-3 text-sm"
+                >
+                    <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                    <div>
+                        <p className="font-semibold text-blue-700 dark:text-blue-400">
+                            Picks IA — solo disponible para La Liga
+                        </p>
+                        <p className="text-xs text-blue-600/80 dark:text-blue-400/70 mt-0.5 leading-relaxed">
+                            El modelo de predicción fue entrenado exclusivamente con 5 temporadas de La Liga (2021-26).
+                            No existen datos suficientes para entrenar un modelo equivalente para el Mundial.
+                            Para datos del Mundial, usa la pestaña <strong>Explorar</strong>.
+                        </p>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Stats strip */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
                 {BACKTEST_STATS.map(({ label, value, sub, good }) => (
@@ -297,6 +331,14 @@ function PicksTab() {
                         <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>
                     </div>
                 ))}
+            </div>
+
+            {/* La Liga scope badge */}
+            <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    <ShieldCheck className="w-3 h-3" />
+                    Solo La Liga · Modelo entrenado con 1.899 partidos (2021–2026)
+                </span>
             </div>
 
             {/* ROI notice */}
@@ -314,7 +356,7 @@ function PicksTab() {
                 </div>
             </div>
 
-            {/* League selector */}
+            {/* La Liga season selector */}
             {laLigaLeagues.length > 1 && (
                 <div className="flex gap-2 flex-wrap">
                     {laLigaLeagues.map(l => (
@@ -322,7 +364,7 @@ function PicksTab() {
                             key={l.id}
                             onClick={() => setActiveLeagueId(l.id)}
                             className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors border ${
-                                (leagueId === l.id)
+                                (resolvedId === l.id)
                                     ? 'bg-primary text-primary-foreground border-primary'
                                     : 'bg-card text-muted-foreground border-border hover:border-primary/50'
                             }`}
@@ -357,6 +399,7 @@ function PicksTab() {
 // ─── Tab 2: Explorar ──────────────────────────────────────────────────────────
 
 function ExplorarTab() {
+    const { activeLeagueId: globalLeagueId } = useLeagueContext()
     const { data: matches = [], isLoading: loadingMatches } = useMatches()
     const { data: leagues = [] } = useLeagues()
     const { data: teams = [] } = useTeams()
@@ -366,10 +409,18 @@ function ExplorarTab() {
     const [yAxes, setYAxes] = useState(['total_goals'])
     const [aggregation, setAggregation] = useState('sum')
 
-    const [selectedLeague, setSelectedLeague] = useState('')
+    // Initialise league filter from global context (so WC stays selected when coming from Dashboard)
+    const [selectedLeague, setSelectedLeague] = useState(
+        () => globalLeagueId ? String(globalLeagueId) : ''
+    )
     const [selectedTeam, setSelectedTeam] = useState('')
     const [selectedReferee, setSelectedReferee] = useState('')
     const [selectedCoach, setSelectedCoach] = useState('')
+
+    // If global league changes while on this tab, update filter
+    useEffect(() => {
+        if (globalLeagueId) setSelectedLeague(String(globalLeagueId))
+    }, [globalLeagueId])
 
     const { referees, coaches } = useMemo(() => {
         const refs = new Set()

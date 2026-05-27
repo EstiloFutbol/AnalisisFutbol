@@ -13,6 +13,7 @@ import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
 import AIAssistant from '@/pages/AIAssistant'
+import MLPredictions from '@/pages/MLPredictions'
 
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
@@ -48,6 +49,10 @@ function App() {
                                         {/* AI Bet — Spanish SEO route */}
                                         <Route path="/ia-bet" element={<AIAssistant />} />
                                         <Route path="/ai" element={<Navigate to="/ia-bet" replace />} />
+
+                                        {/* ML Predictions — Spanish SEO route */}
+                                        <Route path="/predicciones" element={<MLPredictions />} />
+                                        <Route path="/ml-predictions" element={<Navigate to="/predicciones" replace />} />
 
                                         {/* Explorar — Spanish SEO route */}
                                         <Route path="/explorar" element={<SelfService />} />

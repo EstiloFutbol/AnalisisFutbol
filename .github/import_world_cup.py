@@ -128,8 +128,9 @@ def main():
         sb.from_("leagues").update(league_payload).eq("id", wc_league_id).execute()
         print(f"  Updated (id={wc_league_id})")
     else:
-        res = sb.from_("leagues").insert(league_payload).select("id").single().execute()
-        wc_league_id = res.data["id"]
+        sb.from_("leagues").insert(league_payload).execute()
+        res = sb.from_("leagues").select("id").eq("code", "WC").eq("season", WC_SEASON).execute()
+        wc_league_id = res.data[0]["id"]
         print(f"  Created (id={wc_league_id})")
 
     # ── 2. Teams ─────────────────────────────────────────────────────────────
@@ -149,8 +150,8 @@ def main():
             tid = existing_t.data[0]["id"]
             sb.from_("teams").update(payload).eq("id", tid).execute()
         else:
-            res = sb.from_("teams").insert(payload).select("id").single().execute()
-            tid = res.data["id"]
+            sb.from_("teams").insert(payload).execute()
+            tid = sb.from_("teams").select("id").eq("name", name).execute().data[0]["id"]
         team_name_to_id[name] = tid
 
     print(f"  Done: {len(team_name_to_id)} teams upserted")

@@ -12,6 +12,7 @@ import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
+import DataDeletion from '@/pages/DataDeletion'
 
 import { useState } from 'react'
 import { AuthProvider } from '@/context/AuthContext'
@@ -72,6 +73,7 @@ function App() {
                                         <Route path="/admin" element={<Admin />} />
                                         <Route path="/cuenta" element={<Account />} />
                                         <Route path="/account" element={<Navigate to="/cuenta" replace />} />
+                                        <Route path="/eliminar-datos" element={<DataDeletion />} />
 
                                         {/* Legacy route redirects */}
                                         <Route path="/matches" element={<Navigate to="/dashboard?tab=partidos" replace />} />

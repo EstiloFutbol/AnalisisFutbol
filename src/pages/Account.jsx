@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, ShieldCheck, LogOut, Pencil, Check, X, Loader2, KeyRound, Eye, EyeOff, ChevronDown } from 'lucide-react'
+import { User, Mail, ShieldCheck, LogOut, Pencil, Check, X, Loader2, KeyRound, Eye, EyeOff, ChevronDown, Trash2, AlertTriangle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 
@@ -47,6 +47,37 @@ export default function Account() {
     const [pwLoading, setPwLoading] = useState(false)
     const [pwError, setPwError] = useState(null)
     const [pwSuccess, setPwSuccess] = useState(false)
+
+    // ── Delete account ────────────────────────────────────────────────────────
+    const [deleteStep, setDeleteStep] = useState(0) // 0=hidden 1=confirm 2=loading 3=done
+    const [deleteError, setDeleteError] = useState(null)
+
+    const handleDeleteAccount = async () => {
+        setDeleteStep(2)
+        setDeleteError(null)
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json',
+                    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                },
+            }
+        )
+        const body = await res.json()
+        if (!res.ok) {
+            setDeleteError(body.error || 'No se pudo eliminar la cuenta.')
+            setDeleteStep(1)
+            return
+        }
+        // Clear local session (auth user is already deleted server-side)
+        await supabase.auth.signOut({ scope: 'local' })
+        setDeleteStep(3)
+        setTimeout(() => navigate('/'), 3000)
+    }
 
     const handleChangePassword = async () => {
         setPwError(null)
@@ -346,6 +377,66 @@ export default function Account() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
+            {/* ── Delete account card ─────────────────────────────────────── */}
+            <div className="rounded-2xl border border-red-500/20 bg-card/80 shadow-lg backdrop-blur-sm overflow-hidden">
+                <div className="flex items-center gap-3 border-b border-red-500/10 px-6 py-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500/10">
+                        <Trash2 className="h-4 w-4 text-red-400" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">Eliminar cuenta</p>
+                        <p className="text-xs text-muted-foreground">Esta acción no se puede deshacer</p>
+                    </div>
+                </div>
+
+                <div className="px-6 py-5 space-y-4">
+                    {deleteStep === 3 ? (
+                        <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-500">
+                            <Check className="h-4 w-4 shrink-0" />
+                            Cuenta eliminada. Te hemos enviado un email para eliminar tus datos completamente. Redirigiendo...
+                        </div>
+                    ) : deleteStep === 0 ? (
+                        <button
+                            onClick={() => setDeleteStep(1)}
+                            className="flex items-center gap-2 text-sm font-medium text-red-400 hover:text-red-300 transition-colors"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Eliminar mi cuenta
+                        </button>
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3">
+                                <AlertTriangle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+                                <p className="text-sm text-red-400">
+                                    Tu cuenta será eliminada inmediatamente. Guardaremos tu email en nuestros registros — recibirás un enlace para borrar también esos datos si lo deseas.
+                                </p>
+                            </div>
+
+                            {deleteError && (
+                                <p className="text-xs text-red-400">{deleteError}</p>
+                            )}
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={deleteStep === 2}
+                                    className="flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                                >
+                                    {deleteStep === 2 && <Loader2 className="h-4 w-4 animate-spin" />}
+                                    Confirmar eliminación
+                                </button>
+                                <button
+                                    onClick={() => { setDeleteStep(0); setDeleteError(null) }}
+                                    disabled={deleteStep === 2}
+                                    className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </motion.div>
     )

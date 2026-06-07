@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -85,8 +85,22 @@ export default function Login() {
     // Where to go after login (if came from a protected page)
     const from = location.state?.from || '/'
 
+    // Track if Supabase fired PASSWORD_RECOVERY so we redirect to /cuenta
+    // instead of the normal post-login destination.
+    const recoveryHandled = useRef(false)
+
     useEffect(() => {
-        if (session) navigate(from, { replace: true })
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                recoveryHandled.current = true
+                navigate('/cuenta', { replace: true, state: { recovery: true } })
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [navigate])
+
+    useEffect(() => {
+        if (session && !recoveryHandled.current) navigate(from, { replace: true })
     }, [session, navigate, from])
 
     const clearForm = () => {

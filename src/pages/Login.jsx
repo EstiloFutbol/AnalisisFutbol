@@ -102,11 +102,6 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault()
         setError(null)
-
-        // Client-side password check (saves a round-trip for obvious mistakes)
-        const pwErr = validatePassword(password)
-        if (pwErr) { setError(pwErr); return }
-
         setLoading(true)
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) {
@@ -156,7 +151,7 @@ export default function Login() {
         setError(null)
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/login`
+            redirectTo: `${window.location.origin}/iniciar-sesion`
         })
 
         setLoading(false)

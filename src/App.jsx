@@ -13,12 +13,22 @@ import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
 
+import { useState } from 'react'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
 import { LeagueProvider } from '@/context/LeagueContext'
 import CookieConsent from '@/components/CookieConsent'
 
+const COOKIE_KEY = 'af_cookie_consent'
+
 function App() {
+    // When the cookie banner is visible it sits fixed at the bottom and can
+    // cover form submit buttons.  Add pb-96 to <main> so the page is tall
+    // enough to scroll the button above the banner.
+    const [cookieBannerShown, setCookieBannerShown] = useState(
+        () => { try { return !localStorage.getItem(COOKIE_KEY) } catch { return false } }
+    )
+
     return (
         <HelmetProvider>
             <QueryClientProvider client={queryClient}>
@@ -28,8 +38,8 @@ function App() {
                         <BrowserRouter>
                             <div className="min-h-screen bg-background">
                                 <Navbar />
-                                <CookieConsent />
-                                <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                                <CookieConsent onConsent={() => setCookieBannerShown(false)} />
+                                <main className={`mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8${cookieBannerShown ? ' pb-96' : ''}`}>
                                     <Routes>
                                         {/* Landing page */}
                                         <Route path="/" element={<Landing />} />

@@ -23,7 +23,7 @@ const COOKIE_CATEGORIES = {
     },
 }
 
-export default function CookieConsent() {
+export default function CookieConsent({ onConsent }) {
     const [showBanner, setShowBanner] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
     const [consent, setConsent] = useState(null)
@@ -47,6 +47,7 @@ export default function CookieConsent() {
         setConsent(consentData)
         setShowBanner(false)
         setShowSettings(false)
+        onConsent?.()
 
         // If analytics cookies are accepted, initialize analytics
         if (preferences.analytics) {

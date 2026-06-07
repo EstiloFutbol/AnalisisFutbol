@@ -26,15 +26,29 @@ function sanitizeDisplayName(name) {
         .slice(0, 30)
 }
 
-// Translate Supabase errors into friendly Spanish
+// Translate Supabase errors into friendly Spanish.
+// Uses lowercase matching so we're not sensitive to Supabase message casing changes.
 function translateError(msg) {
     if (!msg) return 'Ha ocurrido un error. Inténtalo de nuevo.'
-    if (msg.includes('Invalid login credentials')) return 'Email o contraseña incorrectos.'
-    if (msg.includes('Email not confirmed')) return 'Por favor, confirma tu email antes de entrar. Revisa tu bandeja de entrada.'
-    if (msg.includes('User already registered')) return 'Este email ya está registrado. Inicia sesión.'
-    if (msg.includes('Password should be at least')) return 'La contraseña debe tener al menos 8 caracteres.'
-    if (msg.includes('rate limit') || msg.includes('too many')) return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'
-    if (msg.includes('Unable to validate email')) return 'El formato del email no es válido.'
+    const m = msg.toLowerCase()
+    if (m.includes('invalid login credentials') || m.includes('invalid credentials'))
+        return 'Email o contraseña incorrectos.'
+    if (m.includes('email not confirmed'))
+        return 'Por favor, confirma tu email antes de entrar. Revisa tu bandeja de entrada.'
+    if (m.includes('user already registered') || m.includes('already registered'))
+        return 'Este email ya está registrado. Inicia sesión.'
+    if (m.includes('password should be at least') || m.includes('password is too short'))
+        return 'La contraseña debe tener al menos 8 caracteres.'
+    if (m.includes('rate limit') || m.includes('too many'))
+        return 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.'
+    if (m.includes('unable to validate email') || m.includes('invalid email') || m.includes('email address is invalid'))
+        return 'El formato del email no es válido.'
+    if (m.includes('signups not allowed') || (m.includes('signup') && m.includes('disabled')))
+        return 'El registro está temporalmente desactivado.'
+    if (m.includes('sending') || m.includes('confirmation email') || m.includes('smtp'))
+        return 'No se pudo enviar el email de confirmación. Inténtalo más tarde.'
+    // Log unmatched errors so they appear in browser DevTools
+    console.error('[Auth error]', msg)
     return 'Ha ocurrido un error. Inténtalo de nuevo.'
 }
 
@@ -137,7 +151,7 @@ export default function Login() {
         const safeName = sanitizeDisplayName(displayName) || email.split('@')[0].slice(0, 30)
 
         setLoading(true)
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
@@ -149,7 +163,12 @@ export default function Login() {
 
         setLoading(false)
         if (error) {
+            console.error('[Signup error]', error.message)
             setError(translateError(error.message))
+        } else if (data.user?.identities?.length === 0) {
+            // Supabase returns a fake success for existing confirmed emails (anti-enumeration).
+            // Detectable via an empty identities array.
+            setError('Este email ya tiene una cuenta. Prueba a iniciar sesión o recupera tu contraseña.')
         } else {
             setSuccessMessage(`Hemos enviado un email de confirmación a ${email}. Revisa tu bandeja de entrada (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.`)
         }

@@ -45,8 +45,8 @@ function translateError(msg) {
         return 'El formato del email no es válido.'
     if (m.includes('signups not allowed') || (m.includes('signup') && m.includes('disabled')))
         return 'El registro está temporalmente desactivado.'
-    if (m.includes('sending') || m.includes('confirmation email') || m.includes('smtp'))
-        return 'No se pudo enviar el email de confirmación. Inténtalo más tarde.'
+    if (m.includes('smtp') || m.includes('confirmation email') || m.includes('error sending') || m.includes('failed to send') || m.includes('unable to send'))
+        return 'No se pudo enviar el email. ¿Ya tienes cuenta? Prueba a iniciar sesión o recuperar tu contraseña.'
     // Log unmatched errors so they appear in browser DevTools
     console.error('[Auth error]', msg)
     return 'Ha ocurrido un error. Inténtalo de nuevo.'

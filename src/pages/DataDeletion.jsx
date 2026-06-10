@@ -30,9 +30,9 @@ export default function DataDeletion() {
                     body: JSON.stringify({ token }),
                 }
             )
-            const body = await res.json()
+            const body = await res.json().catch(() => ({}))
             if (!res.ok) {
-                setErrorMsg(body.error || 'No se pudieron eliminar los datos.')
+                setErrorMsg(body.error || body.message || `Error ${res.status}. Comprueba que la función está desplegada.`)
                 setStep('error')
             } else {
                 setStep('success')

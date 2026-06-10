@@ -55,28 +55,40 @@ export default function Account() {
     const handleDeleteAccount = async () => {
         setDeleteStep(2)
         setDeleteError(null)
-        const { data: { session } } = await supabase.auth.getSession()
-        const res = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${session?.access_token}`,
-                    'Content-Type': 'application/json',
-                    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-                },
+        try {
+            const { data: { session } } = await supabase.auth.getSession()
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 15000)
+            const res = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+                {
+                    method: 'POST',
+                    signal: controller.signal,
+                    headers: {
+                        Authorization: `Bearer ${session?.access_token}`,
+                        'Content-Type': 'application/json',
+                        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                    },
+                }
+            )
+            clearTimeout(timeout)
+            const body = await res.json()
+            if (!res.ok) {
+                setDeleteError(body.error || 'No se pudo eliminar la cuenta.')
+                setDeleteStep(1)
+                return
             }
-        )
-        const body = await res.json()
-        if (!res.ok) {
-            setDeleteError(body.error || 'No se pudo eliminar la cuenta.')
+            // Clear local session (auth user is already deleted server-side)
+            await supabase.auth.signOut({ scope: 'local' })
+            setDeleteStep(3)
+            setTimeout(() => navigate('/'), 3000)
+        } catch (err) {
+            const msg = err.name === 'AbortError'
+                ? 'La solicitud tardó demasiado. Comprueba tu conexión e inténtalo de nuevo.'
+                : 'Error de red. Inténtalo de nuevo.'
+            setDeleteError(msg)
             setDeleteStep(1)
-            return
         }
-        // Clear local session (auth user is already deleted server-side)
-        await supabase.auth.signOut({ scope: 'local' })
-        setDeleteStep(3)
-        setTimeout(() => navigate('/'), 3000)
     }
 
     const handleChangePassword = async () => {

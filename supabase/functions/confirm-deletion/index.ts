@@ -5,32 +5,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
-}
-
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
-  if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-  let token: string | undefined
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  let token
   try {
     const body = await req.json()
     token = body.token
-  } catch {
-    return json({ error: 'Invalid request body' }, 400)
+  } catch (_) {
+    return new Response(JSON.stringify({ error: 'Invalid request body' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
-  if (!token) return json({ error: 'Token requerido.' }, 400)
+  if (!token) {
+    return new Response(JSON.stringify({ error: 'Token requerido.' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const adminClient = createClient(supabaseUrl, serviceKey)
 
-  // Look up the token
   const { data: deletion, error: lookupError } = await adminClient
     .from('account_deletions')
     .select('*')
@@ -38,26 +46,33 @@ Deno.serve(async (req) => {
     .single()
 
   if (lookupError || !deletion) {
-    return json({ error: 'Enlace inválido o no encontrado.' }, 404)
+    console.error('Token lookup error:', lookupError)
+    return new Response(JSON.stringify({ error: 'Enlace inválido o no encontrado.' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   if (deletion.fully_deleted) {
-    return json({ error: 'Los datos ya fueron eliminados anteriormente.' }, 400)
+    return new Response(JSON.stringify({ error: 'Los datos ya fueron eliminados anteriormente.' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   if (new Date(deletion.token_expires_at) < new Date()) {
-    return json({ error: 'El enlace ha caducado (válido 7 días).' }, 400)
+    return new Response(JSON.stringify({ error: 'El enlace ha caducado (válido 7 días).' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 
   const userId = deletion.user_id
 
-  // Delete all remaining user data (auth user was already deleted in step 1;
-  // some tables cascade automatically, but we delete explicitly to be safe).
   await adminClient.from('chat_usage').delete().eq('user_id', userId)
   await adminClient.from('real_bets').delete().eq('user_id', userId)
   await adminClient.from('user_profiles').delete().eq('id', userId)
 
-  // Mark the deletion record as fully done (keeps audit trail, removes email value)
   await adminClient
     .from('account_deletions')
     .update({
@@ -67,5 +82,8 @@ Deno.serve(async (req) => {
     })
     .eq('deletion_token', token)
 
-  return json({ success: true })
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
 })

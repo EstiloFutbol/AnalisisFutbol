@@ -230,7 +230,7 @@ def compute_referee_stats(dry_run: bool = False):
             "avg_home_fouls":          avg_hf,
             "avg_away_fouls":          avg_af,
             "avg_total_fouls":         avg_tf,
-            "last_updated":            now_iso,
+            "last_computed":           now_iso,
         })
 
     # ── 6. Upsert ─────────────────────────────────────────────────────────────

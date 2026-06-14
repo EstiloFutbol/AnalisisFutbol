@@ -117,21 +117,30 @@ def compute_elo(dry_run: bool = False):
 
     # ── 1. Fetch all played matches ordered chronologically ───────────────────
     print("[DB] Fetching played matches...")
-    raw = (
-        sb.from_("matches")
-        .select(
-            "id, match_date, league_id, matchday, "
-            "home_team_id, away_team_id, "
-            "home_goals, away_goals, "
-            "home_coach, away_coach"
+    raw = []
+    page_size = 1000
+    offset = 0
+    while True:
+        chunk = (
+            sb.from_("matches")
+            .select(
+                "id, match_date, league_id, matchday, "
+                "home_team_id, away_team_id, "
+                "home_goals, away_goals, "
+                "home_coach, away_coach"
+            )
+            .not_.is_("home_goals", "null")
+            .not_.is_("away_goals", "null")
+            .order("match_date", desc=False)
+            .order("id", desc=False)
+            .range(offset, offset + page_size - 1)
+            .execute()
+            .data
         )
-        .not_.is_("home_goals", "null")
-        .not_.is_("away_goals", "null")
-        .order("match_date", desc=False)
-        .order("id", desc=False)
-        .execute()
-        .data
-    )
+        raw.extend(chunk)
+        if len(chunk) < page_size:
+            break
+        offset += page_size
     print(f"[INFO] {len(raw)} played matches fetched")
 
     # ── 2. Initialise state ───────────────────────────────────────────────────

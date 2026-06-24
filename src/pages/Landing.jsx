@@ -178,20 +178,37 @@ function CompactMatchCard({ match }) {
 
 function TodayMatchesSection() {
     const { data, isLoading } = useTodayMatches()
-    const [tab, setTab] = useState('today')
 
     const hasToday     = (data?.today?.length     || 0) > 0
     const hasYesterday = (data?.yesterday?.length || 0) > 0
+    const hasTomorrow  = (data?.tomorrow?.length  || 0) > 0
 
-    if (isLoading || (!hasToday && !hasYesterday)) return null
+    // Default to whichever tab has content, preferring today → tomorrow → yesterday
+    const defaultTab = hasToday ? 'today' : hasTomorrow ? 'tomorrow' : 'yesterday'
+    const [tab, setTab] = useState(defaultTab)
 
-    const matches = tab === 'today' ? (data?.today || []) : (data?.yesterday || [])
+    if (isLoading || (!hasToday && !hasYesterday && !hasTomorrow)) return null
+
+    const matchesMap = {
+        today:     data?.today     || [],
+        yesterday: data?.yesterday || [],
+        tomorrow:  data?.tomorrow  || [],
+    }
+    const matches = matchesMap[tab] || []
 
     const dayLabel = (dateStr) => {
         if (!dateStr) return ''
         const [y, m, d] = dateStr.split('-')
         return new Date(+y, +m - 1, +d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
     }
+
+    const tabs = [
+        { id: 'yesterday', label: 'Ayer',   icon: CheckCircle2, count: data?.yesterday?.length || 0, show: hasYesterday },
+        { id: 'today',     label: 'Hoy',    icon: Clock,        count: data?.today?.length     || 0, show: hasToday     },
+        { id: 'tomorrow',  label: 'Mañana', icon: CalendarDays, count: data?.tomorrow?.length  || 0, show: hasTomorrow  },
+    ]
+
+    const activeDateStr = { today: data?.todayStr, yesterday: data?.yesterdayStr, tomorrow: data?.tomorrowStr }[tab]
 
     return (
         <motion.section
@@ -208,46 +225,34 @@ function TodayMatchesSection() {
                     <p className="text-xs text-muted-foreground">La Liga · FIFA World Cup 2026</p>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
-                    {hasToday && (
+                    {tabs.filter(t => t.show).map(({ id, label, icon: Icon, count }) => (
                         <button
-                            onClick={() => setTab('today')}
-                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${tab === 'today'
+                            key={id}
+                            onClick={() => setTab(id)}
+                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${tab === id
                                 ? 'border-primary/40 bg-primary/10 text-primary'
-                                : 'border-border/50 text-muted-foreground hover:border-border'
+                                : 'border-border/50 text-muted-foreground hover:border-border hover:text-foreground'
                             }`}
                         >
-                            <Clock className="h-3.5 w-3.5" />
-                            Hoy
-                            <span className="rounded-full bg-current/10 px-1 tabular-nums">{data.today.length}</span>
+                            <Icon className="h-3.5 w-3.5" />
+                            {label}
+                            <span className="tabular-nums">{count}</span>
                         </button>
-                    )}
-                    {hasYesterday && (
-                        <button
-                            onClick={() => setTab('yesterday')}
-                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${tab === 'yesterday'
-                                ? 'border-primary/40 bg-primary/10 text-primary'
-                                : 'border-border/50 text-muted-foreground hover:border-border'
-                            }`}
-                        >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Ayer
-                            <span className="rounded-full bg-current/10 px-1 tabular-nums">{data.yesterday.length}</span>
-                        </button>
-                    )}
+                    ))}
                 </div>
             </div>
 
             {/* Date label */}
-            {data && (
+            {activeDateStr && (
                 <p className="text-[11px] font-semibold capitalize text-muted-foreground/60">
-                    {dayLabel(tab === 'today' ? data.todayStr : data.yesterdayStr)}
+                    {dayLabel(activeDateStr)}
                 </p>
             )}
 
             {/* Match cards grid */}
             {matches.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                    No hay partidos {tab === 'today' ? 'hoy' : 'ayer'}.
+                    No hay partidos programados.
                 </p>
             ) : (
                 <div className="grid gap-2 sm:grid-cols-2">

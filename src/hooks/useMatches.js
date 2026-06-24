@@ -125,15 +125,17 @@ export function useMatchdays(leagueId) {
     })
 }
 
-// Today's + yesterday's matches across La Liga 2025-26 (id 2) and WC 2026 (id 12)
+// Today's, yesterday's and tomorrow's matches across La Liga 2025-26 (id 2) and WC 2026 (id 12)
 export function useTodayMatches() {
     return useQuery({
-        queryKey: ['matches-today-yesterday'],
+        queryKey: ['matches-today-yesterday-tomorrow'],
         queryFn: async () => {
-            const now       = new Date()
-            const todayStr  = now.toLocaleDateString('sv-SE')  // YYYY-MM-DD in local tz
-            const yest      = new Date(now - 86_400_000)
-            const yesterdayStr = yest.toLocaleDateString('sv-SE')
+            const now           = new Date()
+            const todayStr      = now.toLocaleDateString('sv-SE')  // YYYY-MM-DD in local tz
+            const yest          = new Date(now - 86_400_000)
+            const tom           = new Date(now + 86_400_000)
+            const yesterdayStr  = yest.toLocaleDateString('sv-SE')
+            const tomorrowStr   = tom.toLocaleDateString('sv-SE')
 
             const { data, error } = await supabase
                 .from('matches')
@@ -145,7 +147,7 @@ export function useTodayMatches() {
                     league:leagues(id, code, name)
                 `)
                 .in('league_id', [2, 12])
-                .in('match_date', [todayStr, yesterdayStr])
+                .in('match_date', [yesterdayStr, todayStr, tomorrowStr])
                 .not('home_team_id', 'is', null)
                 .not('away_team_id', 'is', null)
                 .order('kick_off_time', { ascending: true })
@@ -155,8 +157,10 @@ export function useTodayMatches() {
             return {
                 todayStr,
                 yesterdayStr,
+                tomorrowStr,
                 today:     rows.filter(m => m.match_date === todayStr),
                 yesterday: rows.filter(m => m.match_date === yesterdayStr),
+                tomorrow:  rows.filter(m => m.match_date === tomorrowStr),
             }
         },
         staleTime: 3 * 60_000,

@@ -370,7 +370,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── Tab Content ── */}
-            {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} />}
+            {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} leagueObj={activeLeagueObj} />}
             {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
             {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
             {activeTab === 'clasificacion' && <TeamsTab matches={matches} leagueObj={activeLeagueObj} activeLeagueId={activeLeagueId} />}
@@ -438,8 +438,9 @@ const MARKET_TABS = [
     { id: 'especiales', label: 'Especiales' },
 ]
 
-function MercadosContent({ s, matches }) {
+function MercadosContent({ s, matches, leagueObj }) {
     const [activeMarket, setActiveMarket] = useState('resultado')
+    const isWC = leagueObj?.code === 'WC'
 
     if (!s) return (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/50 py-32 text-center">
@@ -492,8 +493,8 @@ function MercadosContent({ s, matches }) {
                             <ProbRow label="Doble oportunidad 1X" pctVal={pct(s.x1, n)} count={s.x1} total={n} />
                             <ProbRow label="Doble oportunidad X2" pctVal={pct(s.x2, n)} count={s.x2} total={n} />
                             <ProbRow label="Doble oportunidad 12" pctVal={pct(s.homeWins + s.awayWins, n)} count={s.homeWins + s.awayWins} total={n} />
-                            <ProbRow label="Local anota primero" pctVal={pct(s.homeScoresFirst, n)} count={s.homeScoresFirst} total={n} />
-                            <ProbRow label="Visitante anota primero" pctVal={pct(s.awayScoresFirst, n)} count={s.awayScoresFirst} total={n} />
+                            {!isWC && <ProbRow label="Local anota primero" pctVal={pct(s.homeScoresFirst, n)} count={s.homeScoresFirst} total={n} />}
+                            {!isWC && <ProbRow label="Visitante anota primero" pctVal={pct(s.awayScoresFirst, n)} count={s.awayScoresFirst} total={n} />}
                         </div>
                     )}
 
@@ -577,18 +578,18 @@ function MercadosContent({ s, matches }) {
                                 count={s.fgOver60}
                                 total={s.firstGoalMinsCount}
                             />
-                            <ProbRow
+                            {!isWC && <ProbRow
                                 label="Local anota primero"
                                 pctVal={pct(s.homeScoresFirst, n)}
                                 count={s.homeScoresFirst}
                                 total={n}
-                            />
-                            <ProbRow
+                            />}
+                            {!isWC && <ProbRow
                                 label="Visitante anota primero"
                                 pctVal={pct(s.awayScoresFirst, n)}
                                 count={s.awayScoresFirst}
                                 total={n}
-                            />
+                            />}
                             <ProbRow label="Avg goles 1a parte" pctVal={s.avgHtGoals} isNumStat />
                         </div>
                     )}

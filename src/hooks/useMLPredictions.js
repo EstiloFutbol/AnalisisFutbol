@@ -23,6 +23,7 @@ export function useMLPredictions({ leagueId = null, upcoming = true } = {}) {
                     away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url)
                 `)
                 .order('match_date', { ascending: true })
+                .order('kick_off_time', { ascending: true })
 
             if (leagueId) matchQuery = matchQuery.eq('league_id', leagueId)
             if (upcoming)  matchQuery = matchQuery.is('home_goals', null)

@@ -30,6 +30,7 @@ export function useMatches(leagueId, { playedOnly = false } = {}) {
                     referee_data:referees(id, name)
                 `)
                 .order('match_date', { ascending: false })
+                .order('kick_off_time', { ascending: true })
 
             if (leagueId) {
                 query = query.eq('league_id', leagueId)

@@ -41,7 +41,7 @@ export function useBettableMatches(leagueId) {
                 .not('draw_odds', 'is', null)
                 .not('away_odds', 'is', null)
                 .is('home_goals', null)            // only unplayed matches
-                .order('matchday', { ascending: true })
+                .order('match_date', { ascending: true })
                 .order('kick_off_time', { ascending: true })
 
             if (leagueId) q = q.eq('league_id', leagueId)
@@ -119,6 +119,7 @@ export function useMatchesByJornada(leagueId, season, matchday) {
                 .eq('season', season)
                 .eq('matchday', Number(matchday))
                 .order('match_date', { ascending: true })
+                .order('kick_off_time', { ascending: true })
             if (error) throw error
             return data || []
         },

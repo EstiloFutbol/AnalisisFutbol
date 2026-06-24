@@ -101,6 +101,34 @@ def normalize(name: str, team_map: dict) -> str:
     return team_map.get(name.strip(), name.strip()) if name else ""
 
 
+def load_referees(sb) -> dict:
+    """Return lowercase_name → referee_id for all referees in DB."""
+    rows = sb.from_("referees").select("id,name").execute().data
+    return {r["name"].strip().lower(): r["id"] for r in rows if r.get("name")}
+
+
+def _get_or_create_referee(sb, raw_name: str, db_referees: dict, dry_run: bool):
+    """Look up referee by name (case-insensitive). Insert if missing. Returns referee_id or None."""
+    if not raw_name:
+        return None
+    name = raw_name.strip()
+    key  = name.lower()
+    if key in db_referees:
+        return db_referees[key]
+    if dry_run:
+        print(f"    [DRY-RUN] Would insert new referee: '{name}'")
+        return None
+    try:
+        result = sb.from_("referees").insert({"name": name}).execute()
+        new_id = result.data[0]["id"]
+        db_referees[key] = new_id
+        print(f"    [DB] New referee inserted: '{name}' (id={new_id})")
+        return new_id
+    except Exception as e:
+        print(f"    [!] Could not insert referee '{name}': {e}")
+        return None
+
+
 def recalculate_wc_standings(sb, league_id: int) -> int:
     """Recompute group standings from all played WC group-stage results."""
     rows = (sb.from_("matches")
@@ -156,7 +184,7 @@ def recalculate_wc_standings(sb, league_id: int) -> int:
 
 # ── Per-competition sync ──────────────────────────────────────────────────────
 
-def sync_competition(sb, comp: dict, args, summary: list):
+def sync_competition(sb, comp: dict, args, summary: list, db_referees: dict):
     code      = comp["code"]
     fd_season = comp["fd_season"]
     team_map  = comp["team_map"]
@@ -189,7 +217,7 @@ def sync_competition(sb, comp: dict, args, summary: list):
 
     # Load DB state for this league
     db_rows = (sb.from_("matches")
-               .select("id,matchday,home_team_id,away_team_id,match_date,kick_off_time,home_goals,away_goals")
+               .select("id,matchday,home_team_id,away_team_id,match_date,kick_off_time,home_goals,away_goals,referee_id,referee")
                .eq("league_id", league_id)
                .execute().data)
     db_teams = {t["name"]: t["id"]
@@ -244,6 +272,17 @@ def sync_competition(sb, comp: dict, args, summary: list):
                 payload["home_goals"] = hg
                 payload["away_goals"] = ag
                 notes.append(f"score {hg}-{ag}")
+
+        # Referee — take the first entry with type REFEREE from the API
+        api_refs   = m.get("referees") or []
+        main_ref   = next((r for r in api_refs if r.get("type") == "REFEREE"), None)
+        ref_name   = (main_ref["name"].strip() if main_ref else None)
+        if ref_name and ref_name != db_row.get("referee"):
+            ref_id = _get_or_create_referee(sb, ref_name, db_referees, args.preview)
+            payload["referee"] = ref_name
+            if ref_id and ref_id != db_row.get("referee_id"):
+                payload["referee_id"] = ref_id
+            notes.append(f"referee -> {ref_name}")
 
         if payload:
             updates.append({
@@ -312,12 +351,14 @@ def main():
         print("[ERROR] FOOTBALL_DATA_API_KEY not set.")
         sys.exit(1)
 
-    sb      = create_client(SUPABASE_URL, SUPABASE_KEY)
-    summary = []
+    sb          = create_client(SUPABASE_URL, SUPABASE_KEY)
+    summary     = []
+    db_referees = load_referees(sb)
+    print(f"[DB] {len(db_referees)} referees loaded")
 
     for comp in COMPETITIONS:
         try:
-            sync_competition(sb, comp, args, summary)
+            sync_competition(sb, comp, args, summary, db_referees)
         except Exception as e:
             print(f"\n[ERROR] {comp['code']}: {e}")
             summary.append(f"{comp['code']}: ERROR — {e}")

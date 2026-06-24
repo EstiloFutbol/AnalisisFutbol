@@ -1,10 +1,27 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
     BarChart3, Trophy, Bot, Search, TrendingUp, Shield,
-    ArrowRight, Activity, Heart, AlertTriangle, BookOpen, Phone
+    ArrowRight, Activity, Heart, AlertTriangle, BookOpen, Phone,
+    CalendarDays, Globe, Clock, CheckCircle2
 } from 'lucide-react'
 import SEO from '@/components/SEO'
+import { useTodayMatches } from '@/hooks/useMatches'
+
+const wcStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: 'FIFA World Cup 2026',
+    alternateName: ['Mundial 2026', 'Copa del Mundo FIFA 2026', 'World Cup 2026'],
+    description: 'Clasificación, partidos y estadísticas del FIFA World Cup 2026 — Estados Unidos, Canadá y México',
+    startDate: '2026-06-11',
+    endDate: '2026-07-19',
+    location: { '@type': 'Place', name: 'Estados Unidos, Canadá y México' },
+    organizer: { '@type': 'Organization', name: 'FIFA' },
+    sport: 'Fútbol',
+    url: 'https://analisisfutbol.com/dashboard?tab=clasificacion&league=12',
+}
 
 const features = [
     {
@@ -42,10 +59,10 @@ const features = [
 ]
 
 const stats = [
-    { value: '+380', label: 'Partidos analizados' },
-    { value: '7',    label: 'Mercados de apuestas' },
-    { value: '99%',  label: 'Datos verificados' },
-    { value: 'IA',   label: 'Asistente inteligente' },
+    { value: '104',    label: 'Partidos del Mundial 2026' },
+    { value: '32',     label: 'Selecciones clasificadas' },
+    { value: '+1.900', label: 'Partidos históricos La Liga' },
+    { value: 'IA',     label: 'Asistente inteligente' },
 ]
 
 const colorMap = {
@@ -85,13 +102,180 @@ const stagger = {
     show:   { transition: { staggerChildren: 0.12 } },
 }
 
+// ── Compact match card (used in the Today section) ───────────────────────────
+
+function TeamLogo({ team }) {
+    if (team?.logo_url) {
+        return (
+            <img
+                src={team.logo_url}
+                alt={team.short_name || team.name}
+                className="h-6 w-6 rounded-full object-contain"
+                onError={e => { e.target.style.display = 'none' }}
+            />
+        )
+    }
+    return (
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-[9px] font-bold text-muted-foreground">
+            {(team?.short_name || team?.name || '?').slice(0, 3).toUpperCase()}
+        </div>
+    )
+}
+
+function CompactMatchCard({ match }) {
+    const isPlayed = match.home_goals !== null && match.away_goals !== null
+    const isWC     = match.league?.code === 'WC'
+    const homeName = match.home_team?.short_name || match.home_team?.name || '?'
+    const awayName = match.away_team?.short_name || match.away_team?.name || '?'
+
+    return (
+        <Link
+            to={`/partido/${match.id}`}
+            className="group flex items-center gap-3 rounded-xl border border-border/50 bg-card px-4 py-3 transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5"
+        >
+            {/* League badge */}
+            <span
+                className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest"
+                style={isWC
+                    ? { background: 'rgba(40,54,24,0.15)', color: '#606c38' }
+                    : { background: 'rgba(188,108,37,0.12)', color: '#bc6c25' }
+                }
+            >
+                {isWC ? (match.group_name ? `Gr. ${match.group_name}` : 'WC') : `J${match.matchday}`}
+            </span>
+
+            {/* Home team */}
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
+                <span className="truncate text-sm font-bold text-foreground">{homeName}</span>
+                <TeamLogo team={match.home_team} />
+            </div>
+
+            {/* Score or time */}
+            <div className="shrink-0 w-16 text-center">
+                {isPlayed ? (
+                    <span className="text-base font-black tabular-nums text-foreground">
+                        {match.home_goals} – {match.away_goals}
+                    </span>
+                ) : (
+                    <span className="text-xs font-bold text-muted-foreground">
+                        {match.kick_off_time ? match.kick_off_time.slice(0, 5) : '–:––'}
+                    </span>
+                )}
+            </div>
+
+            {/* Away team */}
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                <TeamLogo team={match.away_team} />
+                <span className="truncate text-sm font-bold text-foreground">{awayName}</span>
+            </div>
+
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+    )
+}
+
+// ── Today / Yesterday section ─────────────────────────────────────────────────
+
+function TodayMatchesSection() {
+    const { data, isLoading } = useTodayMatches()
+    const [tab, setTab] = useState('today')
+
+    const hasToday     = (data?.today?.length     || 0) > 0
+    const hasYesterday = (data?.yesterday?.length || 0) > 0
+
+    if (isLoading || (!hasToday && !hasYesterday)) return null
+
+    const matches = tab === 'today' ? (data?.today || []) : (data?.yesterday || [])
+
+    const dayLabel = (dateStr) => {
+        if (!dateStr) return ''
+        const [y, m, d] = dateStr.split('-')
+        return new Date(+y, +m - 1, +d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
+    }
+
+    return (
+        <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="space-y-3"
+        >
+            {/* Header + tabs */}
+            <div className="flex flex-wrap items-center gap-3">
+                <div>
+                    <h2 className="text-lg font-black text-foreground">Partidos</h2>
+                    <p className="text-xs text-muted-foreground">La Liga · FIFA World Cup 2026</p>
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                    {hasToday && (
+                        <button
+                            onClick={() => setTab('today')}
+                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${tab === 'today'
+                                ? 'border-primary/40 bg-primary/10 text-primary'
+                                : 'border-border/50 text-muted-foreground hover:border-border'
+                            }`}
+                        >
+                            <Clock className="h-3.5 w-3.5" />
+                            Hoy
+                            <span className="rounded-full bg-current/10 px-1 tabular-nums">{data.today.length}</span>
+                        </button>
+                    )}
+                    {hasYesterday && (
+                        <button
+                            onClick={() => setTab('yesterday')}
+                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all ${tab === 'yesterday'
+                                ? 'border-primary/40 bg-primary/10 text-primary'
+                                : 'border-border/50 text-muted-foreground hover:border-border'
+                            }`}
+                        >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Ayer
+                            <span className="rounded-full bg-current/10 px-1 tabular-nums">{data.yesterday.length}</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Date label */}
+            {data && (
+                <p className="text-[11px] font-semibold capitalize text-muted-foreground/60">
+                    {dayLabel(tab === 'today' ? data.todayStr : data.yesterdayStr)}
+                </p>
+            )}
+
+            {/* Match cards grid */}
+            {matches.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                    No hay partidos {tab === 'today' ? 'hoy' : 'ayer'}.
+                </p>
+            ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                    {matches.map((m, i) => (
+                        <motion.div
+                            key={m.id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.04 }}
+                        >
+                            <CompactMatchCard match={m} />
+                        </motion.div>
+                    ))}
+                </div>
+            )}
+        </motion.section>
+    )
+}
+
 export default function Landing() {
     return (
         <>
             <SEO
-                title="Inicio — Análisis Fútbol"
-                description="Plataforma de análisis de fútbol con estadísticas avanzadas y asistente IA para tomar decisiones de apuestas informadas. Apuesta con responsabilidad."
+                title="Clasificación Mundial 2026 · Partidos y Estadísticas FIFA World Cup"
+                description="Clasificación en directo del Mundial FIFA 2026, resultados de partidos y estadísticas de las 32 selecciones. FIFA World Cup 2026 standings, matches and stats. Análisis avanzado de La Liga 2025-26."
                 path="/"
+                keywords="clasificación mundial 2026, clasificación FIFA World Cup 2026, partidos del mundial 2026, estadísticas mundial 2026, FIFA World Cup 2026 standings, resultados mundial 2026, grupos mundial 2026, La Liga 2025-2026, estadísticas fútbol, análisis fútbol, apuestas fútbol"
+                structuredData={wcStructuredData}
             />
 
             <div className="space-y-20 pb-20">
@@ -116,7 +300,7 @@ export default function Landing() {
                         className="relative flex flex-col items-center text-center gap-6 px-4"
                     >
                         {/* Badge */}
-                        <motion.div variants={fadeUp}>
+                        <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-2">
                             <span
                                 className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
                                 style={{
@@ -126,7 +310,18 @@ export default function Landing() {
                                 }}
                             >
                                 <Activity className="h-3.5 w-3.5" />
-                                Temporada 2025 · 2026
+                                La Liga 2025 · 2026
+                            </span>
+                            <span
+                                className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+                                style={{
+                                    borderColor: 'rgba(96,108,56,0.5)',
+                                    background:  'rgba(96,108,56,0.12)',
+                                    color:        '#606c38',
+                                }}
+                            >
+                                <Globe className="h-3.5 w-3.5" />
+                                FIFA World Cup 2026
                             </span>
                         </motion.div>
 
@@ -135,7 +330,7 @@ export default function Landing() {
                             variants={fadeUp}
                             className="text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl text-foreground"
                         >
-                            Apuesta con{' '}
+                            Mundial 2026{' '}
                             <span
                                 className="block"
                                 style={{
@@ -145,7 +340,7 @@ export default function Landing() {
                                     backgroundClip: 'text',
                                 }}
                             >
-                                Datos Reales
+                                &amp; La Liga
                             </span>
                         </motion.h1>
 
@@ -154,13 +349,26 @@ export default function Landing() {
                             variants={fadeUp}
                             className="max-w-xl text-base font-medium text-muted-foreground sm:text-lg"
                         >
-                            Estadísticas avanzadas de La Liga y asistente IA para que tomes{' '}
-                            <strong className="text-foreground">decisiones fundamentadas</strong>, no impulsivas.
-                            La información es poder — úsala con responsabilidad.
+                            Clasificación, partidos y estadísticas del{' '}
+                            <strong className="text-foreground">FIFA World Cup 2026</strong>. Más análisis
+                            avanzado de La Liga con asistente IA.
                         </motion.p>
 
                         {/* CTAs */}
                         <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                            <Link
+                                to="/dashboard?tab=clasificacion&league=12"
+                                id="cta-wc"
+                                className="group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                                style={{
+                                    background:  'linear-gradient(135deg, #283618, #606c38)',
+                                    boxShadow:   '0 4px 24px rgba(40,54,24,0.35)',
+                                }}
+                            >
+                                <Globe className="h-4 w-4" />
+                                Ver Mundial
+                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </Link>
                             <Link
                                 to="/dashboard"
                                 id="cta-dashboard"
@@ -170,7 +378,7 @@ export default function Landing() {
                                     boxShadow:   '0 4px 24px rgba(188,108,37,0.35)',
                                 }}
                             >
-                                Ver Dashboard
+                                Ver La Liga
                                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </Link>
                             <Link
@@ -184,6 +392,189 @@ export default function Landing() {
                         </motion.div>
                     </motion.div>
                 </section>
+
+                {/* ── TODAY'S MATCHES ── */}
+                <TodayMatchesSection />
+
+                {/* ── FIFA WORLD CUP 2026 ── */}
+                <motion.section
+                    initial={{ opacity: 0, y: 32 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="relative overflow-hidden rounded-3xl p-8 sm:p-10"
+                    style={{
+                        background: 'linear-gradient(135deg, rgba(40,54,24,0.92) 0%, #1a2410 100%)',
+                        boxShadow: '0 8px 40px rgba(40,54,24,0.4)',
+                    }}
+                >
+                    {/* Decorative glow */}
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full"
+                        style={{ background: 'radial-gradient(circle, rgba(221,161,94,0.18) 0%, transparent 70%)' }}
+                    />
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute -bottom-16 -left-16 h-48 w-48 rounded-full"
+                        style={{ background: 'radial-gradient(circle, rgba(96,108,56,0.25) 0%, transparent 70%)' }}
+                    />
+
+                    <div className="relative space-y-8">
+                        {/* Badge + Heading */}
+                        <div className="text-center space-y-3">
+                            <span
+                                className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-widest"
+                                style={{
+                                    borderColor: 'rgba(221,161,94,0.45)',
+                                    background:  'rgba(221,161,94,0.1)',
+                                    color:        '#dda15e',
+                                }}
+                            >
+                                <Globe className="h-3.5 w-3.5" />
+                                EN DIRECTO · FIFA World Cup 2026
+                            </span>
+                            <h2 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
+                                Clasificación del Mundial FIFA 2026
+                            </h2>
+                            <p className="mx-auto max-w-2xl text-sm leading-relaxed text-white/70">
+                                Sigue en directo la{' '}
+                                <strong className="text-white">clasificación del Mundial FIFA 2026</strong>, consulta
+                                los <strong className="text-white">partidos del Mundial</strong> y analiza las{' '}
+                                <strong className="text-white">estadísticas del Mundial</strong> de las 32 selecciones.
+                                FIFA World Cup 2026 standings, matches and stats updated daily.
+                            </p>
+                        </div>
+
+                        {/* 3 cards */}
+                        <motion.div
+                            initial="hidden"
+                            whileInView="show"
+                            viewport={{ once: true, margin: '-40px' }}
+                            variants={stagger}
+                            className="grid gap-4 sm:grid-cols-3"
+                        >
+                            {/* Card 1 — Clasificación */}
+                            <motion.div
+                                variants={fadeUp}
+                                className="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                                style={{
+                                    background: 'hsl(var(--card))',
+                                    borderColor: 'rgba(221,161,94,0.3)',
+                                }}
+                            >
+                                <div
+                                    aria-hidden
+                                    className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                                    style={{ background: 'radial-gradient(circle, rgba(221,161,94,0.15) 0%, transparent 70%)' }}
+                                />
+                                <div
+                                    className="mb-4 inline-flex rounded-xl border p-3"
+                                    style={{
+                                        background:   'rgba(221,161,94,0.12)',
+                                        borderColor:  'rgba(221,161,94,0.3)',
+                                    }}
+                                >
+                                    <Trophy className="h-5 w-5" style={{ color: '#dda15e' }} />
+                                </div>
+                                <h3 className="mb-1 text-base font-black text-foreground">Clasificación Mundial 2026</h3>
+                                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#dda15e' }}>
+                                    FIFA World Cup 2026 standings
+                                </p>
+                                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                                    Seguimiento en directo de los 12 grupos: puntos, goles, diferencia y clasificados para octavos de final.
+                                </p>
+                                <Link
+                                    to="/dashboard?tab=clasificacion&league=12"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+                                    style={{ color: '#dda15e' }}
+                                >
+                                    Ver Clasificación
+                                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                                </Link>
+                            </motion.div>
+
+                            {/* Card 2 — Partidos */}
+                            <motion.div
+                                variants={fadeUp}
+                                className="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                                style={{
+                                    background: 'hsl(var(--card))',
+                                    borderColor: 'rgba(188,108,37,0.3)',
+                                }}
+                            >
+                                <div
+                                    aria-hidden
+                                    className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                                    style={{ background: 'radial-gradient(circle, rgba(188,108,37,0.15) 0%, transparent 70%)' }}
+                                />
+                                <div
+                                    className="mb-4 inline-flex rounded-xl border p-3"
+                                    style={{
+                                        background:  'rgba(188,108,37,0.12)',
+                                        borderColor: 'rgba(188,108,37,0.3)',
+                                    }}
+                                >
+                                    <CalendarDays className="h-5 w-5" style={{ color: '#bc6c25' }} />
+                                </div>
+                                <h3 className="mb-1 text-base font-black text-foreground">Partidos del Mundial 2026</h3>
+                                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest" style={{ color: '#bc6c25' }}>
+                                    104 partidos · resultados y calendario
+                                </p>
+                                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                                    Todos los partidos del Mundial FIFA 2026 con resultados, horarios en hora española y estadísticas de cada encuentro.
+                                </p>
+                                <Link
+                                    to="/dashboard?tab=partidos&league=12"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+                                    style={{ color: '#bc6c25' }}
+                                >
+                                    Ver Partidos
+                                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                                </Link>
+                            </motion.div>
+
+                            {/* Card 3 — Estadísticas */}
+                            <motion.div
+                                variants={fadeUp}
+                                className="group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                                style={{
+                                    background: 'hsl(var(--card))',
+                                    borderColor: 'rgba(96,108,56,0.35)',
+                                }}
+                            >
+                                <div
+                                    aria-hidden
+                                    className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                                    style={{ background: 'radial-gradient(circle, rgba(96,108,56,0.18) 0%, transparent 70%)' }}
+                                />
+                                <div
+                                    className="mb-4 inline-flex rounded-xl border p-3"
+                                    style={{
+                                        background:  'rgba(96,108,56,0.12)',
+                                        borderColor: 'rgba(96,108,56,0.3)',
+                                    }}
+                                >
+                                    <BarChart3 className="h-5 w-5 text-[#606c38] dark:text-[#dda15e]" />
+                                </div>
+                                <h3 className="mb-1 text-base font-black text-foreground">Estadísticas del Mundial</h3>
+                                <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-[#606c38] dark:text-[#dda15e]">
+                                    Análisis · cuotas · mercados de apuestas
+                                </p>
+                                <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                                    Datos completos de cada selección: goles, tarjetas, córners, xG y cuotas de apuestas actualizadas.
+                                </p>
+                                <Link
+                                    to="/dashboard?tab=mercados&league=12"
+                                    className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#606c38] dark:text-[#dda15e] transition-colors hover:opacity-80"
+                                >
+                                    Ver Estadísticas
+                                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                                </Link>
+                            </motion.div>
+                        </motion.div>
+                    </div>
+                </motion.section>
 
                 {/* ── PURPOSE STATEMENT ── */}
                 <motion.section

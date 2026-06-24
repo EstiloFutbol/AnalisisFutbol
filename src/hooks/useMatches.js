@@ -125,6 +125,45 @@ export function useMatchdays(leagueId) {
     })
 }
 
+// Today's + yesterday's matches across La Liga 2025-26 (id 2) and WC 2026 (id 12)
+export function useTodayMatches() {
+    return useQuery({
+        queryKey: ['matches-today-yesterday'],
+        queryFn: async () => {
+            const now       = new Date()
+            const todayStr  = now.toLocaleDateString('sv-SE')  // YYYY-MM-DD in local tz
+            const yest      = new Date(now - 86_400_000)
+            const yesterdayStr = yest.toLocaleDateString('sv-SE')
+
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`
+                    id, match_date, kick_off_time, matchday, group_name,
+                    home_goals, away_goals, league_id,
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url),
+                    league:leagues(id, code, name)
+                `)
+                .in('league_id', [2, 12])
+                .in('match_date', [todayStr, yesterdayStr])
+                .not('home_team_id', 'is', null)
+                .not('away_team_id', 'is', null)
+                .order('kick_off_time', { ascending: true })
+
+            if (error) throw error
+            const rows = data || []
+            return {
+                todayStr,
+                yesterdayStr,
+                today:     rows.filter(m => m.match_date === todayStr),
+                yesterday: rows.filter(m => m.match_date === yesterdayStr),
+            }
+        },
+        staleTime: 3 * 60_000,
+        refetchInterval: 5 * 60_000,
+    })
+}
+
 // Group standings for tournament formats (World Cup, etc.)
 export function useGroupStandings(leagueId) {
     return useQuery({

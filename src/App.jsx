@@ -13,6 +13,8 @@ import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
 import DataDeletion from '@/pages/DataDeletion'
+import LaPlaza from '@/pages/LaPlaza'
+import LaPlazaPost from '@/pages/LaPlazaPost'
 
 import { useState } from 'react'
 import { AuthProvider } from '@/context/AuthContext'
@@ -66,6 +68,10 @@ function App() {
                                         <Route path="/ai" element={<Navigate to="/analisis" replace />} />
                                         <Route path="/explorar" element={<Navigate to="/analisis" replace />} />
                                         <Route path="/self-service" element={<Navigate to="/analisis" replace />} />
+
+                                        {/* La Plaza — community forum */}
+                                        <Route path="/plaza"          element={<LaPlaza />} />
+                                        <Route path="/plaza/:postId"  element={<LaPlazaPost />} />
 
                                         {/* Auth & Admin */}
                                         <Route path="/iniciar-sesion" element={<Login />} />

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Menu, X, ShieldCheck, UserCircle, LogOut, ChevronDown, Trophy, Sun, Moon, Brain } from 'lucide-react'
+import { LayoutDashboard, Menu, X, ShieldCheck, UserCircle, LogOut, ChevronDown, Trophy, Sun, Moon, Brain, MessageSquare } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 
@@ -9,6 +9,7 @@ const navItems = [
     { path: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
     { path: '/analisis',     label: 'Análisis IA',  icon: Brain },
     { path: '/mis-apuestas', label: 'Mis Apuestas', icon: Trophy },
+    { path: '/plaza',        label: 'La Plaza',     icon: MessageSquare },
 ]
 
 function UserAvatar({ name, email }) {

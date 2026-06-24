@@ -298,8 +298,8 @@ export default function Players({ hideLeagueSelector = false, leagueId = null })
                                     <tr>
                                         <td colSpan={12} className="py-16 text-center text-muted-foreground">
                                             <Trophy className="mx-auto mb-3 h-10 w-10 opacity-20" />
-                                            <p className="text-sm">No hay datos de jugadores todavía</p>
-                                            <p className="mt-1 text-xs opacity-60">Importa partidos con FBref para ver estadísticas individuales</p>
+                                            <p className="text-sm">Estadísticas de jugadores no disponibles</p>
+                                            <p className="mt-1 text-xs opacity-60">Esta sección requiere financiación para recopilar y mantener los datos individuales</p>
                                         </td>
                                     </tr>
                                 )}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -183,11 +183,18 @@ function TodayMatchesSection() {
     const hasYesterday = (data?.yesterday?.length || 0) > 0
     const hasTomorrow  = (data?.tomorrow?.length  || 0) > 0
 
-    // Default to whichever tab has content, preferring today → tomorrow → yesterday
-    const defaultTab = hasToday ? 'today' : hasTomorrow ? 'tomorrow' : 'yesterday'
-    const [tab, setTab] = useState(defaultTab)
+    // null = not yet chosen; set once after first data load so we pick the right default
+    const [tab, setTab] = useState(null)
 
-    if (isLoading || (!hasToday && !hasYesterday && !hasTomorrow)) return null
+    useEffect(() => {
+        if (tab !== null || !data) return
+        if (data.today.length > 0)     setTab('today')
+        else if (data.tomorrow.length > 0) setTab('tomorrow')
+        else if (data.yesterday.length > 0) setTab('yesterday')
+        else setTab('today')
+    }, [data, tab])
+
+    if (isLoading || tab === null || (!hasToday && !hasYesterday && !hasTomorrow)) return null
 
     const matchesMap = {
         today:     data?.today     || [],

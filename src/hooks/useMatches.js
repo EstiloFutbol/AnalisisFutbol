@@ -125,17 +125,25 @@ export function useMatchdays(leagueId) {
     })
 }
 
+// Reliable YYYY-MM-DD string from a Date using local calendar date
+function _localDateStr(d) {
+    return [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0'),
+    ].join('-')
+}
+
 // Today's, yesterday's and tomorrow's matches across La Liga 2025-26 (id 2) and WC 2026 (id 12)
 export function useTodayMatches() {
     return useQuery({
         queryKey: ['matches-today-yesterday-tomorrow'],
         queryFn: async () => {
-            const now           = new Date()
-            const todayStr      = now.toLocaleDateString('sv-SE')  // YYYY-MM-DD in local tz
-            const yest          = new Date(now - 86_400_000)
-            const tom           = new Date(now + 86_400_000)
-            const yesterdayStr  = yest.toLocaleDateString('sv-SE')
-            const tomorrowStr   = tom.toLocaleDateString('sv-SE')
+            // Use Date.now() (a plain number) so + and - are numeric, not string concatenation
+            const nowMs        = Date.now()
+            const todayStr     = _localDateStr(new Date(nowMs))
+            const yesterdayStr = _localDateStr(new Date(nowMs - 86_400_000))
+            const tomorrowStr  = _localDateStr(new Date(nowMs + 86_400_000))
 
             const { data, error } = await supabase
                 .from('matches')

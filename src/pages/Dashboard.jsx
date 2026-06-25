@@ -775,7 +775,7 @@ function WCEliminatorias({ leagueId }) {
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
             ) : (
-                <WCBracket knockoutMatches={knockoutMatches} />
+                <WCBracket knockoutMatches={knockoutMatches} standings={effectiveStandings} />
             )}
 
             {/* Third-place tracker — below bracket */}
@@ -884,6 +884,48 @@ function ThirdPlaceTracker({ allThirds, simMode }) {
 
 // ─── Classic visual bracket ──────────────────────────────────────────────────
 
+// WC 2026 R32 bracket position order: DB match IDs sorted by official bracket position
+// (derived from consecutive football-data.org API IDs 537415–537430; consecutive pairs → same R16)
+const WC_R32_BRACKET_ORDER = [
+    2986, 2989,  // bracket pair 1 → R16: Match 76 (1C vs 2F) + Match 78 (2E vs 2I)
+    2984, 2987,  // bracket pair 2 → R16: Match 73 (2A vs 2B) + Match 75 (1F vs 2C)
+    2995, 2994,  // bracket pair 3 → R16: Match 84 (1H vs 2J) + Match 83 (2K vs 2L)
+    2993, 2992,  // bracket pair 4 → R16: Match 82 (1G vs best3) + Match 81 (1D vs best3)
+    2985, 2988,  // bracket pair 5 → R16: Match 74 (1E vs best3) + Match 77 (1I vs best3)
+    2990, 2991,  // bracket pair 6 → R16: Match 79 (1A vs best3) + Match 80 (1L vs best3)
+    2998, 2997,  // bracket pair 7 → R16: Match 88 (2D vs 2G) + Match 86 (1J vs 2H)
+    2996, 2999,  // bracket pair 8 → R16: Match 85 (1B vs best3) + Match 87 (1K vs best3)
+]
+
+// Group-position labels for each R32 slot (shown when team_id is not yet set)
+const WC_R32_SLOT_LABELS = [
+    { home: '1° Gr. C', away: '2° Gr. F' },  // bracket pos 0
+    { home: '2° Gr. E', away: '2° Gr. I' },  // bracket pos 1
+    { home: '2° Gr. A', away: '2° Gr. B' },  // bracket pos 2
+    { home: '1° Gr. F', away: '2° Gr. C' },  // bracket pos 3
+    { home: '1° Gr. H', away: '2° Gr. J' },  // bracket pos 4
+    { home: '2° Gr. K', away: '2° Gr. L' },  // bracket pos 5
+    { home: '1° Gr. G', away: 'Mejor 3°' },  // bracket pos 6
+    { home: '1° Gr. D', away: 'Mejor 3°' },  // bracket pos 7
+    { home: '1° Gr. E', away: 'Mejor 3°' },  // bracket pos 8
+    { home: '1° Gr. I', away: 'Mejor 3°' },  // bracket pos 9
+    { home: '1° Gr. A', away: 'Mejor 3°' },  // bracket pos 10
+    { home: '1° Gr. L', away: 'Mejor 3°' },  // bracket pos 11
+    { home: '2° Gr. D', away: '2° Gr. G' },  // bracket pos 12
+    { home: '1° Gr. J', away: '2° Gr. H' },  // bracket pos 13
+    { home: '1° Gr. B', away: 'Mejor 3°' },  // bracket pos 14
+    { home: '1° Gr. K', away: 'Mejor 3°' },  // bracket pos 15
+]
+
+// Parse "1° Gr. C" → team object from standings (null if not found or not confirmed)
+function getSlotProjection(label, groupWinners, groupRunnerUps) {
+    if (!label) return null
+    const m = label.match(/^([12])° Gr\. ([A-L])$/)
+    if (!m) return null
+    const [, pos, group] = m
+    return pos === '1' ? (groupWinners[group] || null) : (groupRunnerUps[group] || null)
+}
+
 const BK_MATCH_H = 56       // height of each match card (px)
 const BK_MATCH_GAP = 6      // gap between consecutive matches (px)
 const BK_UNIT = BK_MATCH_H + BK_MATCH_GAP
@@ -908,13 +950,28 @@ const BK_ROUNDS = [
     { md: 9, label: 'Final' },
 ]
 
-function WCBracket({ knockoutMatches }) {
+function WCBracket({ knockoutMatches, standings = [] }) {
+    const { groupWinners, groupRunnerUps } = useMemo(
+        () => computeWCQualifiers(standings),
+        [standings]
+    )
+
     const byRound = useMemo(() => {
         const r = {}
         BK_ROUNDS.forEach(({ md }) => { r[md] = [] })
         knockoutMatches.forEach(m => {
             if (r[m.matchday] !== undefined) r[m.matchday].push(m)
         })
+        // Sort R32 by true bracket position (based on official FIFA draw via API ID order)
+        if (r[4].length > 0) {
+            const orderMap = {}
+            WC_R32_BRACKET_ORDER.forEach((dbId, pos) => { orderMap[dbId] = pos })
+            r[4].sort((a, b) => {
+                const pa = orderMap[a.id] ?? 999
+                const pb = orderMap[b.id] ?? 999
+                return pa - pb
+            })
+        }
         return r
     }, [knockoutMatches])
 
@@ -947,6 +1004,19 @@ function WCBracket({ knockoutMatches }) {
     }, [byRound])
 
     const totalWidth = BK_ROUNDS.length * BK_COL_W + (BK_ROUNDS.length - 1) * BK_COL_GAP
+
+    // For R32 slots, resolve labels + projected teams from standings
+    function r32SlotProps(matchId) {
+        const bPos = WC_R32_BRACKET_ORDER.indexOf(matchId)
+        if (bPos < 0) return {}
+        const labels = WC_R32_SLOT_LABELS[bPos] || {}
+        return {
+            homeLabel: labels.home,
+            awayLabel: labels.away,
+            homeProj: getSlotProjection(labels.home, groupWinners, groupRunnerUps),
+            awayProj: getSlotProjection(labels.away, groupWinners, groupRunnerUps),
+        }
+    }
 
     return (
         <div className="space-y-3">
@@ -988,7 +1058,7 @@ function WCBracket({ knockoutMatches }) {
                                     height: BK_MATCH_H,
                                 }}
                             >
-                                <BracketMatchSlot match={m} />
+                                <BracketMatchSlot match={m} {...(md === 4 ? r32SlotProps(m.id) : {})} />
                             </div>
                         ))
                     )}
@@ -1013,37 +1083,52 @@ function WCBracket({ knockoutMatches }) {
     )
 }
 
-function BracketMatchSlot({ match }) {
+function BracketMatchSlot({ match, homeLabel, awayLabel, homeProj, awayProj }) {
     const played = match.home_goals != null
     const homeWon = played && match.home_goals > match.away_goals
     const awayWon = played && match.away_goals > match.home_goals
 
     return (
         <div className="h-full flex flex-col rounded-lg border border-border/60 bg-card overflow-hidden shadow-sm">
-            <BracketTeamSlot team={match.home_team} goals={played ? match.home_goals : null} winner={homeWon} played={played} />
+            <BracketTeamSlot
+                team={match.home_team} goals={played ? match.home_goals : null}
+                winner={homeWon} played={played} label={homeLabel} proj={homeProj}
+            />
             <div className="h-px bg-border/40 shrink-0" />
-            <BracketTeamSlot team={match.away_team} goals={played ? match.away_goals : null} winner={awayWon} played={played} />
+            <BracketTeamSlot
+                team={match.away_team} goals={played ? match.away_goals : null}
+                winner={awayWon} played={played} label={awayLabel} proj={awayProj}
+            />
         </div>
     )
 }
 
-function BracketTeamSlot({ team, goals, winner, played }) {
+function BracketTeamSlot({ team, goals, winner, played, label, proj }) {
+    // proj = standing row from computeWCQualifiers (has .team sub-object)
+    const projTeam = proj?.team || null
+    const displayTeam = team || projTeam
+    const isProj = !team && !!projTeam
+
     return (
         <div className={`flex flex-1 items-center gap-1.5 px-1.5 min-h-0
             ${winner ? 'bg-primary/10' : ''}`}
         >
-            {team?.logo_url ? (
-                <img src={team.logo_url} alt="" className="h-4 w-4 object-contain shrink-0" />
+            {displayTeam?.logo_url ? (
+                <img src={displayTeam.logo_url} alt=""
+                    className={`h-4 w-4 object-contain shrink-0 ${isProj ? 'opacity-60' : ''}`} />
             ) : (
                 <div className="h-4 w-4 rounded-full bg-muted/20 shrink-0" />
             )}
             <span className={`text-[10px] flex-1 truncate leading-tight
                 ${winner ? 'font-bold text-foreground'
                     : played ? 'text-muted-foreground'
-                    : 'text-muted-foreground/60'}
-                ${!team ? 'italic' : ''}`}
+                    : isProj ? 'text-muted-foreground/70 italic'
+                    : displayTeam ? 'text-muted-foreground/60'
+                    : 'text-muted-foreground/40 italic'}`}
             >
-                {team?.short_name || team?.name || '???'}
+                {displayTeam
+                    ? (displayTeam.short_name || displayTeam.name)
+                    : (label || '?')}
             </span>
             {goals != null && (
                 <span className={`text-[11px] font-black tabular-nums shrink-0

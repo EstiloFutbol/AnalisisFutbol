@@ -656,7 +656,35 @@ const WC_ROUNDS = [
     { md: 9, label: 'Final', full: 'Final' },
 ]
 
-function computeWCQualifiers(standings) {
+// Sort a tied group of teams using H2H results among themselves, then overall GD/GF
+function _sortTied(tied, h2h) {
+    if (tied.length <= 1) return tied
+    // Accumulate H2H stats among only these tied teams
+    const h2hPts = {}, h2hGD = {}
+    tied.forEach(t => { h2hPts[t.team_id] = 0; h2hGD[t.team_id] = 0 })
+    tied.forEach(a => {
+        tied.forEach(b => {
+            if (a.team_id === b.team_id) return
+            const hh = h2h[a.team_id]?.[b.team_id]
+            if (!hh) return
+            h2hPts[a.team_id] += hh.pts
+            h2hGD[a.team_id] += hh.gf - hh.ga
+        })
+    })
+    return [...tied].sort((a, b) => {
+        const dp = h2hPts[b.team_id] - h2hPts[a.team_id]
+        if (dp !== 0) return dp
+        const dg = h2hGD[b.team_id] - h2hGD[a.team_id]
+        if (dg !== 0) return dg
+        // Overall GD
+        const gdA = (a.goals_for || 0) - (a.goals_against || 0)
+        const gdB = (b.goals_for || 0) - (b.goals_against || 0)
+        if (gdB !== gdA) return gdB - gdA
+        return (b.goals_for || 0) - (a.goals_for || 0)
+    })
+}
+
+function computeWCQualifiers(standings, groupMatches = []) {
     const byGroup = {}
     standings.forEach(r => {
         const g = r.group_name || '?'
@@ -664,24 +692,43 @@ function computeWCQualifiers(standings) {
         byGroup[g].push(r)
     })
 
+    // Build H2H lookup from played match results
+    const h2h = {}
+    groupMatches.forEach(m => {
+        if (m.home_goals == null || !m.home_team_id || !m.away_team_id) return
+        const [hId, aId, hg, ag] = [m.home_team_id, m.away_team_id, m.home_goals, m.away_goals]
+        if (!h2h[hId]) h2h[hId] = {}
+        if (!h2h[aId]) h2h[aId] = {}
+        if (!h2h[hId][aId]) h2h[hId][aId] = { pts: 0, gf: 0, ga: 0 }
+        if (!h2h[aId][hId]) h2h[aId][hId] = { pts: 0, gf: 0, ga: 0 }
+        h2h[hId][aId].gf += hg; h2h[hId][aId].ga += ag
+        h2h[aId][hId].gf += ag; h2h[aId][hId].ga += hg
+        if (hg > ag)      { h2h[hId][aId].pts += 3 }
+        else if (hg < ag) { h2h[aId][hId].pts += 3 }
+        else              { h2h[hId][aId].pts += 1; h2h[aId][hId].pts += 1 }
+    })
+
     const groupWinners = {}
     const groupRunnerUps = {}
     const allThirds = []
 
     Object.keys(byGroup).sort().forEach(g => {
-        const sorted = [...byGroup[g]].sort((a, b) => {
-            const pd = (b.points || 0) - (a.points || 0)
-            if (pd !== 0) return pd
-            const gdA = (a.goals_for || 0) - (a.goals_against || 0)
-            const gdB = (b.goals_for || 0) - (b.goals_against || 0)
-            if (gdB !== gdA) return gdB - gdA
-            return (b.goals_for || 0) - (a.goals_for || 0)
-        })
+        // Sort by points first, then apply H2H within tied groups
+        const byPts = [...byGroup[g]].sort((a, b) => (b.points || 0) - (a.points || 0))
+        const sorted = []
+        let i = 0
+        while (i < byPts.length) {
+            let j = i + 1
+            while (j < byPts.length && (byPts[j].points || 0) === (byPts[i].points || 0)) j++
+            _sortTied(byPts.slice(i, j), h2h).forEach(t => sorted.push(t))
+            i = j
+        }
         groupWinners[g] = sorted[0]
         groupRunnerUps[g] = sorted[1]
         if (sorted[2]) allThirds.push({ ...sorted[2], _group: g })
     })
 
+    // 3rd-place cross-group ranking: points → overall GD → overall GF (no H2H between groups)
     allThirds.sort((a, b) => {
         const pd = (b.points || 0) - (a.points || 0)
         if (pd !== 0) return pd
@@ -732,7 +779,23 @@ function WCEliminatorias({ leagueId }) {
         return simulateStandings(standings, unplayed, simScores)
     }, [simMode, simScores, standings, unplayed])
 
-    const { allThirds } = useMemo(() => computeWCQualifiers(effectiveStandings), [effectiveStandings])
+    // Merge simulated scores into group matches so H2H uses them too
+    const effectiveGroupMatches = useMemo(() => {
+        if (!simMode || !Object.keys(simScores).length) return groupMatches
+        return groupMatches.map(m => {
+            if (m.home_goals != null) return m
+            const sim = simScores[m.id]
+            if (sim && sim.h !== '' && sim.a !== '') {
+                return { ...m, home_goals: parseInt(sim.h) || 0, away_goals: parseInt(sim.a) || 0 }
+            }
+            return m
+        })
+    }, [simMode, simScores, groupMatches])
+
+    const { allThirds } = useMemo(
+        () => computeWCQualifiers(effectiveStandings, effectiveGroupMatches),
+        [effectiveStandings, effectiveGroupMatches]
+    )
 
     function toggleSim() {
         if (simMode) setSimScores({})
@@ -775,7 +838,7 @@ function WCEliminatorias({ leagueId }) {
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
             ) : (
-                <WCBracket knockoutMatches={knockoutMatches} standings={effectiveStandings} simMode={simMode} />
+                <WCBracket knockoutMatches={knockoutMatches} standings={effectiveStandings} groupMatches={effectiveGroupMatches} simMode={simMode} />
             )}
 
             {/* Third-place tracker — below bracket */}
@@ -917,14 +980,6 @@ const WC_R32_SLOT_LABELS = [
     { home: '1° Gr. K', away: 'Mejor 3°' },  // bracket pos 15
 ]
 
-// Parse "1° Gr. C" → team object from standings (null if not found or not confirmed)
-function getSlotProjection(label, groupWinners, groupRunnerUps) {
-    if (!label) return null
-    const m = label.match(/^([12])° Gr\. ([A-L])$/)
-    if (!m) return null
-    const [, pos, group] = m
-    return pos === '1' ? (groupWinners[group] || null) : (groupRunnerUps[group] || null)
-}
 
 const BK_MATCH_H = 56       // height of each match card (px)
 const BK_MATCH_GAP = 6      // gap between consecutive matches (px)
@@ -950,11 +1005,26 @@ const BK_ROUNDS = [
     { md: 9, label: 'Final' },
 ]
 
-function WCBracket({ knockoutMatches, standings = [], simMode = false }) {
+function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode = false }) {
     const { groupWinners, groupRunnerUps } = useMemo(
-        () => computeWCQualifiers(standings),
-        [standings]
+        () => computeWCQualifiers(standings, groupMatches),
+        [standings, groupMatches]
     )
+
+    // Groups where all 4 teams have played 3 games — their positions are confirmed
+    const completedGroups = useMemo(() => {
+        const byGroup = {}
+        standings.forEach(r => {
+            if (!r.group_name) return
+            if (!byGroup[r.group_name]) byGroup[r.group_name] = []
+            byGroup[r.group_name].push(r)
+        })
+        const done = new Set()
+        Object.entries(byGroup).forEach(([g, rows]) => {
+            if (rows.length >= 4 && rows.every(r => (r.played || 0) >= 3)) done.add(g)
+        })
+        return done
+    }, [standings])
 
     const byRound = useMemo(() => {
         const r = {}
@@ -1005,16 +1075,27 @@ function WCBracket({ knockoutMatches, standings = [], simMode = false }) {
 
     const totalWidth = BK_ROUNDS.length * BK_COL_W + (BK_ROUNDS.length - 1) * BK_COL_GAP
 
-    // For R32 slots, resolve labels + projected teams (only in simulator mode)
+    // For R32 slots, resolve labels + projected teams.
+    // Show actual team when: group is fully complete (confirmed) OR simulator is active.
     function r32SlotProps(matchId) {
         const bPos = WC_R32_BRACKET_ORDER.indexOf(matchId)
         if (bPos < 0) return {}
         const labels = WC_R32_SLOT_LABELS[bPos] || {}
+
+        function projForLabel(label) {
+            if (!label) return null
+            const m = label.match(/^([12])° Gr\. ([A-L])$/)
+            if (!m) return null
+            const [, pos, group] = m
+            if (!simMode && !completedGroups.has(group)) return null
+            return pos === '1' ? (groupWinners[group] || null) : (groupRunnerUps[group] || null)
+        }
+
         return {
             homeLabel: labels.home,
             awayLabel: labels.away,
-            homeProj: simMode ? getSlotProjection(labels.home, groupWinners, groupRunnerUps) : null,
-            awayProj: simMode ? getSlotProjection(labels.away, groupWinners, groupRunnerUps) : null,
+            homeProj: projForLabel(labels.home),
+            awayProj: projForLabel(labels.away),
         }
     }
 

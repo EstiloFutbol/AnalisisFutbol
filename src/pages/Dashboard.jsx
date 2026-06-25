@@ -724,7 +724,6 @@ function WCEliminatorias({ leagueId }) {
 
     const [simMode, setSimMode] = useState(false)
     const [simScores, setSimScores] = useState({})
-    const [bracketRound, setBracketRound] = useState(4)
 
     const unplayed = useMemo(() => groupMatches.filter(m => m.home_goals == null), [groupMatches])
 
@@ -734,11 +733,6 @@ function WCEliminatorias({ leagueId }) {
     }, [simMode, simScores, standings, unplayed])
 
     const { allThirds } = useMemo(() => computeWCQualifiers(effectiveStandings), [effectiveStandings])
-
-    const roundMatches = useMemo(
-        () => knockoutMatches.filter(m => m.matchday === bracketRound),
-        [knockoutMatches, bracketRound]
-    )
 
     function toggleSim() {
         if (simMode) setSimScores({})
@@ -775,53 +769,19 @@ function WCEliminatorias({ leagueId }) {
                 />
             )}
 
-            {/* Third-place tracker */}
+            {/* Classic visual bracket */}
+            {koLoading ? (
+                <div className="flex justify-center py-10">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+            ) : (
+                <WCBracket knockoutMatches={knockoutMatches} />
+            )}
+
+            {/* Third-place tracker — below bracket */}
             {allThirds.length > 0 && (
                 <ThirdPlaceTracker allThirds={allThirds} simMode={simMode} />
             )}
-
-            {/* Round selector */}
-            <div className="space-y-3">
-                <div className="overflow-x-auto pb-1">
-                    <div className="flex gap-2 min-w-max">
-                        {WC_ROUNDS.map(r => (
-                            <button
-                                key={r.md}
-                                onClick={() => setBracketRound(r.md)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
-                                    ${bracketRound === r.md
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
-                            >
-                                {r.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Round title */}
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {WC_ROUNDS.find(r => r.md === bracketRound)?.full}
-                </p>
-
-                {/* Match cards */}
-                {koLoading ? (
-                    <div className="flex justify-center py-10">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    </div>
-                ) : roundMatches.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-border/50 py-10 text-center">
-                        <Trophy className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Partidos aún por determinar</p>
-                    </div>
-                ) : (
-                    <div className={`grid gap-3 ${bracketRound <= 5 ? 'md:grid-cols-2' : ''}`}>
-                        {roundMatches.map((m, i) => (
-                            <KnockoutMatchCard key={m.id} match={m} num={i + 1} />
-                        ))}
-                    </div>
-                )}
-            </div>
         </div>
     )
 }
@@ -922,55 +882,173 @@ function ThirdPlaceTracker({ allThirds, simMode }) {
     )
 }
 
-// ─── Knockout match card ─────────────────────────────────────────────────────
+// ─── Classic visual bracket ──────────────────────────────────────────────────
 
-function KnockoutMatchCard({ match, num }) {
-    const isPlayed = match.home_goals != null
-    const homeTeam = match.home_team
-    const awayTeam = match.away_team
-    const homeWon = isPlayed && match.home_goals > match.away_goals
-    const awayWon = isPlayed && match.away_goals > match.home_goals
+const BK_MATCH_H = 56       // height of each match card (px)
+const BK_MATCH_GAP = 6      // gap between consecutive matches (px)
+const BK_UNIT = BK_MATCH_H + BK_MATCH_GAP
+const BK_COL_W = 152        // width of each match card
+const BK_COL_GAP = 26       // space between columns (for connector lines)
+const BK_COL_STEP = BK_COL_W + BK_COL_GAP
+const BK_LABEL_H = 24       // height of round label row
+const BK_TOTAL_H = 16 * BK_UNIT  // total bracket height
 
-    const dateStr = match.match_date
-        ? new Date(match.match_date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-        : null
+// round index → top of match card (px, relative to bracket area)
+function bkMatchTop(ri, mi) {
+    const span = Math.pow(2, ri)
+    return mi * span * BK_UNIT + (span - 1) * BK_UNIT / 2
+}
+function bkMatchCenterY(ri, mi) { return bkMatchTop(ri, mi) + BK_MATCH_H / 2 }
+
+const BK_ROUNDS = [
+    { md: 4, label: 'Copa del Mundo (R32)' },
+    { md: 5, label: 'Octavos de Final' },
+    { md: 6, label: 'Cuartos de Final' },
+    { md: 7, label: 'Semifinales' },
+    { md: 9, label: 'Final' },
+]
+
+function WCBracket({ knockoutMatches }) {
+    const byRound = useMemo(() => {
+        const r = {}
+        BK_ROUNDS.forEach(({ md }) => { r[md] = [] })
+        knockoutMatches.forEach(m => {
+            if (r[m.matchday] !== undefined) r[m.matchday].push(m)
+        })
+        return r
+    }, [knockoutMatches])
+
+    const thirdPlaceMatch = knockoutMatches.find(m => m.matchday === 8)
+
+    const lines = useMemo(() => {
+        const ls = []
+        BK_ROUNDS.forEach(({ md }, ri) => {
+            if (ri >= BK_ROUNDS.length - 1) return
+            const matches = byRound[md] || []
+            matches.forEach((_, mi) => {
+                const x1 = ri * BK_COL_STEP + BK_COL_W
+                const y1 = bkMatchCenterY(ri, mi)
+                const xMid = x1 + BK_COL_GAP / 2
+
+                ls.push([x1, y1, xMid, y1])                  // horizontal out of card
+
+                if (mi % 2 === 0) {
+                    const partner = byRound[md][mi + 1]
+                    if (partner !== undefined) {
+                        const y2 = bkMatchCenterY(ri, mi + 1)
+                        ls.push([xMid, y1, xMid, y2])         // vertical connector
+                    }
+                    const nextY = bkMatchCenterY(ri + 1, Math.floor(mi / 2))
+                    ls.push([xMid, nextY, (ri + 1) * BK_COL_STEP, nextY]) // horizontal into next card
+                }
+            })
+        })
+        return ls
+    }, [byRound])
+
+    const totalWidth = BK_ROUNDS.length * BK_COL_W + (BK_ROUNDS.length - 1) * BK_COL_GAP
 
     return (
-        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
-            <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/30 border-b border-border/50">
-                <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-                    Partido {num}
-                </span>
-                {dateStr && (
-                    <span className="text-[10px] text-muted-foreground">{dateStr}</span>
-                )}
+        <div className="space-y-3">
+            {/* Scrollable bracket */}
+            <div className="overflow-x-auto rounded-xl border border-border/30 bg-card/30 p-4 pb-5">
+                <div style={{ position: 'relative', width: totalWidth, height: BK_TOTAL_H + BK_LABEL_H }}>
+                    {/* Round column labels */}
+                    {BK_ROUNDS.map(({ md, label }, ri) => (
+                        <div
+                            key={md}
+                            style={{ position: 'absolute', left: ri * BK_COL_STEP, top: 0, width: BK_COL_W }}
+                            className="text-center text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 truncate"
+                        >
+                            {label}
+                        </div>
+                    ))}
+
+                    {/* SVG connector lines */}
+                    <svg
+                        style={{ position: 'absolute', top: BK_LABEL_H, left: 0, width: totalWidth, height: BK_TOTAL_H }}
+                        className="pointer-events-none text-border/70"
+                    >
+                        {lines.map(([x1, y1, x2, y2], i) => (
+                            <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+                                stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+                        ))}
+                    </svg>
+
+                    {/* Match cards */}
+                    {BK_ROUNDS.map(({ md }, ri) =>
+                        (byRound[md] || []).map((m, mi) => (
+                            <div
+                                key={m.id}
+                                style={{
+                                    position: 'absolute',
+                                    left: ri * BK_COL_STEP,
+                                    top: BK_LABEL_H + bkMatchTop(ri, mi),
+                                    width: BK_COL_W,
+                                    height: BK_MATCH_H,
+                                }}
+                            >
+                                <BracketMatchSlot match={m} />
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
-            <div className="px-3 py-2.5 space-y-2">
-                <KnockoutTeamRow team={homeTeam} goals={isPlayed ? match.home_goals : null} winner={homeWon} played={isPlayed} />
-                <div className="h-px bg-border/30" />
-                <KnockoutTeamRow team={awayTeam} goals={isPlayed ? match.away_goals : null} winner={awayWon} played={isPlayed} />
-            </div>
+
+            {/* Third-place match */}
+            {thirdPlaceMatch && (
+                <div className="flex items-center gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                    <Trophy className="h-4 w-4 text-amber-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-amber-400/80 mb-1.5">
+                            Tercer Lugar
+                        </p>
+                        <div style={{ width: BK_COL_W }}>
+                            <BracketMatchSlot match={thirdPlaceMatch} />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
 
-function KnockoutTeamRow({ team, goals, winner, played }) {
+function BracketMatchSlot({ match }) {
+    const played = match.home_goals != null
+    const homeWon = played && match.home_goals > match.away_goals
+    const awayWon = played && match.away_goals > match.home_goals
+
     return (
-        <div className={`flex items-center justify-between gap-2 ${played && !winner ? 'opacity-50' : ''}`}>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-                {team?.logo_url ? (
-                    <img src={team.logo_url} alt="" className="h-6 w-6 object-contain shrink-0" />
-                ) : (
-                    <div className="h-6 w-6 rounded-full bg-muted/30 shrink-0 flex items-center justify-center">
-                        <Shield className="h-3 w-3 text-muted-foreground/30" />
-                    </div>
-                )}
-                <span className={`text-sm truncate ${winner ? 'font-bold text-foreground' : 'text-muted-foreground'} ${!team ? 'italic text-muted-foreground/50' : ''}`}>
-                    {team?.short_name || team?.name || 'Por determinar'}
-                </span>
-            </div>
+        <div className="h-full flex flex-col rounded-lg border border-border/60 bg-card overflow-hidden shadow-sm">
+            <BracketTeamSlot team={match.home_team} goals={played ? match.home_goals : null} winner={homeWon} played={played} />
+            <div className="h-px bg-border/40 shrink-0" />
+            <BracketTeamSlot team={match.away_team} goals={played ? match.away_goals : null} winner={awayWon} played={played} />
+        </div>
+    )
+}
+
+function BracketTeamSlot({ team, goals, winner, played }) {
+    return (
+        <div className={`flex flex-1 items-center gap-1.5 px-1.5 min-h-0
+            ${winner ? 'bg-primary/10' : ''}`}
+        >
+            {team?.logo_url ? (
+                <img src={team.logo_url} alt="" className="h-4 w-4 object-contain shrink-0" />
+            ) : (
+                <div className="h-4 w-4 rounded-full bg-muted/20 shrink-0" />
+            )}
+            <span className={`text-[10px] flex-1 truncate leading-tight
+                ${winner ? 'font-bold text-foreground'
+                    : played ? 'text-muted-foreground'
+                    : 'text-muted-foreground/60'}
+                ${!team ? 'italic' : ''}`}
+            >
+                {team?.short_name || team?.name || '???'}
+            </span>
             {goals != null && (
-                <span className={`text-lg font-black tabular-nums ${winner ? 'text-primary' : 'text-muted-foreground'}`}>
+                <span className={`text-[11px] font-black tabular-nums shrink-0
+                    ${winner ? 'text-primary' : 'text-muted-foreground/70'}`}
+                >
                     {goals}
                 </span>
             )}

@@ -2,14 +2,14 @@ import { useMemo, useEffect, useState, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useLeagueContext } from '@/context/LeagueContext'
 import { motion } from 'framer-motion'
-import { useMatches, useLeagues, useGroupStandings } from '@/hooks/useMatches'
+import { useMatches, useLeagues, useGroupStandings, useWCKnockoutMatches, useWCGroupMatches } from '@/hooks/useMatches'
 import { usePlayerLeaderboard } from '@/hooks/usePlayerStats'
 import {
     Trophy, Goal, Target, TrendingUp, Activity,
     BarChart3, Clock, Shield, CreditCard,
     AlertTriangle, Zap, Info, Users, Crosshair,
     ArrowUpRight, Minus, ArrowDownRight, Star, Timer,
-    CalendarDays, ShieldCheck
+    CalendarDays, ShieldCheck, Calculator, Swords, RotateCcw
 } from 'lucide-react'
 import GoalTimeChart from '@/components/charts/GoalTimeChart'
 import StatDistributionChart from '@/components/charts/StatDistributionChart'
@@ -611,14 +611,467 @@ function TeamsTab({ matches = [], leagueObj, activeLeagueId }) {
     const isWC = leagueObj?.code === 'WC'
 
     if (isWC) {
-        return <WCGroupStandings leagueId={activeLeagueId} />
+        return <WCClassificacion leagueId={activeLeagueId} />
     }
 
     return <LeagueStandingsTable matches={matches} />
 }
 
+// ─── WC Clasificación: Grupos + Eliminatorias tabs ──────────────────────────
+
+function WCClassificacion({ leagueId }) {
+    const [tab, setTab] = useState('grupos')
+    return (
+        <div className="space-y-4">
+            <div className="flex rounded-xl overflow-hidden border border-border/50">
+                {[['grupos', 'Grupos'], ['bracket', 'Eliminatorias']].map(([v, label]) => (
+                    <button
+                        key={v}
+                        onClick={() => setTab(v)}
+                        className={`flex-1 py-2 text-sm font-semibold transition-colors
+                            ${tab === v
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:bg-muted/40'}`}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+            {tab === 'grupos'
+                ? <WCGruposView leagueId={leagueId} />
+                : <WCEliminatorias leagueId={leagueId} />
+            }
+        </div>
+    )
+}
+
+// ─── WC Eliminatorias: third-place tracker + round bracket + simulator ───────
+
+const WC_ROUNDS = [
+    { md: 4, label: 'R32', full: 'Copa del Mundo (32)' },
+    { md: 5, label: 'Octavos', full: 'Octavos de Final' },
+    { md: 6, label: 'Cuartos', full: 'Cuartos de Final' },
+    { md: 7, label: 'Semis', full: 'Semifinales' },
+    { md: 8, label: '3er lugar', full: 'Tercer Lugar' },
+    { md: 9, label: 'Final', full: 'Final' },
+]
+
+function computeWCQualifiers(standings) {
+    const byGroup = {}
+    standings.forEach(r => {
+        const g = r.group_name || '?'
+        if (!byGroup[g]) byGroup[g] = []
+        byGroup[g].push(r)
+    })
+
+    const groupWinners = {}
+    const groupRunnerUps = {}
+    const allThirds = []
+
+    Object.keys(byGroup).sort().forEach(g => {
+        const sorted = [...byGroup[g]].sort((a, b) => {
+            const pd = (b.points || 0) - (a.points || 0)
+            if (pd !== 0) return pd
+            const gdA = (a.goals_for || 0) - (a.goals_against || 0)
+            const gdB = (b.goals_for || 0) - (b.goals_against || 0)
+            if (gdB !== gdA) return gdB - gdA
+            return (b.goals_for || 0) - (a.goals_for || 0)
+        })
+        groupWinners[g] = sorted[0]
+        groupRunnerUps[g] = sorted[1]
+        if (sorted[2]) allThirds.push({ ...sorted[2], _group: g })
+    })
+
+    allThirds.sort((a, b) => {
+        const pd = (b.points || 0) - (a.points || 0)
+        if (pd !== 0) return pd
+        const gdA = (a.goals_for || 0) - (a.goals_against || 0)
+        const gdB = (b.goals_for || 0) - (b.goals_against || 0)
+        if (gdB !== gdA) return gdB - gdA
+        return (b.goals_for || 0) - (a.goals_for || 0)
+    })
+
+    return { groupWinners, groupRunnerUps, allThirds }
+}
+
+function simulateStandings(standings, unplayed, simScores) {
+    const byTeamId = {}
+    standings.forEach(r => { byTeamId[r.team_id] = { ...r } })
+
+    unplayed.forEach(m => {
+        const sim = simScores[m.id]
+        if (!sim || sim.h === '' || sim.a === '') return
+        const h = parseInt(sim.h) || 0
+        const a = parseInt(sim.a) || 0
+        const hr = byTeamId[m.home_team_id]
+        const ar = byTeamId[m.away_team_id]
+        if (!hr || !ar) return
+        hr.played = (hr.played || 0) + 1; ar.played = (ar.played || 0) + 1
+        hr.goals_for = (hr.goals_for || 0) + h; hr.goals_against = (hr.goals_against || 0) + a
+        ar.goals_for = (ar.goals_for || 0) + a; ar.goals_against = (ar.goals_against || 0) + h
+        if (h > a) { hr.won = (hr.won || 0) + 1; hr.points = (hr.points || 0) + 3; ar.lost = (ar.lost || 0) + 1 }
+        else if (h < a) { ar.won = (ar.won || 0) + 1; ar.points = (ar.points || 0) + 3; hr.lost = (hr.lost || 0) + 1 }
+        else { hr.drawn = (hr.drawn || 0) + 1; hr.points = (hr.points || 0) + 1; ar.drawn = (ar.drawn || 0) + 1; ar.points = (ar.points || 0) + 1 }
+    })
+
+    return Object.values(byTeamId)
+}
+
+function WCEliminatorias({ leagueId }) {
+    const { data: standings = [] } = useGroupStandings(leagueId)
+    const { data: knockoutMatches = [], isLoading: koLoading } = useWCKnockoutMatches(leagueId)
+    const { data: groupMatches = [] } = useWCGroupMatches(leagueId)
+
+    const [simMode, setSimMode] = useState(false)
+    const [simScores, setSimScores] = useState({})
+    const [bracketRound, setBracketRound] = useState(4)
+
+    const unplayed = useMemo(() => groupMatches.filter(m => m.home_goals == null), [groupMatches])
+
+    const effectiveStandings = useMemo(() => {
+        if (!simMode || !Object.keys(simScores).length) return standings
+        return simulateStandings(standings, unplayed, simScores)
+    }, [simMode, simScores, standings, unplayed])
+
+    const { allThirds } = useMemo(() => computeWCQualifiers(effectiveStandings), [effectiveStandings])
+
+    const roundMatches = useMemo(
+        () => knockoutMatches.filter(m => m.matchday === bracketRound),
+        [knockoutMatches, bracketRound]
+    )
+
+    function toggleSim() {
+        if (simMode) setSimScores({})
+        setSimMode(s => !s)
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Header + simulator toggle */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Swords className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-bold text-foreground">Cuadro Eliminatorio</span>
+                </div>
+                <button
+                    onClick={toggleSim}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all
+                        ${simMode
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'border border-border text-muted-foreground hover:border-primary hover:text-primary'}`}
+                >
+                    <Calculator className="h-3 w-3" />
+                    {simMode ? 'Simulador activo' : 'Simular'}
+                </button>
+            </div>
+
+            {/* Simulator panel */}
+            {simMode && (
+                <SimulatorPanel
+                    unplayed={unplayed}
+                    simScores={simScores}
+                    onScoreChange={(id, h, a) => setSimScores(prev => ({ ...prev, [id]: { h, a } }))}
+                    onReset={() => setSimScores({})}
+                />
+            )}
+
+            {/* Third-place tracker */}
+            {allThirds.length > 0 && (
+                <ThirdPlaceTracker allThirds={allThirds} simMode={simMode} />
+            )}
+
+            {/* Round selector */}
+            <div className="space-y-3">
+                <div className="overflow-x-auto pb-1">
+                    <div className="flex gap-2 min-w-max">
+                        {WC_ROUNDS.map(r => (
+                            <button
+                                key={r.md}
+                                onClick={() => setBracketRound(r.md)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
+                                    ${bracketRound === r.md
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted/50 text-muted-foreground hover:bg-muted'}`}
+                            >
+                                {r.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Round title */}
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {WC_ROUNDS.find(r => r.md === bracketRound)?.full}
+                </p>
+
+                {/* Match cards */}
+                {koLoading ? (
+                    <div className="flex justify-center py-10">
+                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    </div>
+                ) : roundMatches.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-border/50 py-10 text-center">
+                        <Trophy className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Partidos aún por determinar</p>
+                    </div>
+                ) : (
+                    <div className={`grid gap-3 ${bracketRound <= 5 ? 'md:grid-cols-2' : ''}`}>
+                        {roundMatches.map((m, i) => (
+                            <KnockoutMatchCard key={m.id} match={m} num={i + 1} />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ─── Third-place tracker ─────────────────────────────────────────────────────
+
+function ThirdPlaceTracker({ allThirds, simMode }) {
+    return (
+        <div>
+            <div className="flex items-center gap-2 mb-2">
+                <Trophy className="h-3.5 w-3.5 text-amber-400" />
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Ranking de Terceros
+                </span>
+                {simMode && (
+                    <span className="text-[10px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+                        Simulado
+                    </span>
+                )}
+            </div>
+            <div className="overflow-hidden rounded-xl border border-border/50 bg-card">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr className="text-[10px] text-muted-foreground/70 border-b border-border/50 bg-secondary/30">
+                                <th className="px-2 py-2 text-center">#</th>
+                                <th className="px-2 py-2 text-left">Equipo</th>
+                                <th className="px-1 py-2 text-center w-7">Gr</th>
+                                <th className="px-1 py-2 text-center w-7">PJ</th>
+                                <th className="px-1 py-2 text-center w-8">Pts</th>
+                                <th className="px-1 py-2 text-center w-12">GF:GC</th>
+                                <th className="px-1 py-2 text-center w-8">DG</th>
+                                <th className="px-2 py-2 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {allThirds.map((t, i) => {
+                                const qualified = i < 8
+                                const gd = (t.goals_for || 0) - (t.goals_against || 0)
+                                const team = t.team || {}
+                                return (
+                                    <tr
+                                        key={t.team_id || i}
+                                        className={`border-b border-border/20 last:border-0 transition-colors
+                                            ${qualified
+                                                ? 'border-l-2 border-l-green-500/60 hover:bg-green-500/5'
+                                                : 'border-l-2 border-l-red-500/40 opacity-60 hover:bg-red-500/5'}`}
+                                    >
+                                        <td className="px-2 py-2 text-center">
+                                            <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold
+                                                ${qualified ? 'bg-green-500/20 text-green-400' : 'text-muted-foreground'}`}>
+                                                {i + 1}
+                                            </span>
+                                        </td>
+                                        <td className="px-2 py-2">
+                                            <div className="flex items-center gap-1.5">
+                                                {team.logo_url && (
+                                                    <img src={team.logo_url} alt="" className="h-4 w-4 object-contain shrink-0" />
+                                                )}
+                                                <span className={`font-medium truncate max-w-[80px] ${qualified ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                    {team.short_name || team.name || '—'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-1 py-2 text-center font-mono text-muted-foreground">{t._group || t.group_name}</td>
+                                        <td className="px-1 py-2 text-center text-muted-foreground">{t.played || 0}</td>
+                                        <td className="px-1 py-2 text-center font-black text-primary">{t.points || 0}</td>
+                                        <td className="px-1 py-2 text-center text-muted-foreground">{t.goals_for || 0}:{t.goals_against || 0}</td>
+                                        <td className={`px-1 py-2 text-center text-[10px] font-semibold
+                                            ${gd > 0 ? 'text-green-400' : gd < 0 ? 'text-red-400' : 'text-muted-foreground/50'}`}>
+                                            {gd > 0 ? `+${gd}` : gd}
+                                        </td>
+                                        <td className="px-2 py-2 text-center">
+                                            {qualified ? (
+                                                <span className="text-[9px] font-bold text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    Clasificado
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                    Eliminado
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="px-3 py-1.5 border-t border-border/30 bg-secondary/10 flex items-center gap-4 text-[10px] text-muted-foreground/60">
+                    <span className="flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-green-500/60 inline-block" />
+                        Top 8 clasifican (de 12 grupos)
+                    </span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ─── Knockout match card ─────────────────────────────────────────────────────
+
+function KnockoutMatchCard({ match, num }) {
+    const isPlayed = match.home_goals != null
+    const homeTeam = match.home_team
+    const awayTeam = match.away_team
+    const homeWon = isPlayed && match.home_goals > match.away_goals
+    const awayWon = isPlayed && match.away_goals > match.home_goals
+
+    const dateStr = match.match_date
+        ? new Date(match.match_date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+        : null
+
+    return (
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-secondary/30 border-b border-border/50">
+                <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
+                    Partido {num}
+                </span>
+                {dateStr && (
+                    <span className="text-[10px] text-muted-foreground">{dateStr}</span>
+                )}
+            </div>
+            <div className="px-3 py-2.5 space-y-2">
+                <KnockoutTeamRow team={homeTeam} goals={isPlayed ? match.home_goals : null} winner={homeWon} played={isPlayed} />
+                <div className="h-px bg-border/30" />
+                <KnockoutTeamRow team={awayTeam} goals={isPlayed ? match.away_goals : null} winner={awayWon} played={isPlayed} />
+            </div>
+        </div>
+    )
+}
+
+function KnockoutTeamRow({ team, goals, winner, played }) {
+    return (
+        <div className={`flex items-center justify-between gap-2 ${played && !winner ? 'opacity-50' : ''}`}>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+                {team?.logo_url ? (
+                    <img src={team.logo_url} alt="" className="h-6 w-6 object-contain shrink-0" />
+                ) : (
+                    <div className="h-6 w-6 rounded-full bg-muted/30 shrink-0 flex items-center justify-center">
+                        <Shield className="h-3 w-3 text-muted-foreground/30" />
+                    </div>
+                )}
+                <span className={`text-sm truncate ${winner ? 'font-bold text-foreground' : 'text-muted-foreground'} ${!team ? 'italic text-muted-foreground/50' : ''}`}>
+                    {team?.short_name || team?.name || 'Por determinar'}
+                </span>
+            </div>
+            {goals != null && (
+                <span className={`text-lg font-black tabular-nums ${winner ? 'text-primary' : 'text-muted-foreground'}`}>
+                    {goals}
+                </span>
+            )}
+        </div>
+    )
+}
+
+// ─── Simulator panel ─────────────────────────────────────────────────────────
+
+function SimulatorPanel({ unplayed, simScores, onScoreChange, onReset }) {
+    const byGroup = useMemo(() => {
+        const g = {}
+        unplayed.forEach(m => {
+            const key = m.group_name || '?'
+            if (!g[key]) g[key] = []
+            g[key].push(m)
+        })
+        return g
+    }, [unplayed])
+
+    if (!unplayed.length) {
+        return (
+            <div className="rounded-xl border border-dashed border-border/50 py-6 text-center">
+                <p className="text-sm text-muted-foreground">No hay partidos pendientes en la fase de grupos</p>
+            </div>
+        )
+    }
+
+    return (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Calculator className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-sm font-bold text-primary">Simula los resultados pendientes</span>
+                </div>
+                <button
+                    onClick={onReset}
+                    className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <RotateCcw className="h-3 w-3" />
+                    Reiniciar
+                </button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {Object.keys(byGroup).sort().map(g => (
+                    <div key={g}>
+                        <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                            Grupo {g}
+                        </div>
+                        <div className="space-y-2">
+                            {byGroup[g].map(m => {
+                                const sim = simScores[m.id] || { h: '', a: '' }
+                                return (
+                                    <div key={m.id} className="flex items-center gap-1.5 bg-card rounded-lg px-2 py-1.5 border border-border/40">
+                                        <div className="flex items-center gap-1 flex-1 min-w-0">
+                                            {m.home_team?.logo_url && (
+                                                <img src={m.home_team.logo_url} alt="" className="h-4 w-4 object-contain shrink-0" />
+                                            )}
+                                            <span className="text-[11px] truncate font-medium">
+                                                {m.home_team?.short_name || m.home_team?.name || '?'}
+                                            </span>
+                                        </div>
+                                        <input
+                                            type="number" min="0" max="20"
+                                            value={sim.h}
+                                            onChange={e => onScoreChange(m.id, e.target.value, sim.a)}
+                                            className="w-7 text-center bg-background border border-border/60 rounded text-sm font-black text-primary py-0.5 focus:outline-none focus:border-primary"
+                                            placeholder="0"
+                                        />
+                                        <span className="text-muted-foreground/50 text-xs font-bold">–</span>
+                                        <input
+                                            type="number" min="0" max="20"
+                                            value={sim.a}
+                                            onChange={e => onScoreChange(m.id, sim.h, e.target.value)}
+                                            className="w-7 text-center bg-background border border-border/60 rounded text-sm font-black text-primary py-0.5 focus:outline-none focus:border-primary"
+                                            placeholder="0"
+                                        />
+                                        <div className="flex items-center gap-1 flex-1 min-w-0 justify-end">
+                                            <span className="text-[11px] truncate font-medium text-right">
+                                                {m.away_team?.short_name || m.away_team?.name || '?'}
+                                            </span>
+                                            {m.away_team?.logo_url && (
+                                                <img src={m.away_team.logo_url} alt="" className="h-4 w-4 object-contain shrink-0" />
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground/60 text-center">
+                Los cambios se reflejan en tiempo real en el ranking de terceros
+            </p>
+        </div>
+    )
+}
+
 // World Cup: 12 group tables from tournament_standings
-function WCGroupStandings({ leagueId }) {
+function WCGruposView({ leagueId }) {
     const { data: rows = [], isLoading } = useGroupStandings(leagueId)
 
     if (isLoading) return (

@@ -198,3 +198,50 @@ export function useGroupStandings(leagueId) {
         enabled: !!leagueId,
     })
 }
+
+export function useWCKnockoutMatches(leagueId) {
+    return useQuery({
+        queryKey: ['wc_knockout', leagueId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`
+                    id, matchday, match_date, kick_off_time,
+                    home_goals, away_goals, home_team_id, away_team_id,
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url)
+                `)
+                .eq('league_id', leagueId)
+                .gte('matchday', 4)
+                .order('matchday', { ascending: true })
+                .order('match_date', { ascending: true })
+                .order('kick_off_time', { ascending: true })
+            if (error) throw error
+            return data || []
+        },
+        enabled: !!leagueId,
+    })
+}
+
+export function useWCGroupMatches(leagueId) {
+    return useQuery({
+        queryKey: ['wc_group_matches', leagueId],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`
+                    id, matchday, match_date, kick_off_time, group_name,
+                    home_goals, away_goals, home_team_id, away_team_id,
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name, logo_url),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name, logo_url)
+                `)
+                .eq('league_id', leagueId)
+                .lte('matchday', 3)
+                .order('match_date', { ascending: true })
+                .order('kick_off_time', { ascending: true })
+            if (error) throw error
+            return data || []
+        },
+        enabled: !!leagueId,
+    })
+}

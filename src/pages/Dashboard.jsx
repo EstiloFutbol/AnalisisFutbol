@@ -771,6 +771,7 @@ function WCEliminatorias({ leagueId }) {
 
     const [simMode, setSimMode] = useState(false)
     const [simScores, setSimScores] = useState({})
+    const [simKnockout, setSimKnockout] = useState({})
 
     const unplayed = useMemo(() => groupMatches.filter(m => m.home_goals == null), [groupMatches])
 
@@ -798,7 +799,7 @@ function WCEliminatorias({ leagueId }) {
     )
 
     function toggleSim() {
-        if (simMode) setSimScores({})
+        if (simMode) { setSimScores({}); setSimKnockout({}) }
         setSimMode(s => !s)
     }
 
@@ -828,7 +829,7 @@ function WCEliminatorias({ leagueId }) {
                     unplayed={unplayed}
                     simScores={simScores}
                     onScoreChange={(id, h, a) => setSimScores(prev => ({ ...prev, [id]: { h, a } }))}
-                    onReset={() => setSimScores({})}
+                    onReset={() => { setSimScores({}); setSimKnockout({}) }}
                 />
             )}
 
@@ -838,7 +839,19 @@ function WCEliminatorias({ leagueId }) {
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
             ) : (
-                <WCBracket knockoutMatches={knockoutMatches} standings={effectiveStandings} groupMatches={effectiveGroupMatches} simMode={simMode} />
+                <WCBracket
+                    knockoutMatches={knockoutMatches}
+                    standings={effectiveStandings}
+                    groupMatches={effectiveGroupMatches}
+                    simMode={simMode}
+                    simKnockout={simKnockout}
+                    onKoSelect={(matchId, side) => setSimKnockout(prev => {
+                        if (prev[matchId] === side) {
+                            const next = { ...prev }; delete next[matchId]; return next
+                        }
+                        return { ...prev, [matchId]: side }
+                    })}
+                />
             )}
 
             {/* Third-place tracker — below bracket */}
@@ -1005,8 +1018,8 @@ const BK_ROUNDS = [
     { md: 9, label: 'Final' },
 ]
 
-function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode = false }) {
-    const { groupWinners, groupRunnerUps } = useMemo(
+function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode = false, simKnockout = {}, onKoSelect = null }) {
+    const { groupWinners, groupRunnerUps, allThirds } = useMemo(
         () => computeWCQualifiers(standings, groupMatches),
         [standings, groupMatches]
     )
@@ -1075,29 +1088,70 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
 
     const totalWidth = BK_ROUNDS.length * BK_COL_W + (BK_ROUNDS.length - 1) * BK_COL_GAP
 
-    // For R32 slots, resolve labels + projected teams.
-    // Show actual team when: group is fully complete (confirmed) OR simulator is active.
-    function r32SlotProps(matchId) {
-        const bPos = WC_R32_BRACKET_ORDER.indexOf(matchId)
-        if (bPos < 0) return {}
-        const labels = WC_R32_SLOT_LABELS[bPos] || {}
+    // Map allThirds[0..7] to the 8 "Mejor 3°" slots in bracket position order
+    const thirdsMap = useMemo(() => {
+        if (!simMode) return {}
+        const map = {}
+        let ti = 0
+        ;(byRound[4] || []).forEach(match => {
+            const bPos = WC_R32_BRACKET_ORDER.indexOf(match.id)
+            const labels = bPos >= 0 ? WC_R32_SLOT_LABELS[bPos] : {}
+            if (labels.home === 'Mejor 3°') map[`${match.id}_home`] = allThirds[ti++]?.team || null
+            if (labels.away === 'Mejor 3°') map[`${match.id}_away`] = allThirds[ti++]?.team || null
+        })
+        return map
+    }, [byRound, allThirds, simMode])
 
-        function projForLabel(label) {
+    // Full bracket tree: propagate winners from round to round through simKnockout
+    const bracketNodes = useMemo(() => {
+        function resolveTeam(label, matchId, side) {
             if (!label) return null
+            if (label === 'Mejor 3°') return thirdsMap[`${matchId}_${side}`] || null
             const m = label.match(/^([12])° Gr\. ([A-L])$/)
             if (!m) return null
             const [, pos, group] = m
             if (!simMode && !completedGroups.has(group)) return null
-            return pos === '1' ? (groupWinners[group] || null) : (groupRunnerUps[group] || null)
+            const row = pos === '1' ? groupWinners[group] : groupRunnerUps[group]
+            return row?.team || null
         }
 
-        return {
-            homeLabel: labels.home,
-            awayLabel: labels.away,
-            homeProj: projForLabel(labels.home),
-            awayProj: projForLabel(labels.away),
-        }
-    }
+        const nodes = {}
+        BK_ROUNDS.forEach(({ md }, ri) => {
+            nodes[ri] = {}
+            ;(byRound[md] || []).forEach((match, mi) => {
+                let homeTeam = match.home_team || null
+                let awayTeam = match.away_team || null
+                let homeLabel = '', awayLabel = ''
+                let homeIsProj = false, awayIsProj = false
+
+                if (ri === 0) {
+                    const bPos = WC_R32_BRACKET_ORDER.indexOf(match.id)
+                    const labels = bPos >= 0 ? WC_R32_SLOT_LABELS[bPos] : {}
+                    homeLabel = labels.home || ''
+                    awayLabel = labels.away || ''
+                    if (!homeTeam) { homeTeam = resolveTeam(homeLabel, match.id, 'home'); homeIsProj = !!homeTeam }
+                    if (!awayTeam) { awayTeam = resolveTeam(awayLabel, match.id, 'away'); awayIsProj = !!awayTeam }
+                } else {
+                    const nodeA = nodes[ri - 1][mi * 2]
+                    const nodeB = nodes[ri - 1][mi * 2 + 1]
+                    if (!homeTeam && nodeA) { homeTeam = nodeA.winner || null; homeIsProj = !!(nodeA.homeIsProj || nodeA.awayIsProj) }
+                    if (!awayTeam && nodeB) { awayTeam = nodeB.winner || null; awayIsProj = !!(nodeB.homeIsProj || nodeB.awayIsProj) }
+                }
+
+                let winner = null
+                if (match.home_goals != null) {
+                    winner = match.home_goals > match.away_goals ? homeTeam : awayTeam
+                } else if (simKnockout[match.id] === 'home') {
+                    winner = homeTeam
+                } else if (simKnockout[match.id] === 'away') {
+                    winner = awayTeam
+                }
+
+                nodes[ri][mi] = { match, homeTeam, awayTeam, winner, homeLabel, awayLabel, homeIsProj, awayIsProj }
+            })
+        })
+        return nodes
+    }, [byRound, groupWinners, groupRunnerUps, completedGroups, simMode, simKnockout, thirdsMap])
 
     return (
         <div className="space-y-3">
@@ -1128,20 +1182,34 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
 
                     {/* Match cards */}
                     {BK_ROUNDS.map(({ md }, ri) =>
-                        (byRound[md] || []).map((m, mi) => (
-                            <div
-                                key={m.id}
-                                style={{
-                                    position: 'absolute',
-                                    left: ri * BK_COL_STEP,
-                                    top: BK_LABEL_H + bkMatchTop(ri, mi),
-                                    width: BK_COL_W,
-                                    height: BK_MATCH_H,
-                                }}
-                            >
-                                <BracketMatchSlot match={m} {...(md === 4 ? r32SlotProps(m.id) : {})} />
-                            </div>
-                        ))
+                        (byRound[md] || []).map((m, mi) => {
+                            const node = bracketNodes[ri]?.[mi] || {}
+                            return (
+                                <div
+                                    key={m.id}
+                                    style={{
+                                        position: 'absolute',
+                                        left: ri * BK_COL_STEP,
+                                        top: BK_LABEL_H + bkMatchTop(ri, mi),
+                                        width: BK_COL_W,
+                                        height: BK_MATCH_H,
+                                    }}
+                                >
+                                    <BracketMatchSlot
+                                        match={m}
+                                        homeTeam={node.homeTeam}
+                                        awayTeam={node.awayTeam}
+                                        homeLabel={node.homeLabel || ''}
+                                        awayLabel={node.awayLabel || ''}
+                                        homeIsProj={node.homeIsProj}
+                                        awayIsProj={node.awayIsProj}
+                                        simMode={simMode}
+                                        selectedWinner={simKnockout[m.id] || null}
+                                        onSelect={onKoSelect ? (side) => onKoSelect(m.id, side) : null}
+                                    />
+                                </div>
+                            )
+                        })
                     )}
                 </div>
             </div>
@@ -1155,7 +1223,11 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
                             Tercer Lugar
                         </p>
                         <div style={{ width: BK_COL_W }}>
-                            <BracketMatchSlot match={thirdPlaceMatch} />
+                            <BracketMatchSlot
+                                match={thirdPlaceMatch}
+                                homeTeam={thirdPlaceMatch.home_team}
+                                awayTeam={thirdPlaceMatch.away_team}
+                            />
                         </div>
                     </div>
                 </div>
@@ -1164,53 +1236,66 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
     )
 }
 
-function BracketMatchSlot({ match, homeLabel, awayLabel, homeProj, awayProj }) {
+function BracketMatchSlot({ match, homeTeam: homeProp, awayTeam: awayProp, homeLabel = '', awayLabel = '', homeIsProj = false, awayIsProj = false, simMode = false, selectedWinner = null, onSelect = null }) {
     const played = match.home_goals != null
     const homeWon = played && match.home_goals > match.away_goals
     const awayWon = played && match.away_goals > match.home_goals
+    const homeTeam = homeProp || match.home_team || null
+    const awayTeam = awayProp || match.away_team || null
+    const canSelect = simMode && !played && onSelect
+    const hasSelection = !!selectedWinner
 
     return (
         <div className="h-full flex flex-col rounded-lg border border-border/50 bg-muted/30 overflow-hidden shadow-sm">
             <BracketTeamSlot
-                team={match.home_team} goals={played ? match.home_goals : null}
-                winner={homeWon} played={played} label={homeLabel} proj={homeProj}
+                team={homeTeam} goals={played ? match.home_goals : null}
+                winner={homeWon} played={played} label={homeLabel} isProj={homeIsProj}
+                isSelected={selectedWinner === 'home'}
+                isEliminated={hasSelection && selectedWinner !== 'home' && !played}
+                onSelect={canSelect && homeTeam ? () => onSelect('home') : null}
             />
             <div className="h-px bg-border/30 shrink-0" />
             <BracketTeamSlot
-                team={match.away_team} goals={played ? match.away_goals : null}
-                winner={awayWon} played={played} label={awayLabel} proj={awayProj}
+                team={awayTeam} goals={played ? match.away_goals : null}
+                winner={awayWon} played={played} label={awayLabel} isProj={awayIsProj}
+                isSelected={selectedWinner === 'away'}
+                isEliminated={hasSelection && selectedWinner !== 'away' && !played}
+                onSelect={canSelect && awayTeam ? () => onSelect('away') : null}
             />
         </div>
     )
 }
 
-function BracketTeamSlot({ team, goals, winner, played, label, proj }) {
-    // proj = standing row from computeWCQualifiers (has .team sub-object)
-    const projTeam = proj?.team || null
-    const displayTeam = team || projTeam
-    const isProj = !team && !!projTeam
-
+function BracketTeamSlot({ team, goals, winner, played, label, isProj = false, isSelected = false, isEliminated = false, onSelect = null }) {
     return (
-        <div className={`flex flex-1 items-center gap-1.5 px-1.5 min-h-0
-            ${winner ? 'bg-primary/15' : ''}`}
+        <div
+            onClick={onSelect || undefined}
+            className={`flex flex-1 items-center gap-1.5 px-1.5 min-h-0 transition-colors
+                ${winner && played ? 'bg-primary/15' : ''}
+                ${isSelected && !played ? 'bg-green-500/10' : ''}
+                ${isEliminated ? 'opacity-35' : ''}
+                ${onSelect ? 'cursor-pointer hover:bg-muted/60' : ''}`}
         >
-            {displayTeam?.logo_url ? (
-                <img src={displayTeam.logo_url} alt=""
-                    className={`h-4 w-4 object-contain shrink-0 ${isProj ? 'opacity-70' : ''}`} />
+            {team?.logo_url ? (
+                <img src={team.logo_url} alt=""
+                    className={`h-4 w-4 object-contain shrink-0 ${isProj && !isSelected ? 'opacity-70' : ''}`} />
             ) : (
                 <div className="h-4 w-4 rounded-full bg-border/40 shrink-0" />
             )}
             <span className={`text-[10px] flex-1 truncate leading-tight
-                ${winner ? 'font-bold text-foreground'
+                ${winner && played ? 'font-bold text-foreground'
+                    : isSelected && !played ? 'font-semibold text-green-400'
                     : played ? 'text-foreground/70'
                     : isProj ? 'text-foreground/75 italic'
+                    : team ? 'text-foreground/80'
                     : label ? 'text-foreground/60 font-medium'
                     : 'text-foreground/50'}`}
             >
-                {displayTeam
-                    ? (displayTeam.short_name || displayTeam.name)
-                    : (label || '?')}
+                {team ? (team.short_name || team.name) : (label || '?')}
             </span>
+            {isSelected && !played && (
+                <span className="text-green-400 text-[9px] shrink-0 font-bold">✓</span>
+            )}
             {goals != null && (
                 <span className={`text-[11px] font-black tabular-nums shrink-0
                     ${winner ? 'text-primary' : 'text-foreground/60'}`}

@@ -775,7 +775,7 @@ function WCEliminatorias({ leagueId }) {
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 </div>
             ) : (
-                <WCBracket knockoutMatches={knockoutMatches} standings={effectiveStandings} />
+                <WCBracket knockoutMatches={knockoutMatches} standings={effectiveStandings} simMode={simMode} />
             )}
 
             {/* Third-place tracker — below bracket */}
@@ -950,7 +950,7 @@ const BK_ROUNDS = [
     { md: 9, label: 'Final' },
 ]
 
-function WCBracket({ knockoutMatches, standings = [] }) {
+function WCBracket({ knockoutMatches, standings = [], simMode = false }) {
     const { groupWinners, groupRunnerUps } = useMemo(
         () => computeWCQualifiers(standings),
         [standings]
@@ -1005,7 +1005,7 @@ function WCBracket({ knockoutMatches, standings = [] }) {
 
     const totalWidth = BK_ROUNDS.length * BK_COL_W + (BK_ROUNDS.length - 1) * BK_COL_GAP
 
-    // For R32 slots, resolve labels + projected teams from standings
+    // For R32 slots, resolve labels + projected teams (only in simulator mode)
     function r32SlotProps(matchId) {
         const bPos = WC_R32_BRACKET_ORDER.indexOf(matchId)
         if (bPos < 0) return {}
@@ -1013,8 +1013,8 @@ function WCBracket({ knockoutMatches, standings = [] }) {
         return {
             homeLabel: labels.home,
             awayLabel: labels.away,
-            homeProj: getSlotProjection(labels.home, groupWinners, groupRunnerUps),
-            awayProj: getSlotProjection(labels.away, groupWinners, groupRunnerUps),
+            homeProj: simMode ? getSlotProjection(labels.home, groupWinners, groupRunnerUps) : null,
+            awayProj: simMode ? getSlotProjection(labels.away, groupWinners, groupRunnerUps) : null,
         }
     }
 
@@ -1089,12 +1089,12 @@ function BracketMatchSlot({ match, homeLabel, awayLabel, homeProj, awayProj }) {
     const awayWon = played && match.away_goals > match.home_goals
 
     return (
-        <div className="h-full flex flex-col rounded-lg border border-border/60 bg-card overflow-hidden shadow-sm">
+        <div className="h-full flex flex-col rounded-lg border border-border/50 bg-muted/30 overflow-hidden shadow-sm">
             <BracketTeamSlot
                 team={match.home_team} goals={played ? match.home_goals : null}
                 winner={homeWon} played={played} label={homeLabel} proj={homeProj}
             />
-            <div className="h-px bg-border/40 shrink-0" />
+            <div className="h-px bg-border/30 shrink-0" />
             <BracketTeamSlot
                 team={match.away_team} goals={played ? match.away_goals : null}
                 winner={awayWon} played={played} label={awayLabel} proj={awayProj}
@@ -1111,20 +1111,20 @@ function BracketTeamSlot({ team, goals, winner, played, label, proj }) {
 
     return (
         <div className={`flex flex-1 items-center gap-1.5 px-1.5 min-h-0
-            ${winner ? 'bg-primary/10' : ''}`}
+            ${winner ? 'bg-primary/15' : ''}`}
         >
             {displayTeam?.logo_url ? (
                 <img src={displayTeam.logo_url} alt=""
-                    className={`h-4 w-4 object-contain shrink-0 ${isProj ? 'opacity-60' : ''}`} />
+                    className={`h-4 w-4 object-contain shrink-0 ${isProj ? 'opacity-70' : ''}`} />
             ) : (
-                <div className="h-4 w-4 rounded-full bg-muted/20 shrink-0" />
+                <div className="h-4 w-4 rounded-full bg-border/40 shrink-0" />
             )}
             <span className={`text-[10px] flex-1 truncate leading-tight
                 ${winner ? 'font-bold text-foreground'
-                    : played ? 'text-muted-foreground'
-                    : isProj ? 'text-muted-foreground/70 italic'
-                    : displayTeam ? 'text-muted-foreground/60'
-                    : 'text-muted-foreground/40 italic'}`}
+                    : played ? 'text-foreground/70'
+                    : isProj ? 'text-foreground/75 italic'
+                    : label ? 'text-foreground/60 font-medium'
+                    : 'text-foreground/50'}`}
             >
                 {displayTeam
                     ? (displayTeam.short_name || displayTeam.name)
@@ -1132,7 +1132,7 @@ function BracketTeamSlot({ team, goals, winner, played, label, proj }) {
             </span>
             {goals != null && (
                 <span className={`text-[11px] font-black tabular-nums shrink-0
-                    ${winner ? 'text-primary' : 'text-muted-foreground/70'}`}
+                    ${winner ? 'text-primary' : 'text-foreground/60'}`}
                 >
                     {goals}
                 </span>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, X, ChevronDown, ChevronUp, Loader2, AlertCircle, CheckCircle, Trash2, ExternalLink, Pencil } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,8 +10,6 @@ import {
     useAddBettorBet,
     useDeleteBettorBet,
     useBettorBets,
-    formatAmount,
-    toEUR,
 } from '@/hooks/useBettorProfiles'
 import { useLeagues } from '@/hooks/useMatches'
 import { useSeasons, useMatchesByJornada, useMatchesBySeason } from '@/hooks/useBetting'
@@ -37,24 +35,21 @@ const STATUS_STYLES = {
 }
 const STATUS_LABELS = { pending: 'Pendiente', won: 'Ganada', lost: 'Perdida', void: 'Anulada' }
 
-const EMPTY_LEG = {
-    match_info: '',
+// Shared empty state for a single pick (used both in AddBetForm and combined legs)
+const EMPTY_PICK = {
+    league_id: '', season: '', matchday: '', match_id: '',
+    match_info: '', league_name: '', match_date: '',
+    home_team_name: '', away_team_name: '',
     bet_type: '1X2',
-    outcome: '', direction: 'Más de', amount: '',
-    hand_team: 'Local', hand_value: '-1', free_text: '',
+    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
     home_goals_sel: '', away_goals_sel: '',
     goal_scorer: '', goal_timing: 'en cualquier momento',
     odds: '',
 }
 
 const EMPTY_BET = {
-    league_id: '', season: '', matchday: '', match_id: '',
-    match_info: '', league_name: '', match_date: '',
-    bet_type: '1X2',
-    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
-    home_goals_sel: '', away_goals_sel: '',
-    goal_scorer: '', goal_timing: 'en cualquier momento',
-    odds: '', stake: '', bookmaker: '',
+    ...EMPTY_PICK,
+    stake: '', bookmaker: '',
     bet_timing: 'pre', bet_minute: '',
     currency: 'EUR', status: 'won',
 }
@@ -64,23 +59,117 @@ function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// ─── Reusable match picker (league → season → jornada → match dropdown) ───────
+
+function MatchPickerFields({ form, onChange, leagues, inputCls }) {
+    const isWC = leagues.find(l => String(l.id) === String(form.league_id))?.code === 'WC'
+
+    const { data: seasons = [] } = useSeasons(form.league_id || null)
+    const { data: wcMatches = [], isLoading: loadingWC } = useMatchesBySeason(
+        isWC && form.season ? form.league_id : null,
+        isWC && form.season ? form.season      : null,
+    )
+    const { data: jornadaMatches = [], isLoading: loadingJornada } = useMatchesByJornada(
+        !isWC && form.matchday ? form.league_id : null,
+        form.season,
+        form.matchday,
+    )
+
+    const loading  = isWC ? loadingWC : loadingJornada
+    const matches  = isWC ? wcMatches : jornadaMatches
+    const showPicker = (isWC && form.season) || (!isWC && form.matchday)
+
+    const handleLeague = (e) => {
+        const lg = leagues.find(l => String(l.id) === String(e.target.value))
+        onChange({
+            league_id: e.target.value, league_name: lg?.name || '',
+            season: '', matchday: '', match_id: '', match_info: '',
+            match_date: '', home_team_name: '', away_team_name: '',
+        })
+    }
+    const handleSeason  = (e) => onChange({ season: e.target.value, matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' })
+    const handleMatchday = (e) => onChange({ matchday: e.target.value, match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' })
+    const handleMatch   = (e) => {
+        const m = matches.find(x => String(x.id) === String(e.target.value))
+        onChange({
+            match_id:       e.target.value,
+            match_info:     m ? `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}` : '',
+            match_date:     m?.match_date || '',
+            home_team_name: m?.home_team?.name || '',
+            away_team_name: m?.away_team?.name || '',
+        })
+    }
+
+    return (
+        <div className="space-y-1.5">
+            <div className="grid gap-1.5 grid-cols-2 sm:grid-cols-3">
+                <select value={form.league_id} onChange={handleLeague} className={inputCls}>
+                    <option value="">Liga…</option>
+                    {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+                {form.league_id && (
+                    <select value={form.season} onChange={handleSeason} className={inputCls}>
+                        <option value="">Temporada…</option>
+                        {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                )}
+                {!isWC && form.season && (
+                    <select value={form.matchday} onChange={handleMatchday} className={inputCls}>
+                        <option value="">Jornada…</option>
+                        {Array.from({ length: 38 }, (_, i) => i + 1).map(j => (
+                            <option key={j} value={j}>J{j}</option>
+                        ))}
+                    </select>
+                )}
+            </div>
+
+            {showPicker && (
+                loading ? (
+                    <div className="flex items-center gap-2 py-1 text-xs text-muted-foreground">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
+                    </div>
+                ) : (
+                    <>
+                        <select value={form.match_id} onChange={handleMatch}
+                            className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                            <option value="">— Selecciona partido —</option>
+                            {matches.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.group_name ? `Gr. ${m.group_name} · ` : ''}
+                                    {m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                                </option>
+                            ))}
+                        </select>
+                        {form.match_info && (
+                            <p className="text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>
+                        )}
+                    </>
+                )
+            )}
+        </div>
+    )
+}
+
 // ─── Adaptive selection fields ────────────────────────────────────────────────
 
-function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
+function AdaptiveFields({ form, set, inputCls }) {
+    const homeTeam = form.home_team_name || 'Local'
+    const awayTeam = form.away_team_name || 'Visitante'
+
     switch (form.bet_type) {
         case '1X2':
             return (
                 <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
-                    <option value="">Selecciona resultado…</option>
-                    <option value={`${homeTeam} gana`}>{homeTeam} gana (Local)</option>
+                    <option value="">Resultado…</option>
+                    <option value={`${homeTeam} gana`}>{homeTeam} gana</option>
                     <option value="Empate">Empate</option>
-                    <option value={`${awayTeam} gana`}>{awayTeam} gana (Visitante)</option>
+                    <option value={`${awayTeam} gana`}>{awayTeam} gana</option>
                 </select>
             )
         case 'Más/Menos Goles':
         case 'Más/Menos (1ª parte)': {
-            const isHalf   = form.bet_type === 'Más/Menos (1ª parte)'
-            const amounts  = isHalf ? ['0.5','1.5','2.5'] : ['0.5','1.5','2.5','3.5','4.5','5.5']
+            const isHalf  = form.bet_type === 'Más/Menos (1ª parte)'
+            const amounts = isHalf ? ['0.5','1.5','2.5'] : ['0.5','1.5','2.5','3.5','4.5','5.5']
             return (
                 <div className="flex gap-1.5">
                     <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
@@ -119,8 +208,8 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
             return (
                 <div className="flex gap-1.5">
                     <select value={form.hand_team} onChange={e => set('hand_team', e.target.value)} className={`${inputCls} flex-1`}>
-                        <option value="Local">{homeTeam} (Local)</option>
-                        <option value="Visitante">{awayTeam} (Visitante)</option>
+                        <option value="Local">{homeTeam}</option>
+                        <option value="Visitante">{awayTeam}</option>
                     </select>
                     <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-20`}>
                         {['-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3'].map(v => <option key={v}>{v}</option>)}
@@ -157,6 +246,18 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
                     <option value={`${awayTeam} gana (1T)`}>{awayTeam} gana en el descanso</option>
                 </select>
             )
+        case 'Más/Menos (1ª parte)':
+            return (
+                <div className="flex gap-1.5">
+                    <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option>Más de</option><option>Menos de</option>
+                    </select>
+                    <select value={form.amount} onChange={e => set('amount', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option value="">Goles 1T…</option>
+                        {['0.5','1.5','2.5'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+            )
         case 'Goleador':
             return (
                 <div className="space-y-1.5">
@@ -177,14 +278,16 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
     }
 }
 
-function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
+function buildSelection(form) {
+    const home = form.home_team_name || 'Local'
+    const away = form.away_team_name || 'Visitante'
     switch (form.bet_type) {
         case '1X2':               return form.outcome
         case 'Más/Menos Goles':   return form.amount ? `${form.direction} ${form.amount} goles` : ''
         case 'BTTS':              return form.outcome ? `Ambos marcan: ${form.outcome}` : ''
         case 'Córners':           return form.amount ? `${form.direction} ${form.amount} córners` : ''
         case 'Tarjetas':          return form.amount ? `${form.direction} ${form.amount} tarjetas` : ''
-        case 'Hándicap':          return `${form.hand_team === 'Local' ? homeTeam : awayTeam} ${form.hand_value}`
+        case 'Hándicap':          return `${form.hand_team === 'Local' ? home : away} ${form.hand_value}`
         case 'Doble Oportunidad': return form.outcome
         case 'Resultado Exacto':  return form.home_goals_sel !== '' && form.away_goals_sel !== '' ? `${form.home_goals_sel}-${form.away_goals_sel}` : ''
         case 'Resultado al Descanso': return form.outcome
@@ -194,21 +297,25 @@ function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
     }
 }
 
+function resetSelectionFields(form) {
+    return { ...form, outcome: '', amount: '', free_text: '', home_goals_sel: '', away_goals_sel: '', goal_scorer: '' }
+}
+
 // ─── Combined bet legs form ───────────────────────────────────────────────────
 
-function CombinedLegsForm({ legs, setLegs, inputCls }) {
-    const setLeg = (idx, k, v) => {
+function CombinedLegsForm({ legs, setLegs, leagues, inputCls }) {
+    const patchLeg = (idx, updates) => {
         setLegs(prev => prev.map((leg, i) => {
             if (i !== idx) return leg
-            const next = { ...leg, [k]: v }
-            if (k === 'bet_type') {
+            const next = { ...leg, ...updates }
+            if (updates.bet_type !== undefined) {
                 next.outcome = ''; next.amount = ''; next.free_text = ''
                 next.home_goals_sel = ''; next.away_goals_sel = ''; next.goal_scorer = ''
             }
             return next
         }))
     }
-    const addLeg    = () => setLegs(prev => [...prev, { ...EMPTY_LEG }])
+    const addLeg    = () => setLegs(prev => [...prev, { ...EMPTY_PICK }])
     const removeLeg = (idx) => setLegs(prev => prev.filter((_, i) => i !== idx))
 
     const combinedOdds = legs.reduce((acc, leg) => {
@@ -229,28 +336,34 @@ function CombinedLegsForm({ legs, setLegs, inputCls }) {
                             </button>
                         )}
                     </div>
-                    <input value={leg.match_info} onChange={e => setLeg(idx, 'match_info', e.target.value)}
-                        placeholder="Partido (ej. Real Madrid vs Barça)" className={inputCls} />
+
+                    {/* Match picker per leg */}
+                    <MatchPickerFields
+                        form={leg}
+                        onChange={updates => patchLeg(idx, updates)}
+                        leagues={leagues}
+                        inputCls={inputCls}
+                    />
+
+                    {/* Bet type + selection */}
                     <div className="grid grid-cols-2 gap-1.5">
                         <div>
                             <label className="block text-[10px] text-muted-foreground mb-1">Tipo</label>
-                            <select value={leg.bet_type} onChange={e => setLeg(idx, 'bet_type', e.target.value)} className={inputCls}>
+                            <select value={leg.bet_type} onChange={e => patchLeg(idx, { bet_type: e.target.value })} className={inputCls}>
                                 {SINGLE_BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
-                            <AdaptiveFields
-                                form={leg} set={(k, v) => setLeg(idx, k, v)}
-                                homeTeam="Local" awayTeam="Visitante"
-                                inputCls={inputCls}
-                            />
+                            <AdaptiveFields form={leg} set={(k, v) => patchLeg(idx, { [k]: v })} inputCls={inputCls} />
                         </div>
                     </div>
+
+                    {/* Odds */}
                     <div className="flex items-center gap-2">
                         <label className="text-[10px] text-muted-foreground shrink-0">Cuota:</label>
                         <input type="number" step="0.01" min="1.01" value={leg.odds}
-                            onChange={e => setLeg(idx, 'odds', e.target.value)}
+                            onChange={e => patchLeg(idx, { odds: e.target.value })}
                             placeholder="1.85" className={`${inputCls} w-28`} />
                     </div>
                 </div>
@@ -297,8 +410,7 @@ function BettorBetList({ profileId }) {
                     <button
                         onClick={() => deleteBet({ id: bet.id, bettor_profile_id: profileId })}
                         disabled={deleting}
-                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                    >
+                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors">
                         <Trash2 className="h-3.5 w-3.5" />
                     </button>
                 </div>
@@ -310,60 +422,21 @@ function BettorBetList({ profileId }) {
 // ─── Add bet form ─────────────────────────────────────────────────────────────
 
 function AddBetForm({ profileId, onClose }) {
-    const [form, setForm]   = useState(EMPTY_BET)
-    const [legs, setLegs]   = useState([{ ...EMPTY_LEG }, { ...EMPTY_LEG }])
+    const [form, setForm] = useState(EMPTY_BET)
+    const [legs, setLegs] = useState([{ ...EMPTY_PICK }, { ...EMPTY_PICK }])
     const [error, setError] = useState('')
     const { mutate: addBet, isPending } = useAddBettorBet()
     const { data: leagues = [] } = useLeagues()
-    const { data: seasons = [] } = useSeasons(form.league_id || null)
 
     const isCombined = form.bet_type === 'Combinada'
 
-    const isWCLeague = useMemo(() => {
-        const lg = leagues.find(l => String(l.id) === String(form.league_id))
-        return lg?.code === 'WC'
-    }, [leagues, form.league_id])
-
-    const { data: allSeasonMatches = [], isLoading: loadingWC } = useMatchesBySeason(
-        (!isCombined && isWCLeague) ? form.league_id : null,
-        (!isCombined && isWCLeague) ? form.season : null,
-    )
-    const { data: matchesForJornada = [], isLoading: loadingJornada } = useMatchesByJornada(
-        (!isCombined && !isWCLeague) ? form.league_id : null,
-        form.season,
-        form.matchday,
-    )
-    const loadingMatches = isWCLeague ? loadingWC : loadingJornada
-    const activeMatches  = isWCLeague ? allSeasonMatches : matchesForJornada
-    const selectedMatch  = activeMatches.find(m => String(m.id) === String(form.match_id))
-
     const set = (k, v) => setForm(f => {
         const next = { ...f, [k]: v }
-        if (k === 'league_id') {
-            next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''
-            next.league_name = ''; next.outcome = ''; next.amount = ''; next.free_text = ''
-            next.home_goals_sel = ''; next.away_goals_sel = ''; next.goal_scorer = ''
-            const lg = leagues.find(x => String(x.id) === String(v))
-            if (lg) next.league_name = lg.name || lg.code || ''
-        }
-        if (k === 'season')   { next.matchday = ''; next.match_id = ''; next.match_info = '' }
-        if (k === 'matchday') { next.match_id = ''; next.match_info = '' }
-        if (k === 'bet_type') {
-            next.outcome = ''; next.amount = ''; next.free_text = ''
-            next.home_goals_sel = ''; next.away_goals_sel = ''; next.goal_scorer = ''
-        }
+        if (k === 'bet_type') return resetSelectionFields(next)
         return next
     })
 
-    const selectMatch = (matchList, id) => {
-        const m = matchList.find(x => String(x.id) === String(id))
-        setForm(f => ({
-            ...f,
-            match_id:   id,
-            match_info: m ? `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}` : f.match_info,
-            match_date: m?.match_date || f.match_date,
-        }))
-    }
+    const handleMatchPickerChange = (updates) => setForm(f => ({ ...f, ...updates }))
 
     const inputCls = 'w-full rounded-lg border border-border bg-background py-1.5 px-2.5 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
 
@@ -387,13 +460,12 @@ function AddBetForm({ profileId, onClose }) {
             const selectionText = validLegs
                 .map(leg => `${leg.match_info}: ${buildSelection(leg)} @${parseFloat(leg.odds).toFixed(2)}`)
                 .join(' + ')
-            const matchInfoText = `Combinada ${validLegs.length} picks`
             setError('')
             addBet({
                 bettor_profile_id: profileId,
                 match_id:   null,
-                match_info: matchInfoText,
-                league:     form.league_name || null,
+                match_info: `Combinada ${validLegs.length} picks`,
+                league:     null,
                 bet_type:   'Combinada',
                 selection:  selectionText,
                 odds:       combinedOdds,
@@ -405,21 +477,18 @@ function AddBetForm({ profileId, onClose }) {
                 currency:   form.currency,
                 status:     form.status,
             }, {
-                onSuccess: () => { setForm(EMPTY_BET); setLegs([{ ...EMPTY_LEG }, { ...EMPTY_LEG }]); onClose() },
+                onSuccess: () => { setForm(EMPTY_BET); setLegs([{ ...EMPTY_PICK }, { ...EMPTY_PICK }]); onClose() },
                 onError:   (e) => setError(e.message),
             })
             return
         }
 
         // ── Single bet ────────────────────────────────────────────────────────
-        const homeTeam  = selectedMatch?.home_team?.name || 'Local'
-        const awayTeam  = selectedMatch?.away_team?.name || 'Visitante'
-        const selection = buildSelection(form, homeTeam, awayTeam)
-        const matchInfo = form.match_info || (selectedMatch ? `${homeTeam} vs ${awayTeam}` : '')
+        const selection = buildSelection(form)
         const missing = []
-        if (!matchInfo) missing.push('partido')
-        if (!selection) missing.push('selección')
-        if (!form.odds) missing.push('cuota')
+        if (!form.match_info) missing.push('partido')
+        if (!selection)       missing.push('selección')
+        if (!form.odds)       missing.push('cuota')
         if (missing.length) { setError(`Completa: ${missing.join(', ')}.`); return }
         const odds = parseFloat(form.odds)
         if (isNaN(odds) || odds < 1.01) { setError('Cuota ≥ 1.01.'); return }
@@ -427,7 +496,7 @@ function AddBetForm({ profileId, onClose }) {
         addBet({
             bettor_profile_id: profileId,
             match_id:   form.match_id || null,
-            match_info: matchInfo,
+            match_info: form.match_info,
             league:     form.league_name || null,
             bet_type:   form.bet_type,
             selection,
@@ -449,7 +518,7 @@ function AddBetForm({ profileId, onClose }) {
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
             <p className="text-xs font-bold text-foreground uppercase tracking-wide">Nuevo pick</p>
 
-            {/* Bet type — first so the user picks single vs combinada before the rest adapts */}
+            {/* Bet type first — determines single vs combined layout */}
             <div>
                 <label className="block text-[10px] text-muted-foreground mb-1">Tipo de apuesta</label>
                 <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
@@ -457,124 +526,41 @@ function AddBetForm({ profileId, onClose }) {
                 </select>
             </div>
 
-            {/* Combined bet — legs */}
+            {/* Combined bet — legs, each with their own match picker */}
             {isCombined && (
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Picks de la combinada</label>
-                    <CombinedLegsForm legs={legs} setLegs={setLegs} inputCls={inputCls} />
+                    <CombinedLegsForm legs={legs} setLegs={setLegs} leagues={leagues} inputCls={inputCls} />
                 </div>
             )}
 
-            {/* Single bet — league / match picker */}
+            {/* Single bet — match picker + selection */}
             {!isCombined && (
                 <>
-                    {/* League / season / jornada */}
-                    <div className="grid gap-2 sm:grid-cols-3">
-                        <div>
-                            <label className="block text-[10px] text-muted-foreground mb-1">Liga</label>
-                            <select value={form.league_id} onChange={e => set('league_id', e.target.value)} className={inputCls}>
-                                <option value="">Manual</option>
-                                {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                            </select>
-                        </div>
-                        {form.league_id && (
-                            <div>
-                                <label className="block text-[10px] text-muted-foreground mb-1">Temporada</label>
-                                <select value={form.season} onChange={e => set('season', e.target.value)} className={inputCls}>
-                                    <option value="">Temporada</option>
-                                    {seasons.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                            </div>
-                        )}
-                        {!isWCLeague && form.season && (
-                            <div>
-                                <label className="block text-[10px] text-muted-foreground mb-1">Jornada</label>
-                                <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
-                                    <option value="">Jornada</option>
-                                    {Array.from({ length: 38 }, (_, i) => i + 1).map(j => <option key={j} value={j}>J{j}</option>)}
-                                </select>
-                            </div>
-                        )}
+                    <div>
+                        <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
+                        <MatchPickerFields form={form} onChange={handleMatchPickerChange} leagues={leagues} inputCls={inputCls} />
                     </div>
-
-                    {/* Match picker */}
-                    {isWCLeague && form.season ? (
-                        <div>
-                            <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
-                            {loadingMatches ? (
-                                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
-                                </div>
-                            ) : (
-                                <select value={form.match_id} onChange={e => selectMatch(allSeasonMatches, e.target.value)}
-                                    className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
-                                    <option value="">— Selecciona partido —</option>
-                                    {allSeasonMatches.map(m => (
-                                        <option key={m.id} value={m.id}>
-                                            {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            {form.match_info && <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>}
-                        </div>
-                    ) : form.matchday && (loadingJornada || matchesForJornada.length > 0) ? (
-                        <div>
-                            <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
-                            {loadingJornada ? (
-                                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
-                                </div>
-                            ) : (
-                                <select value={form.match_id} onChange={e => selectMatch(matchesForJornada, e.target.value)}
-                                    className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
-                                    <option value="">— Selecciona partido —</option>
-                                    {matchesForJornada.map(m => (
-                                        <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>
-                                    ))}
-                                </select>
-                            )}
-                            {form.match_info && <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>}
-                        </div>
-                    ) : (
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            <div>
-                                <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
-                                <input value={form.match_info} onChange={e => set('match_info', e.target.value)}
-                                    placeholder="Real Madrid vs Barça"
-                                    className={`${inputCls} ${!form.match_info ? 'border-amber-500/30' : ''}`} />
-                            </div>
-                            <div>
-                                <label className="block text-[10px] text-muted-foreground mb-1">Fecha</label>
-                                <input type="date" value={form.match_date} onChange={e => set('match_date', e.target.value)} className={inputCls} />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Selection */}
                     <div>
                         <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
-                        <AdaptiveFields
-                            form={form} set={set}
-                            homeTeam={selectedMatch?.home_team?.name || 'Local'}
-                            awayTeam={selectedMatch?.away_team?.name || 'Visitante'}
-                            inputCls={inputCls}
-                        />
+                        <AdaptiveFields form={form} set={set} inputCls={inputCls} />
                     </div>
-
-                    {/* Odds (only for single bets) */}
                     <div className="w-40">
                         <label className="block text-[10px] text-muted-foreground mb-1">Cuota</label>
-                        <input type="number" step="0.01" min="1.01" value={form.odds} onChange={e => set('odds', e.target.value)} placeholder="1.85" className={inputCls} />
+                        <input type="number" step="0.01" min="1.01" value={form.odds}
+                            onChange={e => set('odds', e.target.value)}
+                            placeholder="1.85" className={inputCls} />
                     </div>
                 </>
             )}
 
-            {/* Stake / currency / result — always shown */}
+            {/* Stake / currency / resultado — always shown */}
             <div className="grid gap-2 sm:grid-cols-3">
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Stake</label>
-                    <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)} placeholder="10.00" className={inputCls} />
+                    <input type="number" step="0.01" min="0.01" value={form.stake}
+                        onChange={e => set('stake', e.target.value)}
+                        placeholder="10.00" className={inputCls} />
                 </div>
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Divisa</label>
@@ -613,7 +599,9 @@ function AddBetForm({ profileId, onClose }) {
                 {form.bet_timing === 'live' && (
                     <div>
                         <label className="block text-[10px] text-muted-foreground mb-1">Minuto</label>
-                        <input type="number" min="1" max="120" value={form.bet_minute} onChange={e => set('bet_minute', e.target.value)} placeholder="45" className={inputCls} />
+                        <input type="number" min="1" max="120" value={form.bet_minute}
+                            onChange={e => set('bet_minute', e.target.value)}
+                            placeholder="45" className={inputCls} />
                     </div>
                 )}
             </div>

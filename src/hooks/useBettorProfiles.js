@@ -196,7 +196,7 @@ export function useUpdatePreferredCurrency() {
             const { error } = await supabase
                 .from('user_profiles')
                 .update({ preferred_currency })
-                .eq('user_id', user.id)
+                .eq('id', user.id)
             if (error) throw new Error(error.message)
         },
         onSuccess: () => qc.invalidateQueries({ queryKey: ['profile'] }),

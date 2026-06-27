@@ -18,7 +18,15 @@ import { useSeasons, useMatchesByJornada, useMatchesBySeason } from '@/hooks/use
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const BET_TYPES  = ['1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas', 'Hándicap', 'Doble Oportunidad', 'Otro']
+const BET_TYPES = [
+    'Combinada',
+    '1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas',
+    'Hándicap', 'Doble Oportunidad',
+    'Resultado Exacto', 'Resultado al Descanso', 'Más/Menos (1ª parte)', 'Goleador',
+    'Otro',
+]
+const SINGLE_BET_TYPES = BET_TYPES.filter(t => t !== 'Combinada')
+
 const BOOKMAKERS = ['Bet365', 'William Hill', 'Betway', 'Codere', 'Marca Apuestas', 'Bwin', 'Betfair', 'Sportium', '888sport', 'Unibet', 'Winamax', 'Betclic', 'Pinnacle', 'Otro']
 
 const STATUS_STYLES = {
@@ -29,11 +37,23 @@ const STATUS_STYLES = {
 }
 const STATUS_LABELS = { pending: 'Pendiente', won: 'Ganada', lost: 'Perdida', void: 'Anulada' }
 
+const EMPTY_LEG = {
+    match_info: '',
+    bet_type: '1X2',
+    outcome: '', direction: 'Más de', amount: '',
+    hand_team: 'Local', hand_value: '-1', free_text: '',
+    home_goals_sel: '', away_goals_sel: '',
+    goal_scorer: '', goal_timing: 'en cualquier momento',
+    odds: '',
+}
+
 const EMPTY_BET = {
     league_id: '', season: '', matchday: '', match_id: '',
     match_info: '', league_name: '', match_date: '',
     bet_type: '1X2',
     outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
+    home_goals_sel: '', away_goals_sel: '',
+    goal_scorer: '', goal_timing: 'en cualquier momento',
     odds: '', stake: '', bookmaker: '',
     bet_timing: 'pre', bet_minute: '',
     currency: 'EUR', status: 'won',
@@ -44,7 +64,7 @@ function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-// ─── Adaptive selection fields (mirrors Betting.jsx) ─────────────────────────
+// ─── Adaptive selection fields ────────────────────────────────────────────────
 
 function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
     switch (form.bet_type) {
@@ -58,17 +78,21 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
                 </select>
             )
         case 'Más/Menos Goles':
+        case 'Más/Menos (1ª parte)': {
+            const isHalf   = form.bet_type === 'Más/Menos (1ª parte)'
+            const amounts  = isHalf ? ['0.5','1.5','2.5'] : ['0.5','1.5','2.5','3.5','4.5','5.5']
             return (
                 <div className="flex gap-1.5">
                     <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
                         <option>Más de</option><option>Menos de</option>
                     </select>
                     <select value={form.amount} onChange={e => set('amount', e.target.value)} className={`${inputCls} flex-1`}>
-                        <option value="">Goles…</option>
-                        {['0.5','1.5','2.5','3.5','4.5','5.5'].map(v => <option key={v} value={v}>{v}</option>)}
+                        <option value="">{isHalf ? 'Goles 1T…' : 'Goles…'}</option>
+                        {amounts.map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                 </div>
             )
+        }
         case 'BTTS':
             return (
                 <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
@@ -112,6 +136,39 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
                     <option value="12">12 — {homeTeam} o {awayTeam}</option>
                 </select>
             )
+        case 'Resultado Exacto':
+            return (
+                <div className="flex items-center gap-1.5">
+                    <input type="number" min="0" max="20" value={form.home_goals_sel}
+                        onChange={e => set('home_goals_sel', e.target.value)}
+                        placeholder="0" className={`${inputCls} w-14 text-center`} />
+                    <span className="text-muted-foreground font-bold shrink-0">—</span>
+                    <input type="number" min="0" max="20" value={form.away_goals_sel}
+                        onChange={e => set('away_goals_sel', e.target.value)}
+                        placeholder="0" className={`${inputCls} w-14 text-center`} />
+                </div>
+            )
+        case 'Resultado al Descanso':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Resultado en HT…</option>
+                    <option value={`${homeTeam} gana (1T)`}>{homeTeam} gana en el descanso</option>
+                    <option value="Empate (1T)">Empate en el descanso</option>
+                    <option value={`${awayTeam} gana (1T)`}>{awayTeam} gana en el descanso</option>
+                </select>
+            )
+        case 'Goleador':
+            return (
+                <div className="space-y-1.5">
+                    <input value={form.goal_scorer} onChange={e => set('goal_scorer', e.target.value)}
+                        placeholder="Nombre del jugador" className={inputCls} />
+                    <select value={form.goal_timing} onChange={e => set('goal_timing', e.target.value)} className={inputCls}>
+                        <option value="en cualquier momento">En cualquier momento</option>
+                        <option value="primero">Primer goleador</option>
+                        <option value="último">Último goleador</option>
+                    </select>
+                </div>
+            )
         default:
             return (
                 <input value={form.free_text} onChange={e => set('free_text', e.target.value)}
@@ -123,17 +180,98 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
 function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
     switch (form.bet_type) {
         case '1X2':               return form.outcome
-        case 'Más/Menos Goles':   return form.amount  ? `${form.direction} ${form.amount} goles`   : ''
-        case 'BTTS':              return form.outcome  ? `Ambos marcan: ${form.outcome}`            : ''
-        case 'Córners':           return form.amount  ? `${form.direction} ${form.amount} córners`  : ''
-        case 'Tarjetas':          return form.amount  ? `${form.direction} ${form.amount} tarjetas` : ''
+        case 'Más/Menos Goles':   return form.amount ? `${form.direction} ${form.amount} goles` : ''
+        case 'BTTS':              return form.outcome ? `Ambos marcan: ${form.outcome}` : ''
+        case 'Córners':           return form.amount ? `${form.direction} ${form.amount} córners` : ''
+        case 'Tarjetas':          return form.amount ? `${form.direction} ${form.amount} tarjetas` : ''
         case 'Hándicap':          return `${form.hand_team === 'Local' ? homeTeam : awayTeam} ${form.hand_value}`
         case 'Doble Oportunidad': return form.outcome
+        case 'Resultado Exacto':  return form.home_goals_sel !== '' && form.away_goals_sel !== '' ? `${form.home_goals_sel}-${form.away_goals_sel}` : ''
+        case 'Resultado al Descanso': return form.outcome
+        case 'Más/Menos (1ª parte)': return form.amount ? `${form.direction} ${form.amount} goles (1T)` : ''
+        case 'Goleador':          return form.goal_scorer ? `${form.goal_scorer} (${form.goal_timing})` : ''
         default:                  return form.free_text
     }
 }
 
-// ─── Bet list for a profile ────────────────────────────────────────────────────
+// ─── Combined bet legs form ───────────────────────────────────────────────────
+
+function CombinedLegsForm({ legs, setLegs, inputCls }) {
+    const setLeg = (idx, k, v) => {
+        setLegs(prev => prev.map((leg, i) => {
+            if (i !== idx) return leg
+            const next = { ...leg, [k]: v }
+            if (k === 'bet_type') {
+                next.outcome = ''; next.amount = ''; next.free_text = ''
+                next.home_goals_sel = ''; next.away_goals_sel = ''; next.goal_scorer = ''
+            }
+            return next
+        }))
+    }
+    const addLeg    = () => setLegs(prev => [...prev, { ...EMPTY_LEG }])
+    const removeLeg = (idx) => setLegs(prev => prev.filter((_, i) => i !== idx))
+
+    const combinedOdds = legs.reduce((acc, leg) => {
+        const o = parseFloat(leg.odds)
+        return (isNaN(o) || o < 1) ? acc : Math.round(acc * o * 1000) / 1000
+    }, 1)
+
+    return (
+        <div className="space-y-2">
+            {legs.map((leg, idx) => (
+                <div key={idx} className="rounded-lg border border-primary/15 bg-background/60 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Pick {idx + 1}</span>
+                        {legs.length > 2 && (
+                            <button type="button" onClick={() => removeLeg(idx)}
+                                className="rounded p-0.5 text-muted-foreground hover:text-red-400 transition-colors">
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                    <input value={leg.match_info} onChange={e => setLeg(idx, 'match_info', e.target.value)}
+                        placeholder="Partido (ej. Real Madrid vs Barça)" className={inputCls} />
+                    <div className="grid grid-cols-2 gap-1.5">
+                        <div>
+                            <label className="block text-[10px] text-muted-foreground mb-1">Tipo</label>
+                            <select value={leg.bet_type} onChange={e => setLeg(idx, 'bet_type', e.target.value)} className={inputCls}>
+                                {SINGLE_BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
+                            <AdaptiveFields
+                                form={leg} set={(k, v) => setLeg(idx, k, v)}
+                                homeTeam="Local" awayTeam="Visitante"
+                                inputCls={inputCls}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <label className="text-[10px] text-muted-foreground shrink-0">Cuota:</label>
+                        <input type="number" step="0.01" min="1.01" value={leg.odds}
+                            onChange={e => setLeg(idx, 'odds', e.target.value)}
+                            placeholder="1.85" className={`${inputCls} w-28`} />
+                    </div>
+                </div>
+            ))}
+
+            <div className="flex items-center justify-between pt-1">
+                <button type="button" onClick={addLeg}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors">
+                    <Plus className="h-3.5 w-3.5" /> Añadir pick
+                </button>
+                {combinedOdds > 1 && (
+                    <p className="text-xs text-muted-foreground">
+                        Cuota combinada: <span className="font-bold text-foreground">{combinedOdds.toFixed(2)}</span>
+                    </p>
+                )}
+            </div>
+        </div>
+    )
+}
+
+// ─── Bet list for a profile ───────────────────────────────────────────────────
 
 function BettorBetList({ profileId }) {
     const { data: bets = [], isLoading } = useBettorBets(profileId)
@@ -148,7 +286,7 @@ function BettorBetList({ profileId }) {
                 <div key={bet.id} className="flex items-center gap-3 rounded-lg border border-border/30 bg-background/60 p-2.5 text-xs">
                     <div className="flex-1 min-w-0">
                         <span className="font-semibold text-foreground/90 truncate block">{bet.match_info}</span>
-                        <span className="text-muted-foreground">
+                        <span className="text-muted-foreground line-clamp-1">
                             {bet.bet_type} · {bet.selection} · @{Number(bet.odds).toFixed(2)} · {bet.currency}{Number(bet.stake).toFixed(2)}
                             {bet.match_date && ` · ${formatDate(bet.match_date)}`}
                         </span>
@@ -172,11 +310,14 @@ function BettorBetList({ profileId }) {
 // ─── Add bet form ─────────────────────────────────────────────────────────────
 
 function AddBetForm({ profileId, onClose }) {
-    const [form, setForm] = useState(EMPTY_BET)
+    const [form, setForm]   = useState(EMPTY_BET)
+    const [legs, setLegs]   = useState([{ ...EMPTY_LEG }, { ...EMPTY_LEG }])
     const [error, setError] = useState('')
     const { mutate: addBet, isPending } = useAddBettorBet()
     const { data: leagues = [] } = useLeagues()
     const { data: seasons = [] } = useSeasons(form.league_id || null)
+
+    const isCombined = form.bet_type === 'Combinada'
 
     const isWCLeague = useMemo(() => {
         const lg = leagues.find(l => String(l.id) === String(form.league_id))
@@ -184,35 +325,36 @@ function AddBetForm({ profileId, onClose }) {
     }, [leagues, form.league_id])
 
     const { data: allSeasonMatches = [], isLoading: loadingWC } = useMatchesBySeason(
-        isWCLeague ? form.league_id : null,
-        isWCLeague ? form.season : null,
+        (!isCombined && isWCLeague) ? form.league_id : null,
+        (!isCombined && isWCLeague) ? form.season : null,
     )
     const { data: matchesForJornada = [], isLoading: loadingJornada } = useMatchesByJornada(
-        isWCLeague ? null : form.league_id,
+        (!isCombined && !isWCLeague) ? form.league_id : null,
         form.season,
         form.matchday,
     )
     const loadingMatches = isWCLeague ? loadingWC : loadingJornada
-    const activeMatches = isWCLeague ? allSeasonMatches : matchesForJornada
-    const selectedMatch = activeMatches.find(m => String(m.id) === String(form.match_id))
+    const activeMatches  = isWCLeague ? allSeasonMatches : matchesForJornada
+    const selectedMatch  = activeMatches.find(m => String(m.id) === String(form.match_id))
 
     const set = (k, v) => setForm(f => {
         const next = { ...f, [k]: v }
         if (k === 'league_id') {
             next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''
             next.league_name = ''; next.outcome = ''; next.amount = ''; next.free_text = ''
+            next.home_goals_sel = ''; next.away_goals_sel = ''; next.goal_scorer = ''
             const lg = leagues.find(x => String(x.id) === String(v))
             if (lg) next.league_name = lg.name || lg.code || ''
         }
         if (k === 'season')   { next.matchday = ''; next.match_id = ''; next.match_info = '' }
         if (k === 'matchday') { next.match_id = ''; next.match_info = '' }
-        if (k === 'bet_type') { next.outcome = ''; next.amount = ''; next.free_text = '' }
+        if (k === 'bet_type') {
+            next.outcome = ''; next.amount = ''; next.free_text = ''
+            next.home_goals_sel = ''; next.away_goals_sel = ''; next.goal_scorer = ''
+        }
         return next
     })
 
-    // Separate handler for match selection so the lookup runs synchronously at event time,
-    // not inside a setForm updater where the closure could be stale.
-    // Use String() comparison: Supabase returns integer IDs but HTML option values are strings.
     const selectMatch = (matchList, id) => {
         const m = matchList.find(x => String(x.id) === String(id))
         setForm(f => ({
@@ -226,41 +368,77 @@ function AddBetForm({ profileId, onClose }) {
     const inputCls = 'w-full rounded-lg border border-border bg-background py-1.5 px-2.5 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
 
     const handleSubmit = () => {
-        const homeTeam = selectedMatch?.home_team?.name || 'Local'
-        const awayTeam = selectedMatch?.away_team?.name || 'Visitante'
-        const selection = buildSelection(form, homeTeam, awayTeam)
-        // Fallback: derive match_info from selectedMatch if the form field is empty
-        const matchInfo = form.match_info || (selectedMatch
-            ? `${homeTeam} vs ${awayTeam}`
-            : '')
-        const missing = []
-        if (!matchInfo)      missing.push('partido')
-        if (!selection)      missing.push('selección')
-        if (!form.odds)      missing.push('cuota')
-        if (!form.stake)     missing.push('stake')
-        if (missing.length) { setError(`Completa: ${missing.join(', ')}.`); return }
-        const odds  = parseFloat(form.odds)
         const stake = parseFloat(form.stake)
-        if (isNaN(odds) || odds < 1.01 || isNaN(stake) || stake <= 0) {
-            setError('Cuota ≥ 1.01 y stake > 0.')
+        if (!form.stake || isNaN(stake) || stake <= 0) { setError('Completa: stake > 0.'); return }
+
+        // ── Combined bet ──────────────────────────────────────────────────────
+        if (isCombined) {
+            const validLegs = legs.filter(leg => {
+                const sel = buildSelection(leg)
+                return leg.match_info.trim() && sel && parseFloat(leg.odds) >= 1.01
+            })
+            if (validLegs.length < 2) {
+                setError('Una combinada necesita al menos 2 picks completos (partido, selección y cuota ≥ 1.01).')
+                return
+            }
+            const combinedOdds = Math.round(
+                validLegs.reduce((acc, leg) => acc * parseFloat(leg.odds), 1) * 100
+            ) / 100
+            const selectionText = validLegs
+                .map(leg => `${leg.match_info}: ${buildSelection(leg)} @${parseFloat(leg.odds).toFixed(2)}`)
+                .join(' + ')
+            const matchInfoText = `Combinada ${validLegs.length} picks`
+            setError('')
+            addBet({
+                bettor_profile_id: profileId,
+                match_id:   null,
+                match_info: matchInfoText,
+                league:     form.league_name || null,
+                bet_type:   'Combinada',
+                selection:  selectionText,
+                odds:       combinedOdds,
+                stake,
+                bookmaker:  form.bookmaker || null,
+                match_date: null,
+                bet_timing: form.bet_timing,
+                bet_minute: form.bet_timing === 'live' && form.bet_minute ? parseInt(form.bet_minute, 10) : null,
+                currency:   form.currency,
+                status:     form.status,
+            }, {
+                onSuccess: () => { setForm(EMPTY_BET); setLegs([{ ...EMPTY_LEG }, { ...EMPTY_LEG }]); onClose() },
+                onError:   (e) => setError(e.message),
+            })
             return
         }
+
+        // ── Single bet ────────────────────────────────────────────────────────
+        const homeTeam  = selectedMatch?.home_team?.name || 'Local'
+        const awayTeam  = selectedMatch?.away_team?.name || 'Visitante'
+        const selection = buildSelection(form, homeTeam, awayTeam)
+        const matchInfo = form.match_info || (selectedMatch ? `${homeTeam} vs ${awayTeam}` : '')
+        const missing = []
+        if (!matchInfo) missing.push('partido')
+        if (!selection) missing.push('selección')
+        if (!form.odds) missing.push('cuota')
+        if (missing.length) { setError(`Completa: ${missing.join(', ')}.`); return }
+        const odds = parseFloat(form.odds)
+        if (isNaN(odds) || odds < 1.01) { setError('Cuota ≥ 1.01.'); return }
         setError('')
         addBet({
             bettor_profile_id: profileId,
-            match_id:          form.match_id || null,
-            match_info:        matchInfo,
-            league:            form.league_name || null,
-            bet_type:          form.bet_type,
+            match_id:   form.match_id || null,
+            match_info: matchInfo,
+            league:     form.league_name || null,
+            bet_type:   form.bet_type,
             selection,
             odds,
             stake,
-            bookmaker:         form.bookmaker || null,
-            match_date:        form.match_date || null,
-            bet_timing:        form.bet_timing,
-            bet_minute:        form.bet_timing === 'live' && form.bet_minute ? parseInt(form.bet_minute, 10) : null,
-            currency:          form.currency,
-            status:            form.status,
+            bookmaker:  form.bookmaker || null,
+            match_date: form.match_date || null,
+            bet_timing: form.bet_timing,
+            bet_minute: form.bet_timing === 'live' && form.bet_minute ? parseInt(form.bet_minute, 10) : null,
+            currency:   form.currency,
+            status:     form.status,
         }, {
             onSuccess: () => { setForm(EMPTY_BET); onClose() },
             onError:   (e) => setError(e.message),
@@ -271,125 +449,129 @@ function AddBetForm({ profileId, onClose }) {
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
             <p className="text-xs font-bold text-foreground uppercase tracking-wide">Nuevo pick</p>
 
-            {/* League / season */}
-            <div className="grid gap-2 sm:grid-cols-3">
-                <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Liga</label>
-                    <select value={form.league_id} onChange={e => set('league_id', e.target.value)} className={inputCls}>
-                        <option value="">Manual</option>
-                        {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                    </select>
-                </div>
-                {form.league_id && (
-                    <div>
-                        <label className="block text-[10px] text-muted-foreground mb-1">Temporada</label>
-                        <select value={form.season} onChange={e => set('season', e.target.value)} className={inputCls}>
-                            <option value="">Temporada</option>
-                            {seasons.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                    </div>
-                )}
-                {/* Jornada only for non-WC */}
-                {!isWCLeague && form.season && (
-                    <div>
-                        <label className="block text-[10px] text-muted-foreground mb-1">Jornada</label>
-                        <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
-                            <option value="">Jornada</option>
-                            {Array.from({ length: 38 }, (_, i) => i + 1).map(j => <option key={j} value={j}>J{j}</option>)}
-                        </select>
-                    </div>
-                )}
+            {/* Bet type — first so the user picks single vs combinada before the rest adapts */}
+            <div>
+                <label className="block text-[10px] text-muted-foreground mb-1">Tipo de apuesta</label>
+                <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
+                    {BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
             </div>
 
-            {/* Match picker */}
-            {isWCLeague && form.season ? (
+            {/* Combined bet — legs */}
+            {isCombined && (
                 <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">
-                        Partido <span className="text-red-400">*</span>
-                    </label>
-                    {loadingMatches ? (
-                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
-                        </div>
-                    ) : (
-                        <select value={form.match_id} onChange={e => selectMatch(allSeasonMatches, e.target.value)}
-                            className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
-                            <option value="">— Selecciona partido —</option>
-                            {allSeasonMatches.map(m => (
-                                <option key={m.id} value={m.id}>
-                                    {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                    {form.match_info && (
-                        <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>
-                    )}
-                </div>
-            ) : form.matchday && (loadingJornada || matchesForJornada.length > 0) ? (
-                <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">
-                        Partido <span className="text-red-400">*</span>
-                    </label>
-                    {loadingJornada ? (
-                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
-                        </div>
-                    ) : (
-                        <select value={form.match_id} onChange={e => selectMatch(matchesForJornada, e.target.value)}
-                            className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
-                            <option value="">— Selecciona partido —</option>
-                            {matchesForJornada.map(m => (
-                                <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>
-                            ))}
-                        </select>
-                    )}
-                    {form.match_info && (
-                        <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>
-                    )}
-                </div>
-            ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
-                    <div>
-                        <label className="block text-[10px] text-muted-foreground mb-1">
-                            Partido <span className="text-red-400">*</span>
-                        </label>
-                        <input value={form.match_info} onChange={e => set('match_info', e.target.value)}
-                            placeholder="Real Madrid vs Barça"
-                            className={`${inputCls} ${!form.match_info ? 'border-amber-500/30' : ''}`} />
-                    </div>
-                    <div>
-                        <label className="block text-[10px] text-muted-foreground mb-1">Fecha</label>
-                        <input type="date" value={form.match_date} onChange={e => set('match_date', e.target.value)} className={inputCls} />
-                    </div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Picks de la combinada</label>
+                    <CombinedLegsForm legs={legs} setLegs={setLegs} inputCls={inputCls} />
                 </div>
             )}
 
-            {/* Bet type + adaptive selection */}
-            <div className="grid gap-2 sm:grid-cols-2">
-                <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Tipo</label>
-                    <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
-                        {BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
-                    <AdaptiveFields
-                        form={form} set={set}
-                        homeTeam={selectedMatch?.home_team?.name || 'Local'}
-                        awayTeam={selectedMatch?.away_team?.name || 'Visitante'}
-                        inputCls={inputCls}
-                    />
-                </div>
-            </div>
+            {/* Single bet — league / match picker */}
+            {!isCombined && (
+                <>
+                    {/* League / season / jornada */}
+                    <div className="grid gap-2 sm:grid-cols-3">
+                        <div>
+                            <label className="block text-[10px] text-muted-foreground mb-1">Liga</label>
+                            <select value={form.league_id} onChange={e => set('league_id', e.target.value)} className={inputCls}>
+                                <option value="">Manual</option>
+                                {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                            </select>
+                        </div>
+                        {form.league_id && (
+                            <div>
+                                <label className="block text-[10px] text-muted-foreground mb-1">Temporada</label>
+                                <select value={form.season} onChange={e => set('season', e.target.value)} className={inputCls}>
+                                    <option value="">Temporada</option>
+                                    {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+                        )}
+                        {!isWCLeague && form.season && (
+                            <div>
+                                <label className="block text-[10px] text-muted-foreground mb-1">Jornada</label>
+                                <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
+                                    <option value="">Jornada</option>
+                                    {Array.from({ length: 38 }, (_, i) => i + 1).map(j => <option key={j} value={j}>J{j}</option>)}
+                                </select>
+                            </div>
+                        )}
+                    </div>
 
-            {/* Odds / stake / currency / status */}
-            <div className="grid gap-2 sm:grid-cols-4">
-                <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Cuota</label>
-                    <input type="number" step="0.01" min="1.01" value={form.odds} onChange={e => set('odds', e.target.value)} placeholder="1.85" className={inputCls} />
-                </div>
+                    {/* Match picker */}
+                    {isWCLeague && form.season ? (
+                        <div>
+                            <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
+                            {loadingMatches ? (
+                                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
+                                </div>
+                            ) : (
+                                <select value={form.match_id} onChange={e => selectMatch(allSeasonMatches, e.target.value)}
+                                    className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                                    <option value="">— Selecciona partido —</option>
+                                    {allSeasonMatches.map(m => (
+                                        <option key={m.id} value={m.id}>
+                                            {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            {form.match_info && <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>}
+                        </div>
+                    ) : form.matchday && (loadingJornada || matchesForJornada.length > 0) ? (
+                        <div>
+                            <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
+                            {loadingJornada ? (
+                                <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
+                                </div>
+                            ) : (
+                                <select value={form.match_id} onChange={e => selectMatch(matchesForJornada, e.target.value)}
+                                    className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                                    <option value="">— Selecciona partido —</option>
+                                    {matchesForJornada.map(m => (
+                                        <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>
+                                    ))}
+                                </select>
+                            )}
+                            {form.match_info && <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>}
+                        </div>
+                    ) : (
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            <div>
+                                <label className="block text-[10px] text-muted-foreground mb-1">Partido <span className="text-red-400">*</span></label>
+                                <input value={form.match_info} onChange={e => set('match_info', e.target.value)}
+                                    placeholder="Real Madrid vs Barça"
+                                    className={`${inputCls} ${!form.match_info ? 'border-amber-500/30' : ''}`} />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] text-muted-foreground mb-1">Fecha</label>
+                                <input type="date" value={form.match_date} onChange={e => set('match_date', e.target.value)} className={inputCls} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Selection */}
+                    <div>
+                        <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
+                        <AdaptiveFields
+                            form={form} set={set}
+                            homeTeam={selectedMatch?.home_team?.name || 'Local'}
+                            awayTeam={selectedMatch?.away_team?.name || 'Visitante'}
+                            inputCls={inputCls}
+                        />
+                    </div>
+
+                    {/* Odds (only for single bets) */}
+                    <div className="w-40">
+                        <label className="block text-[10px] text-muted-foreground mb-1">Cuota</label>
+                        <input type="number" step="0.01" min="1.01" value={form.odds} onChange={e => set('odds', e.target.value)} placeholder="1.85" className={inputCls} />
+                    </div>
+                </>
+            )}
+
+            {/* Stake / currency / result — always shown */}
+            <div className="grid gap-2 sm:grid-cols-3">
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Stake</label>
                     <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)} placeholder="10.00" className={inputCls} />
@@ -412,7 +594,7 @@ function AddBetForm({ profileId, onClose }) {
                 </div>
             </div>
 
-            {/* Bookmaker / timing */}
+            {/* Bookmaker / timing — always shown */}
             <div className="grid gap-2 sm:grid-cols-3">
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Casa de apuestas</label>
@@ -537,7 +719,6 @@ function ProfileCard({ profile }) {
 
     return (
         <div className="rounded-xl border border-border/40 bg-card/70 overflow-hidden">
-            {/* Header row */}
             <div className="flex items-center gap-3 px-4 py-3">
                 {profile.avatar_url
                     ? <img src={profile.avatar_url} alt={profile.display_name} className="h-9 w-9 rounded-full object-cover border border-border/50 shrink-0" />
@@ -558,8 +739,7 @@ function ProfileCard({ profile }) {
                     {profile.description && <p className="text-xs text-muted-foreground truncate">{profile.description}</p>}
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => { setEditing(v => !v); setExpanded(true) }}
-                        title="Editar perfil"
+                    <button onClick={() => { setEditing(v => !v); setExpanded(true) }} title="Editar perfil"
                         className={`p-1.5 rounded transition-colors ${editing ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                         <Pencil className="h-3.5 w-3.5" />
                     </button>
@@ -572,22 +752,12 @@ function ProfileCard({ profile }) {
                 </div>
             </div>
 
-            {/* Expanded section */}
             <AnimatePresence>
                 {expanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden border-t border-border/30"
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden border-t border-border/30">
                         <div className="px-4 py-3 space-y-3">
-                            {/* Edit form */}
-                            {editing && (
-                                <EditProfileForm profile={profile} onClose={() => setEditing(false)} />
-                            )}
-
-                            {/* Action buttons */}
+                            {editing && <EditProfileForm profile={profile} onClose={() => setEditing(false)} />}
                             {!editing && (
                                 <div className="flex flex-wrap gap-2">
                                     <button onClick={() => setAddingBet(v => !v)}
@@ -604,13 +774,7 @@ function ProfileCard({ profile }) {
                                     )}
                                 </div>
                             )}
-
-                            {/* Add bet form */}
-                            {!editing && addingBet && (
-                                <AddBetForm profileId={profile.id} onClose={() => setAddingBet(false)} />
-                            )}
-
-                            {/* Bet list */}
+                            {!editing && addingBet && <AddBetForm profileId={profile.id} onClose={() => setAddingBet(false)} />}
                             {!editing && <BettorBetList profileId={profile.id} />}
                         </div>
                     </motion.div>
@@ -701,10 +865,8 @@ export default function AdminBettors() {
                     <h2 className="text-lg font-bold text-foreground">Perfiles de apostadores</h2>
                     <p className="text-sm text-muted-foreground">Crea y gestiona perfiles de streamers para el leaderboard.</p>
                 </div>
-                <button
-                    onClick={() => setShowCreate(v => !v)}
-                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity"
-                >
+                <button onClick={() => setShowCreate(v => !v)}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity">
                     {showCreate ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                     {showCreate ? 'Cancelar' : 'Nuevo perfil'}
                 </button>

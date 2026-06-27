@@ -182,24 +182,26 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
     const getRoundLabel = (md) => isWC ? (WC_ROUND_LABELS[md] || `Ronda ${md}`) : `Jornada ${md}`
     const getChipLabel  = (md) => isWC ? (WC_CHIP_LABELS[md]  || `R${md}`)      : `J${md}`
 
-    // For WC R32 matches: resolve slot labels to team names when group is confirmed
+    // For WC R32 matches: resolve slot labels to team names + logos when group is confirmed
     const r32SlotLabels = useMemo(() => {
         if (!isWC) return {}
 
-        function resolveLabel(label) {
-            if (!label) return label
+        function resolveEntry(label) {
+            if (!label) return { name: label, logo: null }
             const mm = label.match(/^([12])° Gr\. ([A-L])$/)
-            if (!mm) return label // "Mejor 3°" or unknown — keep as-is
+            if (!mm) return { name: label, logo: null } // "Mejor 3°" or unknown
             const [, pos, group] = mm
-            if (!completedGroups.has(group)) return label
+            if (!completedGroups.has(group)) return { name: label, logo: null }
             const row = pos === '1' ? groupWinners[group] : groupRunnerUps[group]
-            return row?.team?.name || label
+            return { name: row?.team?.name || label, logo: row?.team?.logo_url || null }
         }
 
         const map = {}
         WC_R32_BRACKET_ORDER.forEach((id, pos) => {
             const labels = WC_R32_SLOT_LABELS[pos] || {}
-            map[id] = { home: resolveLabel(labels.home), away: resolveLabel(labels.away) }
+            const h = resolveEntry(labels.home)
+            const a = resolveEntry(labels.away)
+            map[id] = { home: h.name, homeLogo: h.logo, away: a.name, awayLogo: a.logo }
         })
         return map
     }, [isWC, completedGroups, groupWinners, groupRunnerUps])
@@ -317,6 +319,8 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
                                     isWC={isWC}
                                     homeLabel={slots.home}
                                     awayLabel={slots.away}
+                                    homeLogo={slots.homeLogo}
+                                    awayLogo={slots.awayLogo}
                                 />
                             )
                         })}

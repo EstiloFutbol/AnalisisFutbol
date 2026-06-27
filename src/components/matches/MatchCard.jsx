@@ -34,11 +34,14 @@ function ResultBadge({ homeGoals, awayGoals, kickOffTime }) {
     )
 }
 
-export default function MatchCard({ match, index = 0, isWC = false, homeLabel = null, awayLabel = null }) {
+export default function MatchCard({ match, index = 0, isWC = false, homeLabel = null, awayLabel = null, homeLogo = null, awayLogo = null }) {
     const { formatKickOff } = useTimezone()
     const homeTeamName = match.home_team?.name || homeLabel || (isWC ? 'Por definir' : 'Local')
     const awayTeamName = match.away_team?.name || awayLabel || (isWC ? 'Por definir' : 'Visitante')
-    const isTBD = !match.home_team || !match.away_team
+    const homeLogoUrl  = match.home_team?.logo_url || homeLogo
+    const awayLogoUrl  = match.away_team?.logo_url || awayLogo
+    // isTBD only when we have no team data AND no label to display
+    const isTBD = !match.home_team && !homeLabel && !match.away_team && !awayLabel
 
     const matchDate = match.match_date
         ? new Date(match.match_date).toLocaleDateString('es-ES', {
@@ -86,10 +89,10 @@ export default function MatchCard({ match, index = 0, isWC = false, homeLabel = 
                                 </p>
                             )}
                         </div>
-                        {match.home_team?.logo_url && (
-                            <img src={match.home_team.logo_url} alt={homeTeamName} className="h-8 w-8 object-contain" />
+                        {homeLogoUrl && (
+                            <img src={homeLogoUrl} alt={homeTeamName} className="h-8 w-8 object-contain" />
                         )}
-                        {!match.home_team?.logo_url && !isTBD && (
+                        {!homeLogoUrl && !isTBD && (
                             <div className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center text-xs font-bold text-muted-foreground">
                                 ?
                             </div>
@@ -107,10 +110,10 @@ export default function MatchCard({ match, index = 0, isWC = false, homeLabel = 
 
                     {/* Away team */}
                     <div className="flex flex-1 items-center justify-start gap-3 text-left">
-                        {match.away_team?.logo_url && (
-                            <img src={match.away_team.logo_url} alt={awayTeamName} className="h-8 w-8 object-contain" />
+                        {awayLogoUrl && (
+                            <img src={awayLogoUrl} alt={awayTeamName} className="h-8 w-8 object-contain" />
                         )}
-                        {!match.away_team?.logo_url && !isTBD && (
+                        {!awayLogoUrl && !isTBD && (
                             <div className="h-8 w-8 rounded-full bg-secondary/50 flex items-center justify-center text-xs font-bold text-muted-foreground">
                                 ?
                             </div>

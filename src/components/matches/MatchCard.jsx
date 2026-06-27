@@ -33,9 +33,9 @@ function ResultBadge({ homeGoals, awayGoals, kickOffTime }) {
     )
 }
 
-export default function MatchCard({ match, index = 0, isWC = false }) {
-    const homeTeamName = match.home_team?.name || (isWC ? 'Por definir' : 'Local')
-    const awayTeamName = match.away_team?.name || (isWC ? 'Por definir' : 'Visitante')
+export default function MatchCard({ match, index = 0, isWC = false, homeLabel = null, awayLabel = null }) {
+    const homeTeamName = match.home_team?.name || homeLabel || (isWC ? 'Por definir' : 'Local')
+    const awayTeamName = match.away_team?.name || awayLabel || (isWC ? 'Por definir' : 'Visitante')
     const isTBD = !match.home_team || !match.away_team
 
     const matchDate = match.match_date
@@ -70,6 +70,7 @@ export default function MatchCard({ match, index = 0, isWC = false }) {
                     <div className="flex flex-1 items-center justify-end gap-3 text-right">
                         <div>
                             <p className={`text-sm font-semibold sm:text-base ${
+                                !match.home_team && homeLabel ? 'text-muted-foreground font-medium' :
                                 isTBD ? 'text-muted-foreground/50 italic' :
                                 match.home_goals != null && match.home_goals > match.away_goals
                                     ? 'text-foreground'
@@ -114,6 +115,7 @@ export default function MatchCard({ match, index = 0, isWC = false }) {
                         )}
                         <div>
                             <p className={`text-sm font-semibold sm:text-base ${
+                                !match.away_team && awayLabel ? 'text-muted-foreground font-medium' :
                                 isTBD ? 'text-muted-foreground/50 italic' :
                                 match.away_goals != null && match.away_goals > match.home_goals
                                     ? 'text-foreground'

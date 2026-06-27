@@ -4,6 +4,30 @@ import { useMatches, useLeagues } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
 import { Search, Filter, CalendarDays, Trophy } from 'lucide-react'
 
+// ── WC R32 slot labels (mirrors Dashboard.jsx WC_R32_BRACKET_ORDER / WC_R32_SLOT_LABELS)
+const WC_R32_BRACKET_ORDER = [
+    2986, 2989, 2984, 2987, 2995, 2994, 2993, 2992,
+    2985, 2988, 2990, 2991, 2998, 2997, 2996, 2999,
+]
+const WC_R32_SLOT_LABELS = [
+    { home: '1° Gr. C', away: '2° Gr. F' },
+    { home: '2° Gr. E', away: '2° Gr. I' },
+    { home: '2° Gr. A', away: '2° Gr. B' },
+    { home: '1° Gr. F', away: '2° Gr. C' },
+    { home: '1° Gr. H', away: '2° Gr. J' },
+    { home: '2° Gr. K', away: '2° Gr. L' },
+    { home: '1° Gr. G', away: 'Mejor 3°' },
+    { home: '1° Gr. D', away: 'Mejor 3°' },
+    { home: '1° Gr. E', away: 'Mejor 3°' },
+    { home: '1° Gr. I', away: 'Mejor 3°' },
+    { home: '1° Gr. A', away: 'Mejor 3°' },
+    { home: '1° Gr. L', away: 'Mejor 3°' },
+    { home: '2° Gr. D', away: '2° Gr. G' },
+    { home: '1° Gr. J', away: '2° Gr. H' },
+    { home: '1° Gr. B', away: 'Mejor 3°' },
+    { home: '1° Gr. K', away: 'Mejor 3°' },
+]
+
 // ── World Cup round labels ────────────────────────────────────────────────────
 const WC_ROUND_LABELS = {
     1: 'Fase de Grupos · J1',
@@ -136,6 +160,16 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
     const getRoundLabel = (md) => isWC ? (WC_ROUND_LABELS[md] || `Ronda ${md}`) : `Jornada ${md}`
     const getChipLabel  = (md) => isWC ? (WC_CHIP_LABELS[md]  || `R${md}`)      : `J${md}`
 
+    // For WC R32 matches without assigned teams, precompute slot labels by match id
+    const r32SlotLabels = useMemo(() => {
+        if (!isWC) return {}
+        const map = {}
+        WC_R32_BRACKET_ORDER.forEach((id, pos) => {
+            map[id] = WC_R32_SLOT_LABELS[pos] || {}
+        })
+        return map
+    }, [isWC])
+
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
@@ -239,10 +273,21 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
                         </span>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                        {mdMatches.map((match, i) => (
-                            <MatchCard key={match.id} match={match} index={i} isWC={isWC} />
-                        ))}
+                        {mdMatches.map((match, i) => {
+                            const slots = r32SlotLabels[match.id] || {}
+                            return (
+                                <MatchCard
+                                    key={match.id}
+                                    match={match}
+                                    index={i}
+                                    isWC={isWC}
+                                    homeLabel={slots.home}
+                                    awayLabel={slots.away}
+                                />
+                            )
+                        })}
                     </div>
+
                 </div>
             ))}
 

@@ -243,13 +243,16 @@ export default function Dashboard() {
         // Corners
         // Resolve corners per match: use total_corners if set, otherwise home + away
         const matchCorners = m => m.total_corners || ((m.home_corners || 0) + (m.away_corners || 0))
-        const totalCorners = playedMatches.reduce((a, m) => a + matchCorners(m), 0)
-        const homeCorners = playedMatches.reduce((a, m) => a + (m.home_corners || 0), 0)
-        const awayCorners = playedMatches.reduce((a, m) => a + (m.away_corners || 0), 0)
-        const over75c = playedMatches.filter(m => matchCorners(m) > 7.5).length
-        const over85c = playedMatches.filter(m => matchCorners(m) > 8.5).length
-        const over95c = playedMatches.filter(m => matchCorners(m) > 9.5).length
-        const over105c = playedMatches.filter(m => matchCorners(m) > 10.5).length
+        // Only include matches that actually have corner data (avoid treating no-data as 0 corners)
+        const cornersMatches = playedMatches.filter(m => matchCorners(m) > 0)
+        const nCorners = cornersMatches.length
+        const totalCorners = cornersMatches.reduce((a, m) => a + matchCorners(m), 0)
+        const homeCorners = cornersMatches.reduce((a, m) => a + (m.home_corners || 0), 0)
+        const awayCorners = cornersMatches.reduce((a, m) => a + (m.away_corners || 0), 0)
+        const over75c = cornersMatches.filter(m => matchCorners(m) > 7.5).length
+        const over85c = cornersMatches.filter(m => matchCorners(m) > 8.5).length
+        const over95c = cornersMatches.filter(m => matchCorners(m) > 9.5).length
+        const over105c = cornersMatches.filter(m => matchCorners(m) > 10.5).length
 
         // Cards
         const yc = playedMatches.reduce((a, m) => a + (m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0), 0)
@@ -278,7 +281,7 @@ export default function Dashboard() {
             btts, homeWins, draws, awayWins, topScores,
             homeScoresFirst, awayScoresFirst,
             fgUnder30, fg3060, fgOver60, firstGoalMinsCount: firstGoalMins.length,
-            totalCorners, homeCorners, awayCorners, over75c, over85c, over95c, over105c,
+            totalCorners, homeCorners, awayCorners, nCorners, over75c, over85c, over95c, over105c,
             yc, rc, over35yc, over15yc, matchesWithRed,
             avgHtGoals: avgHtGoals.toFixed(2),
             totalShots, matchesWithShots,
@@ -539,28 +542,33 @@ function MercadosContent({ s, matches, leagueObj }) {
                     {/* CORNERS */}
                     {activeMarket === 'corners' && (
                         <div>
-                            {s.totalCorners === 0 ? (
+                            {s.nCorners === 0 ? (
                                 <div className="px-4 py-8 text-center">
                                     <p className="text-sm text-muted-foreground">No hay datos de córners disponibles{isWC ? ' para el Mundial' : ''}</p>
                                 </div>
                             ) : isWC ? (
                                 <>
-                                    <ProbRow label="Over 7.5 Córners" pctVal={pct(s.over75c, n)} count={s.over75c} total={n} />
-                                    <ProbRow label="Over 9.5 Córners" pctVal={pct(s.over95c, n)} count={s.over95c} total={n} />
-                                    <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, n)} count={s.over105c} total={n} />
-                                    <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, n)} isNumStat />
+                                    <ProbRow label="Over 7.5 Córners" pctVal={pct(s.over75c, s.nCorners)} count={s.over75c} total={s.nCorners} />
+                                    <ProbRow label="Over 9.5 Córners" pctVal={pct(s.over95c, s.nCorners)} count={s.over95c} total={s.nCorners} />
+                                    <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, s.nCorners)} count={s.over105c} total={s.nCorners} />
+                                    <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, s.nCorners)} isNumStat />
+                                    {s.nCorners < n && (
+                                        <p className="px-4 pb-3 text-[11px] text-muted-foreground/60">
+                                            Datos de {s.nCorners} de {n} partidos jugados
+                                        </p>
+                                    )}
                                 </>
                             ) : (
                                 <>
-                                    <ProbRow label="Over 8.5 Córners" pctVal={pct(s.over85c, n)} count={s.over85c} total={n} />
-                                    <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, n)} count={s.over105c} total={n} />
+                                    <ProbRow label="Over 8.5 Córners" pctVal={pct(s.over85c, s.nCorners)} count={s.over85c} total={s.nCorners} />
+                                    <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, s.nCorners)} count={s.over105c} total={s.nCorners} />
                                     <ProbRow
                                         label="Córners local > visitante"
-                                        pctVal={pct(matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length, n)}
+                                        pctVal={pct(matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length, s.nCorners)}
                                         count={matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length}
-                                        total={n}
+                                        total={s.nCorners}
                                     />
-                                    <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, n)} isNumStat />
+                                    <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, s.nCorners)} isNumStat />
                                 </>
                             )}
                         </div>

@@ -194,7 +194,7 @@ function AddBetForm({ profileId, onClose }) {
     )
     const loadingMatches = isWCLeague ? loadingWC : loadingJornada
     const activeMatches = isWCLeague ? allSeasonMatches : matchesForJornada
-    const selectedMatch = activeMatches.find(m => m.id === form.match_id)
+    const selectedMatch = activeMatches.find(m => String(m.id) === String(form.match_id))
 
     const set = (k, v) => setForm(f => {
         const next = { ...f, [k]: v }
@@ -212,8 +212,9 @@ function AddBetForm({ profileId, onClose }) {
 
     // Separate handler for match selection so the lookup runs synchronously at event time,
     // not inside a setForm updater where the closure could be stale.
+    // Use String() comparison: Supabase returns integer IDs but HTML option values are strings.
     const selectMatch = (matchList, id) => {
-        const m = matchList.find(x => x.id === id)
+        const m = matchList.find(x => String(x.id) === String(id))
         setForm(f => ({
             ...f,
             match_id:   id,

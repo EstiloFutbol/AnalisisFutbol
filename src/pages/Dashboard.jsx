@@ -244,7 +244,9 @@ export default function Dashboard() {
         const totalCorners = playedMatches.reduce((a, m) => a + (m.total_corners || 0), 0)
         const homeCorners = playedMatches.reduce((a, m) => a + (m.home_corners || 0), 0)
         const awayCorners = playedMatches.reduce((a, m) => a + (m.away_corners || 0), 0)
+        const over75c = playedMatches.filter(m => (m.total_corners || 0) > 7.5).length
         const over85c = playedMatches.filter(m => (m.total_corners || 0) > 8.5).length
+        const over95c = playedMatches.filter(m => (m.total_corners || 0) > 9.5).length
         const over105c = playedMatches.filter(m => (m.total_corners || 0) > 10.5).length
 
         // Cards
@@ -274,7 +276,7 @@ export default function Dashboard() {
             btts, homeWins, draws, awayWins, topScores,
             homeScoresFirst, awayScoresFirst,
             fgUnder30, fg3060, fgOver60, firstGoalMinsCount: firstGoalMins.length,
-            totalCorners, homeCorners, awayCorners, over85c, over105c,
+            totalCorners, homeCorners, awayCorners, over75c, over85c, over95c, over105c,
             yc, rc, over35yc, over15yc, matchesWithRed,
             avgHtGoals: avgHtGoals.toFixed(2),
             totalShots, matchesWithShots,
@@ -527,7 +529,7 @@ function MercadosContent({ s, matches, leagueObj }) {
 
                             {/* Goal time chart */}
                             <div className="px-4 py-4 border-t border-border/30">
-                                <GoalTimeChart matches={matches} />
+                                <GoalTimeChart matches={matches} isWC={isWC} />
                             </div>
                         </div>
                     )}
@@ -535,15 +537,30 @@ function MercadosContent({ s, matches, leagueObj }) {
                     {/* CORNERS */}
                     {activeMarket === 'corners' && (
                         <div>
-                            <ProbRow label="Over 8.5 Córners" pctVal={pct(s.over85c, n)} count={s.over85c} total={n} />
-                            <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, n)} count={s.over105c} total={n} />
-                            <ProbRow
-                                label="Córners local > visitante"
-                                pctVal={pct(matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length, n)}
-                                count={matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length}
-                                total={n}
-                            />
-                            <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, n)} isNumStat />
+                            {s.totalCorners === 0 ? (
+                                <div className="px-4 py-8 text-center">
+                                    <p className="text-sm text-muted-foreground">No hay datos de córners disponibles{isWC ? ' para el Mundial' : ''}</p>
+                                </div>
+                            ) : isWC ? (
+                                <>
+                                    <ProbRow label="Over 7.5 Córners" pctVal={pct(s.over75c, n)} count={s.over75c} total={n} />
+                                    <ProbRow label="Over 9.5 Córners" pctVal={pct(s.over95c, n)} count={s.over95c} total={n} />
+                                    <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, n)} count={s.over105c} total={n} />
+                                    <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, n)} isNumStat />
+                                </>
+                            ) : (
+                                <>
+                                    <ProbRow label="Over 8.5 Córners" pctVal={pct(s.over85c, n)} count={s.over85c} total={n} />
+                                    <ProbRow label="Over 10.5 Córners" pctVal={pct(s.over105c, n)} count={s.over105c} total={n} />
+                                    <ProbRow
+                                        label="Córners local > visitante"
+                                        pctVal={pct(matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length, n)}
+                                        count={matches.filter(m => (m.home_corners || 0) > (m.away_corners || 0)).length}
+                                        total={n}
+                                    />
+                                    <ProbRow label="Avg córners / partido" pctVal={avg(s.totalCorners, n)} isNumStat />
+                                </>
+                            )}
                         </div>
                     )}
 
@@ -1272,7 +1289,7 @@ function BracketTeamSlot({ team, goals, winner, played, label, isProj = false, i
             onClick={onSelect || undefined}
             className={`flex flex-1 items-center gap-1.5 px-1.5 min-h-0 transition-colors
                 ${winner && played ? 'bg-primary/15' : ''}
-                ${isSelected && !played ? 'bg-green-500/10' : ''}
+                ${isSelected && !played && team ? 'bg-green-500/10' : ''}
                 ${isEliminated ? 'opacity-35' : ''}
                 ${onSelect ? 'cursor-pointer hover:bg-muted/60' : ''}`}
         >
@@ -1284,17 +1301,17 @@ function BracketTeamSlot({ team, goals, winner, played, label, isProj = false, i
             )}
             <span className={`text-[10px] flex-1 truncate leading-tight
                 ${winner && played ? 'font-bold text-foreground'
-                    : isSelected && !played ? 'font-semibold text-green-400'
-                    : played ? 'text-foreground/70'
-                    : isProj ? 'text-foreground/75 italic'
-                    : team ? 'text-foreground/80'
-                    : label ? 'text-foreground/60 font-medium'
-                    : 'text-foreground/50'}`}
+                    : isSelected && !played && team ? 'font-semibold text-green-600 dark:text-green-400'
+                    : played ? 'text-foreground/80'
+                    : isProj ? 'text-foreground/80 italic'
+                    : team ? 'text-foreground'
+                    : label ? 'text-muted-foreground font-medium'
+                    : 'text-muted-foreground/60'}`}
             >
                 {team ? (team.short_name || team.name) : (label || '?')}
             </span>
-            {isSelected && !played && (
-                <span className="text-green-400 text-[9px] shrink-0 font-bold">✓</span>
+            {isSelected && !played && team && (
+                <span className="text-green-600 dark:text-green-400 text-[9px] shrink-0 font-bold">✓</span>
             )}
             {goals != null && (
                 <span className={`text-[11px] font-black tabular-nums shrink-0

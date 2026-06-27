@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function GoalTimeChart({ matches }) {
+export default function GoalTimeChart({ matches, isWC = false }) {
     const data = useMemo(() => {
         if (!matches) return []
 
@@ -25,15 +25,10 @@ export default function GoalTimeChart({ matches }) {
                     if (min > 90) {
                         intervals['90+']++
                     } else {
-                        // Bucket 0-5 covers 1,2,3,4,5. 
-                        // Logic: ceil(min / 5) * 5? 
-                        // Let's use 0-5 for [0, 5], 5-10 for (5, 10]...
-                        // Simple bucket: floor((min-1)/5)*5
                         let bucketStart = Math.floor((min - 1) / 5) * 5
                         if (bucketStart < 0) bucketStart = 0
                         const bucketEnd = bucketStart + 5
 
-                        // Cap at 90
                         if (bucketStart >= 90) {
                             intervals['90+']++
                         } else {
@@ -48,25 +43,16 @@ export default function GoalTimeChart({ matches }) {
                 })
             }
 
-            // Parse JSON if string
             let homeGoals = match.home_goal_minutes
             let awayGoals = match.away_goal_minutes
 
             if (typeof homeGoals === 'string') {
-                try {
-                    homeGoals = JSON.parse(homeGoals)
-                } catch (e) {
-                    homeGoals = homeGoals.split(',')
-                }
+                try { homeGoals = JSON.parse(homeGoals) } catch (e) { homeGoals = homeGoals.split(',') }
             }
             if (homeGoals && !Array.isArray(homeGoals)) homeGoals = [homeGoals]
 
             if (typeof awayGoals === 'string') {
-                try {
-                    awayGoals = JSON.parse(awayGoals)
-                } catch (e) {
-                    awayGoals = awayGoals.split(',')
-                }
+                try { awayGoals = JSON.parse(awayGoals) } catch (e) { awayGoals = awayGoals.split(',') }
             }
             if (awayGoals && !Array.isArray(awayGoals)) awayGoals = [awayGoals]
 
@@ -74,22 +60,41 @@ export default function GoalTimeChart({ matches }) {
             processGoals(awayGoals)
         })
 
-        return Object.entries(intervals).map(([range, count]) => ({
-            range,
-            count
-        }))
+        return Object.entries(intervals).map(([range, count]) => ({ range, count }))
     }, [matches])
+
+    // Minute 23 → bucket "20-25", minute 45 → "40-45" (last 1H bar), minute 67 → "65-70"
+    const htBucket = '40-45'
+    const hyd1Bucket = '20-25'
+    const hyd2Bucket = '65-70'
+
+    const refLineStyle = { stroke: 'hsl(var(--muted-foreground))', strokeOpacity: 0.7, strokeDasharray: '4 3' }
+    const hydLineStyle = { stroke: 'hsl(var(--primary))', strokeOpacity: 0.6, strokeDasharray: '2 3' }
 
     return (
         <Card className="col-span-1 lg:col-span-2">
             <CardHeader>
                 <CardTitle>Momentos de Gol</CardTitle>
-                <CardDescription>Distribución de goles por tramos de 5 minutos</CardDescription>
+                <CardDescription>
+                    Distribución de goles por tramos de 5 minutos
+                    {isWC && (
+                        <span className="ml-2 inline-flex items-center gap-2 text-[10px]">
+                            <span className="inline-flex items-center gap-1">
+                                <span className="inline-block h-3 w-4 border-t-2 border-dashed border-muted-foreground/70" />
+                                <span className="text-muted-foreground">½ T (45')</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                                <span className="inline-block h-3 w-4 border-t-2 border-dashed border-primary/60" />
+                                <span className="text-muted-foreground">Pausa hid. (23' / 67')</span>
+                            </span>
+                        </span>
+                    )}
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                        <BarChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 20 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground)/0.2)" />
                             <XAxis
                                 dataKey="range"
@@ -117,6 +122,48 @@ export default function GoalTimeChart({ matches }) {
                                 }}
                             />
                             <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} name="Goles" />
+
+                            {isWC && (
+                                <>
+                                    {/* Halftime */}
+                                    <ReferenceLine
+                                        x={htBucket}
+                                        {...refLineStyle}
+                                        label={{
+                                            value: '½ T',
+                                            position: 'insideTopRight',
+                                            fill: 'hsl(var(--muted-foreground))',
+                                            fontSize: 9,
+                                            fontWeight: 'bold',
+                                            offset: 4,
+                                        }}
+                                    />
+                                    {/* Hydration break ~23' */}
+                                    <ReferenceLine
+                                        x={hyd1Bucket}
+                                        {...hydLineStyle}
+                                        label={{
+                                            value: "23'",
+                                            position: 'insideTopRight',
+                                            fill: 'hsl(var(--primary))',
+                                            fontSize: 8,
+                                            offset: 2,
+                                        }}
+                                    />
+                                    {/* Hydration break ~67' */}
+                                    <ReferenceLine
+                                        x={hyd2Bucket}
+                                        {...hydLineStyle}
+                                        label={{
+                                            value: "67'",
+                                            position: 'insideTopRight',
+                                            fill: 'hsl(var(--primary))',
+                                            fontSize: 8,
+                                            offset: 2,
+                                        }}
+                                    />
+                                </>
+                            )}
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

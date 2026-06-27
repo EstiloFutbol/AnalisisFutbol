@@ -102,6 +102,30 @@ export function useSeasons(leagueId) {
     })
 }
 
+/** All matches for a league + season (used for WC where matchday is not meaningful) */
+export function useMatchesBySeason(leagueId, season) {
+    return useQuery({
+        queryKey: ['matches-by-season', leagueId, season],
+        enabled: !!(leagueId && season),
+        staleTime: 5 * 60_000,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`
+                    id, matchday, match_date, kick_off_time, group_name,
+                    home_team:teams!matches_home_team_id_fkey(id, name, short_name),
+                    away_team:teams!matches_away_team_id_fkey(id, name, short_name)
+                `)
+                .eq('league_id', leagueId)
+                .eq('season', season)
+                .order('match_date', { ascending: true })
+                .order('kick_off_time', { ascending: true })
+            if (error) throw error
+            return data || []
+        },
+    })
+}
+
 /** All matches for a specific league + season + matchday */
 export function useMatchesByJornada(leagueId, season, matchday) {
     return useQuery({

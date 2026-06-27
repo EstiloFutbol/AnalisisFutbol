@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Coins, Loader2, CheckCircle, AlertCircle, Lock, TrendingUp, Wallet, Clock, Plus, X, BarChart3, Euro, Medal, Users, TrendingDown, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { useBettableMatches, useUserBets, usePlaceBet, useRealBets, useAddRealBet, useSettleRealBet, useSeasons, useMatchesByJornada } from '@/hooks/useBetting'
+import { useBettableMatches, useUserBets, usePlaceBet, useRealBets, useAddRealBet, useSettleRealBet, useSeasons, useMatchesByJornada, useMatchesBySeason } from '@/hooks/useBetting'
 import { useLeagues } from '@/hooks/useMatches'
 import { useLeaderboard, formatAmount, toEUR, useUpdatePreferredCurrency } from '@/hooks/useBettorProfiles'
 import SEO from '@/components/SEO'
@@ -191,7 +191,20 @@ function RealBetsTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
     const { mutate: settleBet } = useSettleRealBet()
     const { data: leagues = [] } = useLeagues()
     const { data: seasons = [] } = useSeasons(form.league_id || null)
-    const { data: matchesForJornada = [] } = useMatchesByJornada(form.league_id, form.season, form.matchday)
+    const isWCLeague = useMemo(() => {
+        const lg = leagues.find(l => String(l.id) === String(form.league_id))
+        return lg?.code === 'WC'
+    }, [leagues, form.league_id])
+    const { data: allSeasonMatches = [] } = useMatchesBySeason(
+        isWCLeague ? form.league_id : null,
+        isWCLeague ? form.season : null,
+    )
+    const { data: matchesForJornada = [] } = useMatchesByJornada(
+        isWCLeague ? null : form.league_id,
+        form.season,
+        form.matchday,
+    )
+    const activeMatches = isWCLeague ? allSeasonMatches : matchesForJornada
 
     const set = (k, v) => setForm(f => {
         const next = { ...f, [k]: v }
@@ -199,7 +212,7 @@ function RealBetsTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
         if (k === 'season')    { next.matchday = ''; next.match_id = ''; next.match_info = '' }
         if (k === 'matchday')  { next.match_id = ''; next.match_info = '' }
         if (k === 'match_id') {
-            const m = matchesForJornada.find(x => x.id === v)
+            const m = activeMatches.find(x => x.id === v)
             if (m) {
                 next.match_info = `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}`
                 next.match_date = m.match_date || ''
@@ -214,8 +227,8 @@ function RealBetsTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
 
     const handleAdd = () => {
         const selection = buildSelection(form,
-            matchesForJornada.find(m => m.id === form.match_id)?.home_team?.name || 'Local',
-            matchesForJornada.find(m => m.id === form.match_id)?.away_team?.name || 'Visitante',
+            activeMatches.find(m => m.id === form.match_id)?.home_team?.name || 'Local',
+            activeMatches.find(m => m.id === form.match_id)?.away_team?.name || 'Visitante',
         )
         if (!form.match_info || !selection || !form.odds || !form.stake) {
             setError('Completa: partido, selección, cuota y stake.')
@@ -362,7 +375,8 @@ function RealBetsTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                                         </select>
                                     </div>
                                 )}
-                                {form.season && (
+                                {/* Jornada only for non-WC leagues */}
+                                {!isWCLeague && form.season && (
                                     <div>
                                         <label className="block text-[11px] text-muted-foreground mb-1">Jornada</label>
                                         <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
@@ -373,8 +387,20 @@ function RealBetsTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                                 )}
                             </div>
 
-                            {/* Match picker or manual info */}
-                            {form.matchday && matchesForJornada.length > 0 ? (
+                            {/* Match picker */}
+                            {isWCLeague && form.season ? (
+                                <div>
+                                    <label className="block text-[11px] text-muted-foreground mb-1">Partido</label>
+                                    <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
+                                        <option value="">Selecciona partido</option>
+                                        {allSeasonMatches.map(m => (
+                                            <option key={m.id} value={m.id}>
+                                                {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : form.matchday && matchesForJornada.length > 0 ? (
                                 <div>
                                     <label className="block text-[11px] text-muted-foreground mb-1">Partido</label>
                                     <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
@@ -411,8 +437,8 @@ function RealBetsTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                                 <div>
                                     <label className="block text-[11px] text-muted-foreground mb-1">Selección</label>
                                     <AdaptiveFields form={form} set={set}
-                                        homeTeam={matchesForJornada.find(m => m.id === form.match_id)?.home_team?.name || 'Local'}
-                                        awayTeam={matchesForJornada.find(m => m.id === form.match_id)?.away_team?.name || 'Visitante'}
+                                        homeTeam={activeMatches.find(m => m.id === form.match_id)?.home_team?.name || 'Local'}
+                                        awayTeam={activeMatches.find(m => m.id === form.match_id)?.away_team?.name || 'Visitante'}
                                         inputCls={inputCls}
                                     />
                                 </div>
@@ -855,8 +881,11 @@ export default function Betting() {
     const { data: realBets = [], isLoading: realBetsLoading } = useRealBets()
     const { mutate: updateCurrency } = useUpdatePreferredCurrency()
     const [tab, setTab] = useState('available')
+    const [preferredCurrency, setPreferredCurrency] = useState('EUR')
 
-    const preferredCurrency = userProfile?.preferred_currency || 'EUR'
+    useEffect(() => {
+        if (userProfile?.preferred_currency) setPreferredCurrency(userProfile.preferred_currency)
+    }, [userProfile?.preferred_currency])
 
     const betByMatchId = Object.fromEntries(userBets.map(b => [b.match_id, b]))
     const openMatches    = matches.filter(m => !m.hasStarted)
@@ -903,7 +932,7 @@ export default function Betting() {
                         <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-card/60 p-1">
                             {['EUR', 'USD'].map(c => (
                                 <button key={c}
-                                    onClick={() => updateCurrency(c)}
+                                    onClick={() => { setPreferredCurrency(c); updateCurrency(c) }}
                                     className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${preferredCurrency === c ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                                 >
                                     {c === 'EUR' ? '€ EUR' : '$ USD'}

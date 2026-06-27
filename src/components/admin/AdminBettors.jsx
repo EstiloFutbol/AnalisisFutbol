@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, X, ChevronDown, ChevronUp, Loader2, AlertCircle, CheckCircle, Trash2, ExternalLink } from 'lucide-react'
+import { Plus, X, ChevronDown, ChevronUp, Loader2, AlertCircle, CheckCircle, Trash2, ExternalLink, Pencil } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     useBettorProfiles,
@@ -14,7 +14,7 @@ import {
     toEUR,
 } from '@/hooks/useBettorProfiles'
 import { useLeagues } from '@/hooks/useMatches'
-import { useSeasons, useMatchesByJornada } from '@/hooks/useBetting'
+import { useSeasons, useMatchesByJornada, useMatchesBySeason } from '@/hooks/useBetting'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -32,7 +32,8 @@ const STATUS_LABELS = { pending: 'Pendiente', won: 'Ganada', lost: 'Perdida', vo
 const EMPTY_BET = {
     league_id: '', season: '', matchday: '', match_id: '',
     match_info: '', league_name: '', match_date: '',
-    bet_type: '1X2', selection: '',
+    bet_type: '1X2',
+    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
     odds: '', stake: '', bookmaker: '',
     bet_timing: 'pre', bet_minute: '',
     currency: 'EUR', status: 'won',
@@ -41,6 +42,95 @@ const EMPTY_BET = {
 function formatDate(dateStr) {
     if (!dateStr) return ''
     return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+// ─── Adaptive selection fields (mirrors Betting.jsx) ─────────────────────────
+
+function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
+    switch (form.bet_type) {
+        case '1X2':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Selecciona resultado…</option>
+                    <option value={`${homeTeam} gana`}>{homeTeam} gana (Local)</option>
+                    <option value="Empate">Empate</option>
+                    <option value={`${awayTeam} gana`}>{awayTeam} gana (Visitante)</option>
+                </select>
+            )
+        case 'Más/Menos Goles':
+            return (
+                <div className="flex gap-1.5">
+                    <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option>Más de</option><option>Menos de</option>
+                    </select>
+                    <select value={form.amount} onChange={e => set('amount', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option value="">Goles…</option>
+                        {['0.5','1.5','2.5','3.5','4.5','5.5'].map(v => <option key={v} value={v}>{v}</option>)}
+                    </select>
+                </div>
+            )
+        case 'BTTS':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Selecciona…</option>
+                    <option value="Sí">Sí — Ambos marcan</option>
+                    <option value="No">No</option>
+                </select>
+            )
+        case 'Córners':
+        case 'Tarjetas': {
+            const unit = form.bet_type === 'Córners' ? 'córners' : 'tarjetas'
+            return (
+                <div className="flex gap-1.5">
+                    <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option>Más de</option><option>Menos de</option><option>Exactamente</option>
+                    </select>
+                    <input type="number" step="0.5" min="0" value={form.amount}
+                        onChange={e => set('amount', e.target.value)}
+                        placeholder={`Núm. ${unit}`} className={`${inputCls} flex-1`} />
+                </div>
+            )
+        }
+        case 'Hándicap':
+            return (
+                <div className="flex gap-1.5">
+                    <select value={form.hand_team} onChange={e => set('hand_team', e.target.value)} className={`${inputCls} flex-1`}>
+                        <option value="Local">{homeTeam} (Local)</option>
+                        <option value="Visitante">{awayTeam} (Visitante)</option>
+                    </select>
+                    <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-20`}>
+                        {['-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3'].map(v => <option key={v}>{v}</option>)}
+                    </select>
+                </div>
+            )
+        case 'Doble Oportunidad':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">Selecciona…</option>
+                    <option value="1X">1X — {homeTeam} o Empate</option>
+                    <option value="X2">X2 — Empate o {awayTeam}</option>
+                    <option value="12">12 — {homeTeam} o {awayTeam}</option>
+                </select>
+            )
+        default:
+            return (
+                <input value={form.free_text} onChange={e => set('free_text', e.target.value)}
+                    placeholder="Describe tu selección" className={inputCls} />
+            )
+    }
+}
+
+function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
+    switch (form.bet_type) {
+        case '1X2':               return form.outcome
+        case 'Más/Menos Goles':   return form.amount  ? `${form.direction} ${form.amount} goles`   : ''
+        case 'BTTS':              return form.outcome  ? `Ambos marcan: ${form.outcome}`            : ''
+        case 'Córners':           return form.amount  ? `${form.direction} ${form.amount} córners`  : ''
+        case 'Tarjetas':          return form.amount  ? `${form.direction} ${form.amount} tarjetas` : ''
+        case 'Hándicap':          return `${form.hand_team === 'Local' ? homeTeam : awayTeam} ${form.hand_value}`
+        case 'Doble Oportunidad': return form.outcome
+        default:                  return form.free_text
+    }
 }
 
 // ─── Bet list for a profile ────────────────────────────────────────────────────
@@ -87,15 +177,32 @@ function AddBetForm({ profileId, onClose }) {
     const { mutate: addBet, isPending } = useAddBettorBet()
     const { data: leagues = [] } = useLeagues()
     const { data: seasons = [] } = useSeasons(form.league_id || null)
-    const { data: matchesForJornada = [] } = useMatchesByJornada(form.league_id, form.season, form.matchday)
+
+    const isWCLeague = useMemo(() => {
+        const lg = leagues.find(l => String(l.id) === String(form.league_id))
+        return lg?.code === 'WC'
+    }, [leagues, form.league_id])
+
+    const { data: allSeasonMatches = [] } = useMatchesBySeason(
+        isWCLeague ? form.league_id : null,
+        isWCLeague ? form.season : null,
+    )
+    const { data: matchesForJornada = [] } = useMatchesByJornada(
+        isWCLeague ? null : form.league_id,
+        form.season,
+        form.matchday,
+    )
+    const activeMatches = isWCLeague ? allSeasonMatches : matchesForJornada
+    const selectedMatch = activeMatches.find(m => m.id === form.match_id)
 
     const set = (k, v) => setForm(f => {
         const next = { ...f, [k]: v }
-        if (k === 'league_id') { next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''; next.league_name = '' }
+        if (k === 'league_id') { next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''; next.league_name = ''; next.outcome = ''; next.amount = ''; next.free_text = '' }
         if (k === 'season')    { next.matchday = ''; next.match_id = ''; next.match_info = '' }
         if (k === 'matchday')  { next.match_id = ''; next.match_info = '' }
+        if (k === 'bet_type')  { next.outcome = ''; next.amount = ''; next.free_text = '' }
         if (k === 'match_id') {
-            const m = matchesForJornada.find(x => x.id === v)
+            const m = activeMatches.find(x => x.id === v)
             if (m) {
                 next.match_info = `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}`
                 next.match_date = m.match_date || ''
@@ -111,7 +218,11 @@ function AddBetForm({ profileId, onClose }) {
     const inputCls = 'w-full rounded-lg border border-border bg-background py-1.5 px-2.5 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
 
     const handleSubmit = () => {
-        if (!form.match_info || !form.selection || !form.odds || !form.stake) {
+        const selection = buildSelection(form,
+            selectedMatch?.home_team?.name || 'Local',
+            selectedMatch?.away_team?.name || 'Visitante',
+        )
+        if (!form.match_info || !selection || !form.odds || !form.stake) {
             setError('Completa: partido, selección, cuota y stake.')
             return
         }
@@ -128,7 +239,7 @@ function AddBetForm({ profileId, onClose }) {
             match_info:        form.match_info,
             league:            form.league_name || null,
             bet_type:          form.bet_type,
-            selection:         form.selection,
+            selection,
             odds,
             stake,
             bookmaker:         form.bookmaker || null,
@@ -147,7 +258,7 @@ function AddBetForm({ profileId, onClose }) {
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
             <p className="text-xs font-bold text-foreground uppercase tracking-wide">Nuevo pick</p>
 
-            {/* League / season / matchday */}
+            {/* League / season */}
             <div className="grid gap-2 sm:grid-cols-3">
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Liga</label>
@@ -165,7 +276,8 @@ function AddBetForm({ profileId, onClose }) {
                         </select>
                     </div>
                 )}
-                {form.season && (
+                {/* Jornada only for non-WC */}
+                {!isWCLeague && form.season && (
                     <div>
                         <label className="block text-[10px] text-muted-foreground mb-1">Jornada</label>
                         <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
@@ -176,8 +288,20 @@ function AddBetForm({ profileId, onClose }) {
                 )}
             </div>
 
-            {/* Match */}
-            {form.matchday && matchesForJornada.length > 0 ? (
+            {/* Match picker */}
+            {isWCLeague && form.season ? (
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Partido</label>
+                    <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
+                        <option value="">Selecciona partido</option>
+                        {allSeasonMatches.map(m => (
+                            <option key={m.id} value={m.id}>
+                                {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            ) : form.matchday && matchesForJornada.length > 0 ? (
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Partido</label>
                     <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
@@ -200,7 +324,7 @@ function AddBetForm({ profileId, onClose }) {
                 </div>
             )}
 
-            {/* Bet type + selection */}
+            {/* Bet type + adaptive selection */}
             <div className="grid gap-2 sm:grid-cols-2">
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Tipo</label>
@@ -210,7 +334,12 @@ function AddBetForm({ profileId, onClose }) {
                 </div>
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
-                    <input value={form.selection} onChange={e => set('selection', e.target.value)} placeholder="Ej: Real Madrid gana" className={inputCls} />
+                    <AdaptiveFields
+                        form={form} set={set}
+                        homeTeam={selectedMatch?.home_team?.name || 'Local'}
+                        awayTeam={selectedMatch?.away_team?.name || 'Visitante'}
+                        inputCls={inputCls}
+                    />
                 </div>
             </div>
 
@@ -287,11 +416,82 @@ function AddBetForm({ profileId, onClose }) {
     )
 }
 
+// ─── Edit profile form ────────────────────────────────────────────────────────
+
+function EditProfileForm({ profile, onClose }) {
+    const [form, setForm] = useState({
+        display_name: profile.display_name,
+        avatar_url:   profile.avatar_url   || '',
+        description:  profile.description  || '',
+        currency:     profile.currency     || 'EUR',
+    })
+    const [error, setError] = useState('')
+    const { mutate: update, isPending } = useUpdateBettorProfile()
+
+    const inputCls = 'w-full rounded-lg border border-border bg-background/80 py-2 px-3 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
+
+    const handleSave = () => {
+        if (!form.display_name.trim()) { setError('El nombre es obligatorio.'); return }
+        setError('')
+        update({ id: profile.id, ...form }, {
+            onSuccess: () => onClose(),
+            onError:   (e) => setError(e.message),
+        })
+    }
+
+    return (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <p className="text-xs font-bold text-foreground uppercase tracking-wide">Editar perfil</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label className="block text-[11px] text-muted-foreground mb-1">Nombre *</label>
+                    <input value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))}
+                        placeholder="Nombre del streamer" className={inputCls} />
+                </div>
+                <div>
+                    <label className="block text-[11px] text-muted-foreground mb-1">Avatar URL</label>
+                    <input value={form.avatar_url} onChange={e => setForm(f => ({ ...f, avatar_url: e.target.value }))}
+                        placeholder="https://..." className={inputCls} />
+                </div>
+            </div>
+            <div>
+                <label className="block text-[11px] text-muted-foreground mb-1">Descripción</label>
+                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Tipster especializado en La Liga" className={inputCls} />
+            </div>
+            <div>
+                <label className="block text-[11px] text-muted-foreground mb-1">Divisa base</label>
+                <select value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} className={`${inputCls} w-32`}>
+                    <option value="EUR">EUR €</option>
+                    <option value="USD">USD $</option>
+                </select>
+            </div>
+            {error && (
+                <p className="flex items-center gap-1.5 text-sm text-red-400">
+                    <AlertCircle className="h-4 w-4 shrink-0" />{error}
+                </p>
+            )}
+            <div className="flex gap-2">
+                <button onClick={handleSave} disabled={isPending}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity">
+                    {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />}
+                    Guardar cambios
+                </button>
+                <button onClick={onClose}
+                    className="flex items-center gap-1.5 rounded-lg border border-border/50 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <X className="h-3.5 w-3.5" /> Cancelar
+                </button>
+            </div>
+        </div>
+    )
+}
+
 // ─── Single profile card ──────────────────────────────────────────────────────
 
 function ProfileCard({ profile }) {
     const [expanded, setExpanded]   = useState(false)
     const [addingBet, setAddingBet] = useState(false)
+    const [editing, setEditing]     = useState(false)
     const { mutate: deactivate, isPending: deactivating } = useDeactivateBettorProfile()
 
     return (
@@ -316,7 +516,12 @@ function ProfileCard({ profile }) {
                     </div>
                     {profile.description && <p className="text-xs text-muted-foreground truncate">{profile.description}</p>}
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
+                    <button onClick={() => { setEditing(v => !v); setExpanded(true) }}
+                        title="Editar perfil"
+                        className={`p-1.5 rounded transition-colors ${editing ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
+                        <Pencil className="h-3.5 w-3.5" />
+                    </button>
                     <Link to={`/apuestas/bettor/${profile.id}`} className="p-1.5 rounded text-muted-foreground hover:text-primary transition-colors" title="Ver perfil público">
                         <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
@@ -336,27 +541,36 @@ function ProfileCard({ profile }) {
                         className="overflow-hidden border-t border-border/30"
                     >
                         <div className="px-4 py-3 space-y-3">
+                            {/* Edit form */}
+                            {editing && (
+                                <EditProfileForm profile={profile} onClose={() => setEditing(false)} />
+                            )}
+
                             {/* Action buttons */}
-                            <div className="flex flex-wrap gap-2">
-                                <button onClick={() => setAddingBet(v => !v)}
-                                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors">
-                                    {addingBet ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-                                    {addingBet ? 'Cancelar' : 'Añadir pick'}
-                                </button>
-                                {profile.is_active && (
-                                    <button onClick={() => { if (confirm(`¿Desactivar a ${profile.display_name}?`)) deactivate(profile.id) }}
-                                        disabled={deactivating}
-                                        className="flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors">
-                                        Desactivar perfil
+                            {!editing && (
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick={() => setAddingBet(v => !v)}
+                                        className="flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors">
+                                        {addingBet ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                                        {addingBet ? 'Cancelar' : 'Añadir pick'}
                                     </button>
-                                )}
-                            </div>
+                                    {profile.is_active && (
+                                        <button onClick={() => { if (confirm(`¿Desactivar a ${profile.display_name}?`)) deactivate(profile.id) }}
+                                            disabled={deactivating}
+                                            className="flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors">
+                                            Desactivar perfil
+                                        </button>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Add bet form */}
-                            {addingBet && <AddBetForm profileId={profile.id} onClose={() => setAddingBet(false)} />}
+                            {!editing && addingBet && (
+                                <AddBetForm profileId={profile.id} onClose={() => setAddingBet(false)} />
+                            )}
 
                             {/* Bet list */}
-                            <BettorBetList profileId={profile.id} />
+                            {!editing && <BettorBetList profileId={profile.id} />}
                         </div>
                     </motion.div>
                 )}
@@ -386,7 +600,6 @@ function CreateProfileForm({ onClose }) {
     return (
         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
             <p className="text-sm font-bold text-foreground">Nuevo perfil de apostador</p>
-
             <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                     <label className="block text-[11px] text-muted-foreground mb-1">Nombre *</label>
@@ -399,13 +612,11 @@ function CreateProfileForm({ onClose }) {
                         placeholder="https://..." className={inputCls} />
                 </div>
             </div>
-
             <div>
                 <label className="block text-[11px] text-muted-foreground mb-1">Descripción</label>
                 <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                     placeholder="Tipster especializado en La Liga" className={inputCls} />
             </div>
-
             <div>
                 <label className="block text-[11px] text-muted-foreground mb-1">Divisa base</label>
                 <select value={form.currency} onChange={e => setForm(f => ({ ...f, currency: e.target.value }))} className={`${inputCls} w-32`}>
@@ -413,13 +624,11 @@ function CreateProfileForm({ onClose }) {
                     <option value="USD">USD $</option>
                 </select>
             </div>
-
             {error && (
                 <p className="flex items-center gap-1.5 text-sm text-red-400">
                     <AlertCircle className="h-4 w-4 shrink-0" />{error}
                 </p>
             )}
-
             <div className="flex gap-2">
                 <button onClick={handleCreate} disabled={isPending}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity">
@@ -460,7 +669,6 @@ export default function AdminBettors() {
                 </button>
             </div>
 
-            {/* Create form */}
             <AnimatePresence>
                 {showCreate && (
                     <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
@@ -479,14 +687,12 @@ export default function AdminBettors() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {/* Active profiles */}
                     {active.length > 0 && (
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Activos ({active.length})</p>
                             {active.map(p => <ProfileCard key={p.id} profile={p} />)}
                         </div>
                     )}
-                    {/* Inactive profiles */}
                     {inactive.length > 0 && (
                         <div className="space-y-2">
                             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Inactivos ({inactive.length})</p>

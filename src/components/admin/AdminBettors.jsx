@@ -197,35 +197,46 @@ function AddBetForm({ profileId, onClose }) {
 
     const set = (k, v) => setForm(f => {
         const next = { ...f, [k]: v }
-        if (k === 'league_id') { next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''; next.league_name = ''; next.outcome = ''; next.amount = ''; next.free_text = '' }
-        if (k === 'season')    { next.matchday = ''; next.match_id = ''; next.match_info = '' }
-        if (k === 'matchday')  { next.match_id = ''; next.match_info = '' }
-        if (k === 'bet_type')  { next.outcome = ''; next.amount = ''; next.free_text = '' }
-        if (k === 'match_id') {
-            const m = activeMatches.find(x => x.id === v)
-            if (m) {
-                next.match_info = `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}`
-                next.match_date = m.match_date || ''
-            }
-        }
         if (k === 'league_id') {
+            next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''
+            next.league_name = ''; next.outcome = ''; next.amount = ''; next.free_text = ''
             const lg = leagues.find(x => String(x.id) === String(v))
             if (lg) next.league_name = lg.name || lg.code || ''
         }
+        if (k === 'season')   { next.matchday = ''; next.match_id = ''; next.match_info = '' }
+        if (k === 'matchday') { next.match_id = ''; next.match_info = '' }
+        if (k === 'bet_type') { next.outcome = ''; next.amount = ''; next.free_text = '' }
         return next
     })
+
+    // Separate handler for match selection so the lookup runs synchronously at event time,
+    // not inside a setForm updater where the closure could be stale.
+    const selectMatch = (matchList, id) => {
+        const m = matchList.find(x => x.id === id)
+        setForm(f => ({
+            ...f,
+            match_id:   id,
+            match_info: m ? `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}` : f.match_info,
+            match_date: m?.match_date || f.match_date,
+        }))
+    }
 
     const inputCls = 'w-full rounded-lg border border-border bg-background py-1.5 px-2.5 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
 
     const handleSubmit = () => {
-        const selection = buildSelection(form,
-            selectedMatch?.home_team?.name || 'Local',
-            selectedMatch?.away_team?.name || 'Visitante',
-        )
-        if (!form.match_info || !selection || !form.odds || !form.stake) {
-            setError('Completa: partido, selección, cuota y stake.')
-            return
-        }
+        const homeTeam = selectedMatch?.home_team?.name || 'Local'
+        const awayTeam = selectedMatch?.away_team?.name || 'Visitante'
+        const selection = buildSelection(form, homeTeam, awayTeam)
+        // Fallback: derive match_info from selectedMatch if the form field is empty
+        const matchInfo = form.match_info || (selectedMatch
+            ? `${homeTeam} vs ${awayTeam}`
+            : '')
+        const missing = []
+        if (!matchInfo)      missing.push('partido')
+        if (!selection)      missing.push('selección')
+        if (!form.odds)      missing.push('cuota')
+        if (!form.stake)     missing.push('stake')
+        if (missing.length) { setError(`Completa: ${missing.join(', ')}.`); return }
         const odds  = parseFloat(form.odds)
         const stake = parseFloat(form.stake)
         if (isNaN(odds) || odds < 1.01 || isNaN(stake) || stake <= 0) {
@@ -236,7 +247,7 @@ function AddBetForm({ profileId, onClose }) {
         addBet({
             bettor_profile_id: profileId,
             match_id:          form.match_id || null,
-            match_info:        form.match_info,
+            match_info:        matchInfo,
             league:            form.league_name || null,
             bet_type:          form.bet_type,
             selection,
@@ -292,7 +303,7 @@ function AddBetForm({ profileId, onClose }) {
             {isWCLeague && form.season ? (
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Partido</label>
-                    <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
+                    <select value={form.match_id} onChange={e => selectMatch(allSeasonMatches, e.target.value)} className={inputCls}>
                         <option value="">Selecciona partido</option>
                         {allSeasonMatches.map(m => (
                             <option key={m.id} value={m.id}>
@@ -304,7 +315,7 @@ function AddBetForm({ profileId, onClose }) {
             ) : form.matchday && matchesForJornada.length > 0 ? (
                 <div>
                     <label className="block text-[10px] text-muted-foreground mb-1">Partido</label>
-                    <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
+                    <select value={form.match_id} onChange={e => selectMatch(matchesForJornada, e.target.value)} className={inputCls}>
                         <option value="">Selecciona partido</option>
                         {matchesForJornada.map(m => (
                             <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>

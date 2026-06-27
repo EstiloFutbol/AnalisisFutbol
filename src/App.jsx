@@ -12,6 +12,7 @@ import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 import Account from '@/pages/Account'
 import Betting from '@/pages/Betting'
+import BettorProfile from '@/pages/BettorProfile'
 import DataDeletion from '@/pages/DataDeletion'
 import LaPlaza from '@/pages/LaPlaza'
 import LaPlazaPost from '@/pages/LaPlazaPost'
@@ -57,9 +58,11 @@ function App() {
                                         {/* Legacy route redirect */}
                                         <Route path="/matches/:matchId" element={<Navigate to={window.location.pathname.replace('/matches/', '/partido/')} replace />} />
 
-                                        {/* Betting — Spanish SEO route */}
-                                        <Route path="/mis-apuestas" element={<Betting />} />
-                                        <Route path="/betting" element={<Navigate to="/mis-apuestas" replace />} />
+                                        {/* Betting — Spanish SEO routes */}
+                                        <Route path="/apuestas" element={<Betting />} />
+                                        <Route path="/apuestas/bettor/:id" element={<BettorProfile />} />
+                                        <Route path="/mis-apuestas" element={<Navigate to="/apuestas" replace />} />
+                                        <Route path="/betting" element={<Navigate to="/apuestas" replace />} />
 
                                         {/* Análisis IA — unified page */}
                                         <Route path="/analisis" element={<Analisis />} />

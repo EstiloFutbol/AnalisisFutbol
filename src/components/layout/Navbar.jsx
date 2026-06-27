@@ -9,7 +9,7 @@ import { useTimezone, TIMEZONE_OPTIONS } from '@/context/TimezoneContext'
 const navItems = [
     { path: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
     { path: '/analisis',     label: 'Análisis IA',  icon: Brain },
-    { path: '/mis-apuestas', label: 'Mis Apuestas', icon: Trophy },
+    { path: '/apuestas', label: 'Apuestas', icon: Trophy },
     { path: '/plaza',        label: 'La Plaza',     icon: MessageSquare },
 ]
 
@@ -74,7 +74,9 @@ export default function Navbar() {
                 {/* Desktop Nav */}
                 <nav className="hidden items-center gap-1 md:flex">
                     {navItems.map(({ path, label, icon: Icon }) => {
-                        const isActive = location.pathname === path
+                        const isActive = path === '/apuestas'
+                            ? location.pathname.startsWith('/apuestas')
+                            : location.pathname === path
                         return (
                             <Link
                                 key={path}

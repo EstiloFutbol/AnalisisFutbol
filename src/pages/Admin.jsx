@@ -9,6 +9,7 @@ import AdminTeams from '@/components/admin/AdminTeams'
 import AdminLeagues from '@/components/admin/AdminLeagues'
 import AdminReferees from '@/components/admin/AdminReferees'
 import AdminCoaches from '@/components/admin/AdminCoaches'
+import AdminBettors from '@/components/admin/AdminBettors'
 import { Shield, Database, Users, Calendar, Settings, Gavel, UserCheck } from 'lucide-react'
 
 export default function Admin() {
@@ -44,12 +45,13 @@ export default function Admin() {
             </div>
 
             <Tabs defaultValue="matches" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
+                <TabsList className="grid w-full grid-cols-6 lg:w-[720px]">
                     <TabsTrigger value="matches">Partidos</TabsTrigger>
                     <TabsTrigger value="teams">Equipos</TabsTrigger>
                     <TabsTrigger value="referees">Árbitros</TabsTrigger>
                     <TabsTrigger value="coaches">Entrenadores</TabsTrigger>
                     <TabsTrigger value="leagues">Ligas</TabsTrigger>
+                    <TabsTrigger value="bettors">Apostadores</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="matches" className="space-y-4">
@@ -70,6 +72,10 @@ export default function Admin() {
 
                 <TabsContent value="leagues" className="space-y-4">
                     <AdminLeagues />
+                </TabsContent>
+
+                <TabsContent value="bettors" className="space-y-4">
+                    <AdminBettors />
                 </TabsContent>
             </Tabs>
         </div>

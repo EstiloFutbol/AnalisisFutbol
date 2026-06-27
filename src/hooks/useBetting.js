@@ -143,21 +143,32 @@ export function useRealBets() {
     })
 }
 
-/** Insert a new real bet */
+/** Insert a new real bet (supports immediate settlement via status field) */
 export function useAddRealBet() {
     const qc = useQueryClient()
     const { user } = useAuth()
     return useMutation({
         mutationFn: async (bet) => {
+            const isSettled = bet.status && bet.status !== 'pending'
             const { data, error } = await supabase
                 .from('real_bets')
-                .insert([{ ...bet, user_id: user.id, potential_payout: Math.round(bet.stake * bet.odds * 100) / 100 }])
+                .insert([{
+                    ...bet,
+                    user_id:          user.id,
+                    potential_payout: Math.round(bet.stake * bet.odds * 100) / 100,
+                    currency:         bet.currency || 'EUR',
+                    status:           bet.status || 'pending',
+                    settled_at:       isSettled ? new Date().toISOString() : null,
+                }])
                 .select()
                 .single()
             if (error) throw new Error(error.message)
             return data
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['real-bets'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['real-bets'] })
+            qc.invalidateQueries({ queryKey: ['leaderboard'] })
+        },
     })
 }
 
@@ -175,7 +186,10 @@ export function useSettleRealBet() {
             if (error) throw new Error(error.message)
             return data
         },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['real-bets'] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['real-bets'] })
+            qc.invalidateQueries({ queryKey: ['leaderboard'] })
+        },
     })
 }
 

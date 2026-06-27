@@ -1,11 +1,11 @@
 name: Fetch La Liga Odds
 
 on:
-  # Run every day at 09:00 UTC (11:00 Spain summer / 10:00 winter).
+  # Run every day at 06:00 UTC (08:00 Spain summer CEST / 07:00 winter CET).
   # The script itself checks whether the next jornada is ≤ 5 days away
   # and exits silently if it is not.
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 6 * * *'
   # Allow manual trigger from the Actions tab (useful for testing)
   workflow_dispatch:
 

@@ -241,13 +241,15 @@ export default function Dashboard() {
         const fgOver60 = firstGoalMins.filter(m => m > 60).length
 
         // Corners
-        const totalCorners = playedMatches.reduce((a, m) => a + (m.total_corners || 0), 0)
+        // Resolve corners per match: use total_corners if set, otherwise home + away
+        const matchCorners = m => m.total_corners || ((m.home_corners || 0) + (m.away_corners || 0))
+        const totalCorners = playedMatches.reduce((a, m) => a + matchCorners(m), 0)
         const homeCorners = playedMatches.reduce((a, m) => a + (m.home_corners || 0), 0)
         const awayCorners = playedMatches.reduce((a, m) => a + (m.away_corners || 0), 0)
-        const over75c = playedMatches.filter(m => (m.total_corners || 0) > 7.5).length
-        const over85c = playedMatches.filter(m => (m.total_corners || 0) > 8.5).length
-        const over95c = playedMatches.filter(m => (m.total_corners || 0) > 9.5).length
-        const over105c = playedMatches.filter(m => (m.total_corners || 0) > 10.5).length
+        const over75c = playedMatches.filter(m => matchCorners(m) > 7.5).length
+        const over85c = playedMatches.filter(m => matchCorners(m) > 8.5).length
+        const over95c = playedMatches.filter(m => matchCorners(m) > 9.5).length
+        const over105c = playedMatches.filter(m => matchCorners(m) > 10.5).length
 
         // Cards
         const yc = playedMatches.reduce((a, m) => a + (m.home_yellow_cards || m.home_cards || 0) + (m.away_yellow_cards || m.away_cards || 0), 0)

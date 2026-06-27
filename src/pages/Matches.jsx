@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useMatches, useLeagues } from '@/hooks/useMatches'
+import { useMatches, useLeagues, useGroupStandings } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
 import { Search, Filter, CalendarDays, Trophy } from 'lucide-react'
 
@@ -81,6 +81,28 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
 
     const { data: matches = [], isLoading } = useMatches(activeLeagueId)
 
+    // WC group standings — used to resolve slot labels to confirmed team names
+    const { data: standingsRaw = [] } = useGroupStandings(isWC ? activeLeagueId : null)
+
+    const { groupWinners, groupRunnerUps, completedGroups } = useMemo(() => {
+        const byGroup = {}
+        standingsRaw.forEach(r => {
+            if (!r.group_name) return
+            if (!byGroup[r.group_name]) byGroup[r.group_name] = []
+            byGroup[r.group_name].push(r)
+        })
+        const winners = {}, runners = {}
+        Object.entries(byGroup).forEach(([g, rows]) => {
+            if (rows[0]) winners[g] = rows[0]
+            if (rows[1]) runners[g] = rows[1]
+        })
+        const done = new Set()
+        Object.entries(byGroup).forEach(([g, rows]) => {
+            if (rows.length >= 4 && rows.every(r => (r.played || 0) >= 3)) done.add(g)
+        })
+        return { groupWinners: winners, groupRunnerUps: runners, completedGroups: done }
+    }, [standingsRaw])
+
     // Calculate available matchdays from the fetched matches
     const availableMatchdays = useMemo(() => {
         const mds = new Set(matches.map(m => m.matchday).filter(Boolean))
@@ -160,15 +182,27 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
     const getRoundLabel = (md) => isWC ? (WC_ROUND_LABELS[md] || `Ronda ${md}`) : `Jornada ${md}`
     const getChipLabel  = (md) => isWC ? (WC_CHIP_LABELS[md]  || `R${md}`)      : `J${md}`
 
-    // For WC R32 matches without assigned teams, precompute slot labels by match id
+    // For WC R32 matches: resolve slot labels to team names when group is confirmed
     const r32SlotLabels = useMemo(() => {
         if (!isWC) return {}
+
+        function resolveLabel(label) {
+            if (!label) return label
+            const mm = label.match(/^([12])° Gr\. ([A-L])$/)
+            if (!mm) return label // "Mejor 3°" or unknown — keep as-is
+            const [, pos, group] = mm
+            if (!completedGroups.has(group)) return label
+            const row = pos === '1' ? groupWinners[group] : groupRunnerUps[group]
+            return row?.team?.name || label
+        }
+
         const map = {}
         WC_R32_BRACKET_ORDER.forEach((id, pos) => {
-            map[id] = WC_R32_SLOT_LABELS[pos] || {}
+            const labels = WC_R32_SLOT_LABELS[pos] || {}
+            map[id] = { home: resolveLabel(labels.home), away: resolveLabel(labels.away) }
         })
         return map
-    }, [isWC])
+    }, [isWC, completedGroups, groupWinners, groupRunnerUps])
 
     return (
         <div className="space-y-6 animate-fade-in">

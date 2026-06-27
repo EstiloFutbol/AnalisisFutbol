@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useBettableMatches, useUserBets, usePlaceBet, useRealBets, useAddRealBet, useSettleRealBet, useSeasons, useMatchesByJornada } from '@/hooks/useBetting'
 import { useLeagues } from '@/hooks/useMatches'
 import SEO from '@/components/SEO'
+import { useTimezone } from '@/context/TimezoneContext'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -469,6 +470,7 @@ function MatchBetCard({ match, existingBet, onBetPlaced = null }) {
     const [result, setResult] = useState(null)
     const { isPending, mutate: _mutate } = usePlaceBet()
     const { refreshProfile } = useAuth()
+    const { formatKickOff } = useTimezone()
     const locked = match.hasStarted  // kick-off passed — no more bets
 
     const placeBet = (args) => new Promise((resolve, reject) => {
@@ -546,7 +548,7 @@ function MatchBetCard({ match, existingBet, onBetPlaced = null }) {
                     )}
                     <span className="text-[11px] text-muted-foreground">
                         {formatDate(match.match_date)}
-                        {match.kick_off_time && ` · ${match.kick_off_time.slice(0, 5)}`}
+                        {match.kick_off_time && ` · ${formatKickOff(match.kick_off_time, match.match_date)}`}
                     </span>
                 </div>
             </div>

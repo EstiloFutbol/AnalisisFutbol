@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LayoutDashboard, Menu, X, ShieldCheck, UserCircle, LogOut, ChevronDown, Trophy, Sun, Moon, Brain, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Menu, X, ShieldCheck, UserCircle, LogOut, ChevronDown, Trophy, Sun, Moon, Brain, MessageSquare, Globe } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
+import { useTimezone, TIMEZONE_OPTIONS } from '@/context/TimezoneContext'
 
 const navItems = [
     { path: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard },
@@ -31,6 +32,7 @@ export default function Navbar() {
     const userMenuRef = useRef(null)
     const { session, user, userProfile, isAdmin, signOut } = useAuth()
     const { theme, toggleTheme } = useTheme()
+    const { timezone, setTimezone } = useTimezone()
 
     // Close user menu on outside click
     useEffect(() => {
@@ -98,6 +100,21 @@ export default function Navbar() {
 
                 {/* Right side: user area */}
                 <div className="flex items-center gap-2">
+                    {/* Timezone selector */}
+                    <div className="relative flex items-center">
+                        <Globe className="pointer-events-none absolute left-2 z-10 h-3.5 w-3.5 text-muted-foreground" />
+                        <select
+                            value={timezone}
+                            onChange={(e) => setTimezone(e.target.value)}
+                            aria-label="Zona horaria"
+                            className="h-9 appearance-none rounded-lg border border-border/50 bg-card/60 pl-6 pr-4 text-xs font-medium text-muted-foreground transition-all hover:border-primary/40 hover:bg-card hover:text-primary focus:outline-none cursor-pointer"
+                        >
+                            {TIMEZONE_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
                     {/* Theme toggle */}
                     <button
                         onClick={toggleTheme}

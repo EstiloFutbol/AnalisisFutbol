@@ -19,6 +19,7 @@ import LaPlazaPost from '@/pages/LaPlazaPost'
 import { useState } from 'react'
 import { AuthProvider } from '@/context/AuthContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { TimezoneProvider } from '@/context/TimezoneContext'
 import { LeagueProvider } from '@/context/LeagueContext'
 import CookieConsent from '@/components/CookieConsent'
 
@@ -36,6 +37,7 @@ function App() {
         <HelmetProvider>
             <QueryClientProvider client={queryClient}>
                 <ThemeProvider>
+                    <TimezoneProvider>
                     <LeagueProvider>
                     <AuthProvider>
                         <BrowserRouter>
@@ -90,6 +92,7 @@ function App() {
                         </BrowserRouter>
                     </AuthProvider>
                     </LeagueProvider>
+                    </TimezoneProvider>
                 </ThemeProvider>
             </QueryClientProvider>
         </HelmetProvider>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import SEO from '@/components/SEO'
 import { useTodayMatches } from '@/hooks/useMatches'
+import { useTimezone } from '@/context/TimezoneContext'
 
 const wcStructuredData = {
     '@context': 'https://schema.org',
@@ -123,6 +124,7 @@ function TeamLogo({ team }) {
 }
 
 function CompactMatchCard({ match }) {
+    const { formatKickOff } = useTimezone()
     const isPlayed = match.home_goals !== null && match.away_goals !== null
     const isWC     = match.league?.code === 'WC'
     const homeName = match.home_team?.short_name || match.home_team?.name || '?'
@@ -158,7 +160,7 @@ function CompactMatchCard({ match }) {
                     </span>
                 ) : (
                     <span className="text-xs font-bold text-muted-foreground">
-                        {match.kick_off_time ? match.kick_off_time.slice(0, 5) : '–:––'}
+                        {match.kick_off_time ? formatKickOff(match.kick_off_time, match.match_date) : '–:––'}
                     </span>
                 )}
             </div>

@@ -19,6 +19,7 @@ import { useLeagues, useMatches, useTeams } from '@/hooks/useMatches'
 import { useMLPredictions, getProb, getEV, isRecommended } from '@/hooks/useMLPredictions'
 import { useAIBets, useAIBotStats } from '@/hooks/useAI'
 import { matchHasStarted } from '@/hooks/useBetting'
+import { useTimezone } from '@/context/TimezoneContext'
 import BettingCalculator from '@/components/BettingCalculator'
 import SEO from '@/components/SEO'
 
@@ -824,6 +825,7 @@ function StatCard({ icon: Icon, label, value, sub = null, accent = false }) {
 function AIBetCard({ bet }) {
     const [expanded, setExpanded] = useState(false)
     const navigate = useNavigate()
+    const { formatKickOff } = useTimezone()
     const m = bet.match
     const started = matchHasStarted(m?.match_date, m?.kick_off_time)
     const isSettled = bet.status === 'won' || bet.status === 'lost'
@@ -865,7 +867,7 @@ function AIBetCard({ bet }) {
                 <div className="flex items-center gap-2">
                     <span className="text-[11px] text-muted-foreground">
                         {formatDate(m?.match_date)}
-                        {m?.kick_off_time && ` · ${m.kick_off_time.slice(0, 5)}`}
+                        {m?.kick_off_time && ` · ${formatKickOff(m.kick_off_time, m?.match_date)}`}
                     </span>
                     {isSettled && <ExternalLink className="h-3.5 w-3.5 text-primary/50" />}
                 </div>

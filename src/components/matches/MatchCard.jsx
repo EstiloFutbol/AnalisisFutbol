@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Calendar, MapPin } from 'lucide-react'
+import { useTimezone } from '@/context/TimezoneContext'
 
 function ResultBadge({ homeGoals, awayGoals, kickOffTime }) {
     const hasScore = homeGoals != null && awayGoals != null
@@ -34,6 +35,7 @@ function ResultBadge({ homeGoals, awayGoals, kickOffTime }) {
 }
 
 export default function MatchCard({ match, index = 0, isWC = false, homeLabel = null, awayLabel = null }) {
+    const { formatKickOff } = useTimezone()
     const homeTeamName = match.home_team?.name || homeLabel || (isWC ? 'Por definir' : 'Local')
     const awayTeamName = match.away_team?.name || awayLabel || (isWC ? 'Por definir' : 'Visitante')
     const isTBD = !match.home_team || !match.away_team
@@ -99,7 +101,7 @@ export default function MatchCard({ match, index = 0, isWC = false, homeLabel = 
                         <ResultBadge
                             homeGoals={match.home_goals}
                             awayGoals={match.away_goals}
-                            kickOffTime={match.kick_off_time}
+                            kickOffTime={formatKickOff(match.kick_off_time, match.match_date)}
                         />
                     </div>
 

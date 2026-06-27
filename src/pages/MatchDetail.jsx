@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTimezone } from '@/context/TimezoneContext'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMatch } from '@/hooks/useMatches'
@@ -603,6 +604,7 @@ export default function MatchDetail() {
     const { data: match, isLoading, error } = useMatch(matchId)
     const { data: playerStats = [] } = useMatchPlayerStats(matchId)
     const { session, isAdmin } = useAuth()
+    const { formatKickOff } = useTimezone()
     const [isEditing, setIsEditing] = useState(false)
     const [activeTab, setActiveTab] = useState('stats')
 
@@ -698,7 +700,7 @@ export default function MatchDetail() {
                             {matchDate}
                         </span>
                     )}
-                    {match.kick_off_time && <span>{match.kick_off_time}</span>}
+                    {match.kick_off_time && <span>{formatKickOff(match.kick_off_time, match.match_date)}</span>}
                 </div>
 
                 <div className="flex items-center justify-center gap-4 sm:gap-8">

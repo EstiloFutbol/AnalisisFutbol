@@ -183,15 +183,16 @@ function AddBetForm({ profileId, onClose }) {
         return lg?.code === 'WC'
     }, [leagues, form.league_id])
 
-    const { data: allSeasonMatches = [] } = useMatchesBySeason(
+    const { data: allSeasonMatches = [], isLoading: loadingWC } = useMatchesBySeason(
         isWCLeague ? form.league_id : null,
         isWCLeague ? form.season : null,
     )
-    const { data: matchesForJornada = [] } = useMatchesByJornada(
+    const { data: matchesForJornada = [], isLoading: loadingJornada } = useMatchesByJornada(
         isWCLeague ? null : form.league_id,
         form.season,
         form.matchday,
     )
+    const loadingMatches = isWCLeague ? loadingWC : loadingJornada
     const activeMatches = isWCLeague ? allSeasonMatches : matchesForJornada
     const selectedMatch = activeMatches.find(m => m.id === form.match_id)
 
@@ -302,31 +303,59 @@ function AddBetForm({ profileId, onClose }) {
             {/* Match picker */}
             {isWCLeague && form.season ? (
                 <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Partido</label>
-                    <select value={form.match_id} onChange={e => selectMatch(allSeasonMatches, e.target.value)} className={inputCls}>
-                        <option value="">Selecciona partido</option>
-                        {allSeasonMatches.map(m => (
-                            <option key={m.id} value={m.id}>
-                                {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
-                            </option>
-                        ))}
-                    </select>
+                    <label className="block text-[10px] text-muted-foreground mb-1">
+                        Partido <span className="text-red-400">*</span>
+                    </label>
+                    {loadingMatches ? (
+                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
+                        </div>
+                    ) : (
+                        <select value={form.match_id} onChange={e => selectMatch(allSeasonMatches, e.target.value)}
+                            className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                            <option value="">— Selecciona partido —</option>
+                            {allSeasonMatches.map(m => (
+                                <option key={m.id} value={m.id}>
+                                    {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    {form.match_info && (
+                        <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>
+                    )}
                 </div>
-            ) : form.matchday && matchesForJornada.length > 0 ? (
+            ) : form.matchday && (loadingJornada || matchesForJornada.length > 0) ? (
                 <div>
-                    <label className="block text-[10px] text-muted-foreground mb-1">Partido</label>
-                    <select value={form.match_id} onChange={e => selectMatch(matchesForJornada, e.target.value)} className={inputCls}>
-                        <option value="">Selecciona partido</option>
-                        {matchesForJornada.map(m => (
-                            <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>
-                        ))}
-                    </select>
+                    <label className="block text-[10px] text-muted-foreground mb-1">
+                        Partido <span className="text-red-400">*</span>
+                    </label>
+                    {loadingJornada ? (
+                        <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Cargando partidos…
+                        </div>
+                    ) : (
+                        <select value={form.match_id} onChange={e => selectMatch(matchesForJornada, e.target.value)}
+                            className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                            <option value="">— Selecciona partido —</option>
+                            {matchesForJornada.map(m => (
+                                <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>
+                            ))}
+                        </select>
+                    )}
+                    {form.match_info && (
+                        <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>
+                    )}
                 </div>
             ) : (
                 <div className="grid gap-2 sm:grid-cols-2">
                     <div>
-                        <label className="block text-[10px] text-muted-foreground mb-1">Partido (texto)</label>
-                        <input value={form.match_info} onChange={e => set('match_info', e.target.value)} placeholder="Real Madrid vs Barça" className={inputCls} />
+                        <label className="block text-[10px] text-muted-foreground mb-1">
+                            Partido <span className="text-red-400">*</span>
+                        </label>
+                        <input value={form.match_info} onChange={e => set('match_info', e.target.value)}
+                            placeholder="Real Madrid vs Barça"
+                            className={`${inputCls} ${!form.match_info ? 'border-amber-500/30' : ''}`} />
                     </div>
                     <div>
                         <label className="block text-[10px] text-muted-foreground mb-1">Fecha</label>

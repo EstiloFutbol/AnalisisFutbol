@@ -160,9 +160,40 @@ export function useRealBets() {
             const { data, error } = await supabase
                 .from('real_bets')
                 .select('*')
+                .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
             if (error) throw error
             return data || []
+        },
+    })
+}
+
+/** Edit fields of an existing real bet */
+export function useUpdateRealBet() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, stake, odds, status, ...rest }) => {
+            const stakeNum = parseFloat(stake)
+            const oddsNum  = parseFloat(odds)
+            const payload  = { ...rest, status }
+            if (!isNaN(stakeNum) && !isNaN(oddsNum)) {
+                payload.stake            = stakeNum
+                payload.odds             = oddsNum
+                payload.potential_payout = Math.round(stakeNum * oddsNum * 100) / 100
+            }
+            payload.settled_at = status && status !== 'pending' ? new Date().toISOString() : null
+            const { data, error } = await supabase
+                .from('real_bets')
+                .update(payload)
+                .eq('id', id)
+                .select()
+                .single()
+            if (error) throw new Error(error.message)
+            return data
+        },
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['real-bets'] })
+            qc.invalidateQueries({ queryKey: ['leaderboard'] })
         },
     })
 }

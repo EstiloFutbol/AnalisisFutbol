@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
     Trophy, Coins, Loader2, CheckCircle, AlertCircle, Lock,
     TrendingUp, Wallet, Clock, Plus, X, BarChart3, Euro,
-    Medal, Users, ExternalLink,
+    Medal, Users, ExternalLink, Pencil,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import {
     useBettableMatches, useUserBets, usePlaceBet,
-    useRealBets, useAddRealBet, useSettleRealBet,
+    useRealBets, useAddRealBet, useSettleRealBet, useUpdateRealBet,
     useSeasons, useMatchesByJornada, useMatchesBySeason,
 } from '@/hooks/useBetting'
 import { useLeagues } from '@/hooks/useMatches'
@@ -32,54 +32,83 @@ function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
-const BET_TYPES   = ['1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas', 'Hándicap', 'Doble Oportunidad', 'Otro']
-const BOOKMAKERS  = ['Bet365', 'William Hill', 'Betway', 'Codere', 'Marca Apuestas', 'Bwin', 'Betfair', 'Sportium', '888sport', 'Unibet', 'Winamax', 'Betclic', 'Pinnacle', 'Otro']
-const EMPTY_FORM  = {
+const BET_TYPES = [
+    'Combinada',
+    '1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas',
+    'Hándicap', 'Doble Oportunidad',
+    'Resultado Exacto', 'Resultado al Descanso', 'Más/Menos (1ª parte)',
+]
+const SINGLE_BET_TYPES = BET_TYPES.filter(t => t !== 'Combinada')
+const BOOKMAKERS = ['Bet365', 'William Hill', 'Betway', 'Codere', 'Marca Apuestas', 'Bwin', 'Betfair', 'Sportium', '888sport', 'Unibet', 'Winamax', 'Betclic', 'Pinnacle', 'Otro']
+
+const EMPTY_FORM = {
     league_id: '', season: '', matchday: '', match_id: '',
     match_info: '', league_name: '', match_date: '',
+    home_team_name: '', away_team_name: '',
     bet_type: '1X2',
-    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1', free_text: '',
+    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1',
+    home_goals_sel: '', away_goals_sel: '',
     odds: '', stake: '', bookmaker: '',
     bet_timing: 'pre', bet_minute: '',
     currency: 'EUR', status: 'pending',
 }
+const EMPTY_LEG = {
+    league_id: '', season: '', matchday: '', match_id: '',
+    match_info: '', league_name: '', match_date: '',
+    home_team_name: '', away_team_name: '',
+    bet_type: '1X2',
+    outcome: '', direction: 'Más de', amount: '', hand_team: 'Local', hand_value: '-1',
+    home_goals_sel: '', away_goals_sel: '',
+    odds: '',
+}
 
-function buildSelection(form, homeTeam = 'Local', awayTeam = 'Visitante') {
+function buildSelection(form) {
+    const home = form.home_team_name || 'Local'
+    const away = form.away_team_name || 'Visitante'
     switch (form.bet_type) {
-        case '1X2':               return form.outcome
-        case 'Más/Menos Goles':   return form.amount ? `${form.direction} ${form.amount} goles`   : ''
-        case 'BTTS':              return form.outcome ? `Ambos marcan: ${form.outcome}`            : ''
-        case 'Córners':           return form.amount ? `${form.direction} ${form.amount} córners`  : ''
-        case 'Tarjetas':          return form.amount ? `${form.direction} ${form.amount} tarjetas` : ''
-        case 'Hándicap':          return `${form.hand_team === 'Local' ? homeTeam : awayTeam} ${form.hand_value}`
-        case 'Doble Oportunidad': return form.outcome
-        default:                  return form.free_text
+        case '1X2':                   return form.outcome
+        case 'Más/Menos Goles':       return form.amount ? `${form.direction} ${form.amount} goles`       : ''
+        case 'BTTS':                  return form.outcome ? `Ambos marcan: ${form.outcome}`               : ''
+        case 'Córners':               return form.amount ? `${form.direction} ${form.amount} córners`     : ''
+        case 'Tarjetas':              return form.amount ? `${form.direction} ${form.amount} tarjetas`    : ''
+        case 'Hándicap':              return `${form.hand_team === 'Local' ? home : away} ${form.hand_value}`
+        case 'Doble Oportunidad':     return form.outcome
+        case 'Resultado Exacto':      return (form.home_goals_sel !== '' && form.away_goals_sel !== '') ? `${form.home_goals_sel}-${form.away_goals_sel}` : ''
+        case 'Resultado al Descanso': return form.outcome
+        case 'Más/Menos (1ª parte)':  return form.amount ? `${form.direction} ${form.amount} goles (1T)` : ''
+        default:                      return ''
     }
 }
 
-function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
+function AdaptiveFields({ form, set, inputCls }) {
+    const home = form.home_team_name || 'Local'
+    const away = form.away_team_name || 'Visitante'
     switch (form.bet_type) {
         case '1X2':
             return (
                 <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
-                    <option value="">Selecciona resultado…</option>
-                    <option value={`${homeTeam} gana`}>{homeTeam} gana (Local)</option>
+                    <option value="">Resultado…</option>
+                    <option value={`${home} gana`}>{home} gana</option>
                     <option value="Empate">Empate</option>
-                    <option value={`${awayTeam} gana`}>{awayTeam} gana (Visitante)</option>
+                    <option value={`${away} gana`}>{away} gana</option>
                 </select>
             )
         case 'Más/Menos Goles':
+        case 'Más/Menos (1ª parte)': {
+            const isHalf  = form.bet_type === 'Más/Menos (1ª parte)'
+            const amounts = isHalf ? ['0.5','1.5','2.5'] : ['0.5','1.5','2.5','3.5','4.5','5.5']
             return (
                 <div className="flex gap-2">
                     <select value={form.direction} onChange={e => set('direction', e.target.value)} className={`${inputCls} flex-1`}>
                         <option>Más de</option><option>Menos de</option>
                     </select>
                     <select value={form.amount} onChange={e => set('amount', e.target.value)} className={`${inputCls} flex-1`}>
-                        <option value="">Goles…</option>
-                        {['0.5','1.5','2.5','3.5','4.5','5.5'].map(v => <option key={v} value={v}>{v} goles</option>)}
+                        <option value="">{isHalf ? 'Goles 1T…' : 'Goles…'}</option>
+                        {amounts.map(v => <option key={v} value={v}>{v}</option>)}
                     </select>
                 </div>
             )
+        }
         case 'BTTS':
             return (
                 <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
@@ -106,8 +135,8 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
             return (
                 <div className="flex gap-2">
                     <select value={form.hand_team} onChange={e => set('hand_team', e.target.value)} className={`${inputCls} flex-1`}>
-                        <option value="Local">{homeTeam} (Local)</option>
-                        <option value="Visitante">{awayTeam} (Visitante)</option>
+                        <option value="Local">{home}</option>
+                        <option value="Visitante">{away}</option>
                     </select>
                     <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-28`}>
                         {['-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3'].map(v => <option key={v}>{v}</option>)}
@@ -118,16 +147,34 @@ function AdaptiveFields({ form, set, homeTeam, awayTeam, inputCls }) {
             return (
                 <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
                     <option value="">Selecciona…</option>
-                    <option value="1X">1X — {homeTeam} o Empate</option>
-                    <option value="X2">X2 — Empate o {awayTeam}</option>
-                    <option value="12">12 — {homeTeam} o {awayTeam}</option>
+                    <option value="1X">1X — {home} o Empate</option>
+                    <option value="X2">X2 — Empate o {away}</option>
+                    <option value="12">12 — {home} o {away}</option>
+                </select>
+            )
+        case 'Resultado Exacto':
+            return (
+                <div className="flex items-center gap-1.5">
+                    <input type="number" min="0" max="20" value={form.home_goals_sel}
+                        onChange={e => set('home_goals_sel', e.target.value)}
+                        placeholder="0" className={`${inputCls} w-14 text-center`} />
+                    <span className="text-muted-foreground font-bold shrink-0">—</span>
+                    <input type="number" min="0" max="20" value={form.away_goals_sel}
+                        onChange={e => set('away_goals_sel', e.target.value)}
+                        placeholder="0" className={`${inputCls} w-14 text-center`} />
+                </div>
+            )
+        case 'Resultado al Descanso':
+            return (
+                <select value={form.outcome} onChange={e => set('outcome', e.target.value)} className={inputCls}>
+                    <option value="">HT resultado…</option>
+                    <option value={`${home} gana (1T)`}>{home} gana (descanso)</option>
+                    <option value="Empate (1T)">Empate (descanso)</option>
+                    <option value={`${away} gana (1T)`}>{away} gana (descanso)</option>
                 </select>
             )
         default:
-            return (
-                <input value={form.free_text} onChange={e => set('free_text', e.target.value)}
-                    placeholder="Describe tu selección" className={inputCls} />
-            )
+            return <span className="text-xs text-muted-foreground py-2">—</span>
     }
 }
 
@@ -163,9 +210,201 @@ function TabBar({ tabs, active, onChange, layoutId }) {
 
 // ─── Real bets ────────────────────────────────────────────────────────────────
 
+// Leg row for Combinada — each instance owns its own hooks (no conditional hook rule)
+function LegPickerRow({ leg, onChange, leagues, idx, onRemove, canRemove, inputCls }) {
+    const isWC = leagues.find(l => String(l.id) === String(leg.league_id))?.code === 'WC'
+    const { data: seasons       = [] } = useSeasons(leg.league_id || null)
+    const { data: wcMatches     = [] } = useMatchesBySeason(
+        isWC && leg.season ? leg.league_id : null,
+        isWC && leg.season ? leg.season    : null,
+    )
+    const { data: jornMatches   = [] } = useMatchesByJornada(
+        !isWC && leg.matchday ? leg.league_id : null, leg.season, leg.matchday,
+    )
+    const matches   = isWC ? wcMatches : jornMatches
+    const showPicker = (isWC && leg.season) || (!isWC && leg.matchday)
+
+    const patch = (k, v) => {
+        let next = { ...leg, [k]: v }
+        if (k === 'league_id') { next = { ...next, season: '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'season')    { next = { ...next, matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'matchday')  { next = { ...next, match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'match_id')  {
+            const m = matches.find(x => String(x.id) === String(v))
+            if (m) next = { ...next, match_info: `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}`, match_date: m.match_date || '', home_team_name: m.home_team?.name || '', away_team_name: m.away_team?.name || '' }
+        }
+        if (k === 'bet_type')  { next = { ...next, outcome: '', amount: '', home_goals_sel: '', away_goals_sel: '' } }
+        onChange(next)
+    }
+
+    return (
+        <div className="rounded-lg border border-primary/15 bg-background/60 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Pick {idx + 1}</span>
+                {canRemove && (
+                    <button type="button" onClick={onRemove} className="rounded p-0.5 text-muted-foreground hover:text-red-400 transition-colors">
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                )}
+            </div>
+            <div className="grid gap-1.5 grid-cols-2 sm:grid-cols-3">
+                <select value={leg.league_id} onChange={e => patch('league_id', e.target.value)} className={inputCls}>
+                    <option value="">Liga…</option>
+                    {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+                {leg.league_id && (
+                    <select value={leg.season} onChange={e => patch('season', e.target.value)} className={inputCls}>
+                        <option value="">Temporada…</option>
+                        {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                )}
+                {!isWC && leg.season && (
+                    <select value={leg.matchday} onChange={e => patch('matchday', e.target.value)} className={inputCls}>
+                        <option value="">Jornada…</option>
+                        {Array.from({ length: 38 }, (_, i) => i + 1).map(j => <option key={j} value={j}>J{j}</option>)}
+                    </select>
+                )}
+            </div>
+            {showPicker && (
+                <select value={leg.match_id} onChange={e => patch('match_id', e.target.value)}
+                    className={`${inputCls} ${!leg.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                    <option value="">— Selecciona partido —</option>
+                    {matches.map(m => (
+                        <option key={m.id} value={m.id}>
+                            {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                        </option>
+                    ))}
+                </select>
+            )}
+            {leg.match_info && <p className="text-[11px] text-green-400 font-medium">✓ {leg.match_info}</p>}
+            {leg.match_id && (
+                <div className="grid grid-cols-3 gap-1.5">
+                    <select value={leg.bet_type} onChange={e => patch('bet_type', e.target.value)} className={inputCls}>
+                        {SINGLE_BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <AdaptiveFields form={leg} set={(k, v) => patch(k, v)} inputCls={inputCls} />
+                    <input type="number" step="0.01" min="1.01" value={leg.odds}
+                        onChange={e => patch('odds', e.target.value)}
+                        placeholder="Cuota" className={inputCls} />
+                </div>
+            )}
+        </div>
+    )
+}
+
 function RealBetRow({ bet, onSettle, preferredCurrency = 'EUR' }) {
+    const [editing, setEditing] = useState(false)
+    const [ef, setEf]           = useState(null)   // edit form state
+    const { mutate: updateBet, isPending: updating } = useUpdateRealBet()
+
     const stakeEur  = toEUR(bet.stake, bet.currency)
     const payoutEur = toEUR(bet.potential_payout, bet.currency)
+
+    const startEdit = () => {
+        setEf({
+            bet_type:   bet.bet_type,
+            selection:  bet.selection,
+            odds:       String(bet.odds),
+            stake:      String(bet.stake),
+            currency:   bet.currency || 'EUR',
+            bookmaker:  bet.bookmaker || '',
+            bet_timing: bet.bet_timing || 'pre',
+            bet_minute: bet.bet_minute != null ? String(bet.bet_minute) : '',
+            status:     bet.status,
+        })
+        setEditing(true)
+    }
+
+    const saveEdit = () => {
+        if (!ef) return
+        updateBet({
+            id: bet.id, bet_type: ef.bet_type, selection: ef.selection,
+            odds: ef.odds, stake: ef.stake, currency: ef.currency,
+            bookmaker: ef.bookmaker || null, bet_timing: ef.bet_timing,
+            bet_minute: ef.bet_timing === 'live' && ef.bet_minute ? parseInt(ef.bet_minute, 10) : null,
+            status: ef.status,
+        }, { onSuccess: () => setEditing(false) })
+    }
+
+    const inputCls = 'w-full rounded-lg border border-border bg-background/80 py-1.5 px-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
+
+    if (editing && ef) {
+        return (
+            <div className="rounded-xl border border-primary/30 bg-card/60 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground truncate">{bet.match_info}</p>
+                    <button onClick={() => setEditing(false)} className="ml-2 shrink-0 text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Tipo</label>
+                        <select value={ef.bet_type} onChange={e => setEf(f => ({...f, bet_type: e.target.value}))} className={inputCls}>
+                            {SINGLE_BET_TYPES.map(t => <option key={t}>{t}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Selección</label>
+                        <input value={ef.selection} onChange={e => setEf(f => ({...f, selection: e.target.value}))} className={inputCls} />
+                    </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-4">
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Cuota</label>
+                        <input type="number" step="0.01" min="1.01" value={ef.odds} onChange={e => setEf(f => ({...f, odds: e.target.value}))} className={inputCls} />
+                    </div>
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Stake</label>
+                        <input type="number" step="0.01" min="0.01" value={ef.stake} onChange={e => setEf(f => ({...f, stake: e.target.value}))} className={inputCls} />
+                    </div>
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Divisa</label>
+                        <select value={ef.currency} onChange={e => setEf(f => ({...f, currency: e.target.value}))} className={inputCls}>
+                            <option value="EUR">EUR (€)</option><option value="USD">USD ($)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Resultado</label>
+                        <select value={ef.status} onChange={e => setEf(f => ({...f, status: e.target.value}))} className={inputCls}>
+                            <option value="pending">Pendiente</option><option value="won">Ganada</option>
+                            <option value="lost">Perdida</option><option value="void">Anulada</option>
+                        </select>
+                    </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Casa de apuestas</label>
+                        <select value={ef.bookmaker} onChange={e => setEf(f => ({...f, bookmaker: e.target.value}))} className={inputCls}>
+                            <option value="">Sin especificar</option>
+                            {BOOKMAKERS.map(b => <option key={b} value={b}>{b}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-[11px] text-muted-foreground mb-1">Timing</label>
+                        <select value={ef.bet_timing} onChange={e => setEf(f => ({...f, bet_timing: e.target.value}))} className={inputCls}>
+                            <option value="pre">Pre-partido</option><option value="live">En vivo</option>
+                        </select>
+                    </div>
+                    {ef.bet_timing === 'live' && (
+                        <div>
+                            <label className="block text-[11px] text-muted-foreground mb-1">Minuto</label>
+                            <input type="number" min="1" max="120" value={ef.bet_minute} onChange={e => setEf(f => ({...f, bet_minute: e.target.value}))} className={inputCls} />
+                        </div>
+                    )}
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={saveEdit} disabled={updating}
+                        className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity">
+                        {updating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle className="h-3.5 w-3.5" />} Guardar
+                    </button>
+                    <button onClick={() => setEditing(false)}
+                        className="rounded-lg border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/60 p-4 sm:flex-row sm:items-center">
             <div className="flex-1 min-w-0 space-y-1">
@@ -189,26 +428,33 @@ function RealBetRow({ bet, onSettle, preferredCurrency = 'EUR' }) {
                     }
                 </div>
             </div>
-            {bet.status === 'pending' ? (
-                <div className="flex gap-1.5 shrink-0">
-                    <button onClick={() => onSettle({ id: bet.id, status: 'won' })}
-                        className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-bold text-green-400 hover:bg-green-500/20 transition-colors">
-                        Ganada
-                    </button>
-                    <button onClick={() => onSettle({ id: bet.id, status: 'lost' })}
-                        className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-bold text-red-400 hover:bg-red-500/20 transition-colors">
-                        Perdida
-                    </button>
-                    <button onClick={() => onSettle({ id: bet.id, status: 'void' })}
-                        className="rounded-lg border border-border/40 bg-secondary px-3 py-1.5 text-[11px] font-bold text-muted-foreground hover:bg-secondary/80 transition-colors">
-                        Anulada
-                    </button>
-                </div>
-            ) : (
-                <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLES[bet.status]}`}>
-                    {STATUS_LABELS[bet.status]}
-                </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+                <button onClick={startEdit}
+                    className="rounded-lg border border-border/40 p-1.5 text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                    title="Editar apuesta">
+                    <Pencil className="h-3.5 w-3.5" />
+                </button>
+                {bet.status === 'pending' ? (
+                    <>
+                        <button onClick={() => onSettle({ id: bet.id, status: 'won' })}
+                            className="rounded-lg border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-bold text-green-400 hover:bg-green-500/20 transition-colors">
+                            Ganada
+                        </button>
+                        <button onClick={() => onSettle({ id: bet.id, status: 'lost' })}
+                            className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-bold text-red-400 hover:bg-red-500/20 transition-colors">
+                            Perdida
+                        </button>
+                        <button onClick={() => onSettle({ id: bet.id, status: 'void' })}
+                            className="rounded-lg border border-border/40 bg-secondary px-3 py-1.5 text-[11px] font-bold text-muted-foreground hover:bg-secondary/80 transition-colors">
+                            Anulada
+                        </button>
+                    </>
+                ) : (
+                    <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLES[bet.status]}`}>
+                        {STATUS_LABELS[bet.status]}
+                    </span>
+                )}
+            </div>
         </div>
     )
 }
@@ -216,54 +462,84 @@ function RealBetRow({ bet, onSettle, preferredCurrency = 'EUR' }) {
 function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
     const [showForm, setShowForm] = useState(false)
     const [form, setForm]         = useState(EMPTY_FORM)
+    const [legs, setLegs]         = useState([{ ...EMPTY_LEG }, { ...EMPTY_LEG }])
     const [error, setError]       = useState('')
     const { mutate: addBet, isPending: adding } = useAddRealBet()
     const { mutate: settleBet }                 = useSettleRealBet()
     const { data: leagues = [] }                = useLeagues()
     const { data: seasons = [] }                = useSeasons(form.league_id || null)
 
+    const isCombined = form.bet_type === 'Combinada'
     const isWCLeague = useMemo(() => {
         const lg = leagues.find(l => String(l.id) === String(form.league_id))
         return lg?.code === 'WC'
     }, [leagues, form.league_id])
 
-    const { data: allSeasonMatches  = [] } = useMatchesBySeason(isWCLeague ? form.league_id : null, isWCLeague ? form.season : null)
-    const { data: matchesForJornada = [] } = useMatchesByJornada(!isWCLeague ? form.league_id : null, form.season, form.matchday)
-    const activeMatches = isWCLeague ? allSeasonMatches : matchesForJornada
+    const { data: wcMatches   = [] } = useMatchesBySeason(isWCLeague && form.season ? form.league_id : null, isWCLeague && form.season ? form.season : null)
+    const { data: jornMatches = [] } = useMatchesByJornada(!isWCLeague && form.matchday ? form.league_id : null, form.season, form.matchday)
+    const activeMatches = isWCLeague ? wcMatches : jornMatches
+    const showMatchPicker = (isWCLeague && form.season) || (!isWCLeague && form.matchday)
 
     const set = (k, v) => setForm(f => {
-        const next = { ...f, [k]: v }
-        if (k === 'league_id') { next.season = ''; next.matchday = ''; next.match_id = ''; next.match_info = ''; next.league_name = '' }
-        if (k === 'season')    { next.matchday = ''; next.match_id = ''; next.match_info = '' }
-        if (k === 'matchday')  { next.match_id = ''; next.match_info = '' }
-        if (k === 'match_id') {
-            const m = activeMatches.find(x => String(x.id) === String(v))
-            if (m) { next.match_info = `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}`; next.match_date = m.match_date || '' }
-        }
+        let next = { ...f, [k]: v }
         if (k === 'league_id') {
             const lg = leagues.find(x => String(x.id) === String(v))
-            if (lg) next.league_name = lg.name || lg.code || ''
+            next = { ...next, league_name: lg?.name || '', season: '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' }
         }
+        if (k === 'season')   { next = { ...next, matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'matchday') { next = { ...next, match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'match_id') {
+            const m = activeMatches.find(x => String(x.id) === String(v))
+            if (m) next = { ...next, match_info: `${m.home_team?.name || '?'} vs ${m.away_team?.name || '?'}`, match_date: m.match_date || '', home_team_name: m.home_team?.name || '', away_team_name: m.away_team?.name || '' }
+        }
+        if (k === 'bet_type') { next = { ...next, outcome: '', amount: '', home_goals_sel: '', away_goals_sel: '' } }
         return next
     })
 
+    // Combined odds for Combinada display
+    const combinedOdds = legs.reduce((acc, leg) => {
+        const o = parseFloat(leg.odds)
+        return (isNaN(o) || o < 1) ? acc : Math.round(acc * o * 1000) / 1000
+    }, 1)
+
     const handleAdd = () => {
-        const selectedMatch = activeMatches.find(m => String(m.id) === String(form.match_id))
-        const selection = buildSelection(form, selectedMatch?.home_team?.name || 'Local', selectedMatch?.away_team?.name || 'Visitante')
-        if (!form.match_info || !selection || !form.odds || !form.stake) { setError('Completa: partido, selección, cuota y stake.'); return }
-        const oddsNum  = parseFloat(form.odds)
-        const stakeNum = parseFloat(form.stake)
-        if (isNaN(oddsNum) || oddsNum < 1.01 || isNaN(stakeNum) || stakeNum <= 0) { setError('Cuota ≥ 1.01 y stake > 0.'); return }
         setError('')
+        const stakeNum = parseFloat(form.stake)
+        if (isNaN(stakeNum) || stakeNum <= 0) { setError('Stake debe ser mayor que 0.'); return }
+
+        if (isCombined) {
+            const validLegs = legs.filter(l => l.match_id && buildSelection(l) && parseFloat(l.odds) >= 1.01)
+            if (validLegs.length < 2) { setError('Una combinada necesita al menos 2 picks completos (partido, selección, cuota ≥ 1.01).'); return }
+            const selectionText = validLegs.map(l => `${l.match_info}: ${buildSelection(l)}`).join(' | ')
+            addBet({
+                match_id: null, match_info: `Combinada ${validLegs.length} picks`,
+                league: null, bet_type: 'Combinada', selection: selectionText,
+                odds: combinedOdds, stake: stakeNum,
+                bookmaker: form.bookmaker || null, match_date: null,
+                bet_timing: form.bet_timing, bet_minute: form.bet_timing === 'live' && form.bet_minute ? parseInt(form.bet_minute, 10) : null,
+                currency: form.currency, status: form.status,
+            }, {
+                onSuccess: () => { setForm(EMPTY_FORM); setLegs([{ ...EMPTY_LEG }, { ...EMPTY_LEG }]); setShowForm(false) },
+                onError: (e) => setError(e.message),
+            })
+            return
+        }
+
+        const selection = buildSelection(form)
+        if (!form.match_id) { setError('Selecciona un partido de la base de datos.'); return }
+        if (!selection)     { setError('Completa la selección.'); return }
+        const oddsNum = parseFloat(form.odds)
+        if (isNaN(oddsNum) || oddsNum < 1.01) { setError('Cuota ≥ 1.01'); return }
+
         addBet({
-            match_id: form.match_id || null, match_info: form.match_info, league: form.league_name || null,
+            match_id: form.match_id, match_info: form.match_info, league: form.league_name || null,
             bet_type: form.bet_type, selection, odds: oddsNum, stake: stakeNum,
             bookmaker: form.bookmaker || null, match_date: form.match_date || null,
             bet_timing: form.bet_timing, bet_minute: form.bet_timing === 'live' && form.bet_minute ? parseInt(form.bet_minute, 10) : null,
             currency: form.currency, status: form.status,
         }, {
             onSuccess: () => { setForm(EMPTY_FORM); setShowForm(false) },
-            onError:   (e) => setError(e.message),
+            onError: (e) => setError(e.message),
         })
     }
 
@@ -337,7 +613,7 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
             {/* Header + add button */}
             <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold text-foreground">Mis picks reales</h2>
-                <button onClick={() => setShowForm(v => !v)}
+                <button onClick={() => { setShowForm(v => !v); setError('') }}
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground hover:opacity-90 transition-opacity">
                     {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                     {showForm ? 'Cancelar' : 'Añadir pick'}
@@ -350,83 +626,104 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                         <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-4">
                             <p className="text-sm font-semibold text-foreground">Nuevo pick</p>
-                            {/* League / season / matchday */}
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <div>
-                                    <label className="block text-[11px] text-muted-foreground mb-1">Liga</label>
-                                    <select value={form.league_id} onChange={e => set('league_id', e.target.value)} className={inputCls}>
-                                        <option value="">Manual / sin liga</option>
-                                        {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                    </select>
-                                </div>
-                                {form.league_id && (
-                                    <div>
-                                        <label className="block text-[11px] text-muted-foreground mb-1">Temporada</label>
-                                        <select value={form.season} onChange={e => set('season', e.target.value)} className={inputCls}>
-                                            <option value="">Elige temporada</option>
-                                            {seasons.map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                    </div>
-                                )}
-                                {!isWCLeague && form.season && (
-                                    <div>
-                                        <label className="block text-[11px] text-muted-foreground mb-1">Jornada</label>
-                                        <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
-                                            <option value="">Elige jornada</option>
-                                            {Array.from({ length: 38 }, (_, i) => i + 1).map(j => <option key={j} value={j}>J{j}</option>)}
-                                        </select>
-                                    </div>
-                                )}
+
+                            {/* Bet type first — drives whether to show match picker or legs */}
+                            <div>
+                                <label className="block text-[11px] text-muted-foreground mb-1">Tipo de apuesta</label>
+                                <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
+                                    {BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                </select>
                             </div>
-                            {/* Match picker */}
-                            {isWCLeague && form.season ? (
-                                <div>
-                                    <label className="block text-[11px] text-muted-foreground mb-1">Partido</label>
-                                    <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
-                                        <option value="">Selecciona partido</option>
-                                        {allSeasonMatches.map(m => <option key={m.id} value={m.id}>{m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>)}
-                                    </select>
-                                </div>
-                            ) : form.matchday && matchesForJornada.length > 0 ? (
-                                <div>
-                                    <label className="block text-[11px] text-muted-foreground mb-1">Partido</label>
-                                    <select value={form.match_id} onChange={e => set('match_id', e.target.value)} className={inputCls}>
-                                        <option value="">Selecciona partido</option>
-                                        {matchesForJornada.map(m => <option key={m.id} value={m.id}>{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}</option>)}
-                                    </select>
+
+                            {isCombined ? (
+                                /* ── Combinada: multi-leg form ── */
+                                <div className="space-y-2">
+                                    <label className="block text-[11px] text-muted-foreground">Picks de la combinada</label>
+                                    {legs.map((leg, idx) => (
+                                        <LegPickerRow
+                                            key={idx} leg={leg} idx={idx} leagues={leagues}
+                                            canRemove={legs.length > 2}
+                                            onChange={updated => setLegs(prev => prev.map((l, i) => i === idx ? updated : l))}
+                                            onRemove={() => setLegs(prev => prev.filter((_, i) => i !== idx))}
+                                            inputCls={inputCls}
+                                        />
+                                    ))}
+                                    <button type="button" onClick={() => setLegs(prev => [...prev, { ...EMPTY_LEG }])}
+                                        className="flex items-center gap-1 text-[11px] text-primary hover:underline">
+                                        <Plus className="h-3 w-3" /> Añadir pick
+                                    </button>
+                                    {combinedOdds > 1 && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Cuota combinada: <span className="font-bold text-foreground">{combinedOdds.toFixed(2)}</span>
+                                        </p>
+                                    )}
                                 </div>
                             ) : (
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <div>
-                                        <label className="block text-[11px] text-muted-foreground mb-1">Partido (texto)</label>
-                                        <input value={form.match_info} onChange={e => set('match_info', e.target.value)} placeholder="Ej: Real Madrid vs Barça" className={inputCls} />
+                                /* ── Single bet: league → season → jornada → match ── */
+                                <div className="space-y-3">
+                                    <div className="grid gap-3 sm:grid-cols-3">
+                                        <div>
+                                            <label className="block text-[11px] text-muted-foreground mb-1">Liga</label>
+                                            <select value={form.league_id} onChange={e => set('league_id', e.target.value)} className={inputCls}>
+                                                <option value="">Selecciona liga…</option>
+                                                {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                            </select>
+                                        </div>
+                                        {form.league_id && (
+                                            <div>
+                                                <label className="block text-[11px] text-muted-foreground mb-1">Temporada</label>
+                                                <select value={form.season} onChange={e => set('season', e.target.value)} className={inputCls}>
+                                                    <option value="">Temporada…</option>
+                                                    {seasons.map(s => <option key={s} value={s}>{s}</option>)}
+                                                </select>
+                                            </div>
+                                        )}
+                                        {!isWCLeague && form.season && (
+                                            <div>
+                                                <label className="block text-[11px] text-muted-foreground mb-1">Jornada</label>
+                                                <select value={form.matchday} onChange={e => set('matchday', e.target.value)} className={inputCls}>
+                                                    <option value="">Jornada…</option>
+                                                    {Array.from({ length: 38 }, (_, i) => i + 1).map(j => <option key={j} value={j}>J{j}</option>)}
+                                                </select>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div>
-                                        <label className="block text-[11px] text-muted-foreground mb-1">Fecha del partido</label>
-                                        <input type="date" value={form.match_date} onChange={e => set('match_date', e.target.value)} className={inputCls} />
-                                    </div>
+                                    {showMatchPicker && (
+                                        <div>
+                                            <select value={form.match_id} onChange={e => set('match_id', e.target.value)}
+                                                className={`${inputCls} ${!form.match_id ? 'border-amber-500/50' : 'border-green-500/50'}`}>
+                                                <option value="">— Selecciona partido —</option>
+                                                {activeMatches.map(m => (
+                                                    <option key={m.id} value={m.id}>
+                                                        {m.group_name ? `Gr. ${m.group_name} · ` : ''}{m.home_team?.name} vs {m.away_team?.name} · {formatDate(m.match_date)}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {form.match_info && <p className="mt-1 text-[11px] text-green-400 font-medium">✓ {form.match_info}</p>}
+                                        </div>
+                                    )}
+                                    {/* Selection — only shown once match is picked */}
+                                    {form.match_id && (
+                                        <div>
+                                            <label className="block text-[11px] text-muted-foreground mb-1">Selección</label>
+                                            <AdaptiveFields form={form} set={set} inputCls={inputCls} />
+                                        </div>
+                                    )}
                                 </div>
                             )}
-                            {/* Bet type + selection */}
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div>
-                                    <label className="block text-[11px] text-muted-foreground mb-1">Tipo</label>
-                                    <select value={form.bet_type} onChange={e => set('bet_type', e.target.value)} className={inputCls}>
-                                        {BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] text-muted-foreground mb-1">Selección</label>
-                                    <AdaptiveFields form={form} set={set}
-                                        homeTeam={activeMatches.find(m => String(m.id) === String(form.match_id))?.home_team?.name || 'Local'}
-                                        awayTeam={activeMatches.find(m => String(m.id) === String(form.match_id))?.away_team?.name || 'Visitante'}
-                                        inputCls={inputCls} />
-                                </div>
-                            </div>
+
                             {/* Odds / stake / currency / status */}
                             <div className="grid gap-3 sm:grid-cols-4">
-                                <div><label className="block text-[11px] text-muted-foreground mb-1">Cuota</label><input type="number" step="0.01" min="1.01" value={form.odds} onChange={e => set('odds', e.target.value)} placeholder="1.85" className={inputCls} /></div>
-                                <div><label className="block text-[11px] text-muted-foreground mb-1">Stake</label><input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)} placeholder="10.00" className={inputCls} /></div>
+                                {!isCombined && (
+                                    <div>
+                                        <label className="block text-[11px] text-muted-foreground mb-1">Cuota</label>
+                                        <input type="number" step="0.01" min="1.01" value={form.odds} onChange={e => set('odds', e.target.value)} placeholder="1.85" className={inputCls} />
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-[11px] text-muted-foreground mb-1">Stake</label>
+                                    <input type="number" step="0.01" min="0.01" value={form.stake} onChange={e => set('stake', e.target.value)} placeholder="10.00" className={inputCls} />
+                                </div>
                                 <div>
                                     <label className="block text-[11px] text-muted-foreground mb-1">Divisa</label>
                                     <select value={form.currency} onChange={e => set('currency', e.target.value)} className={inputCls}>
@@ -436,7 +733,8 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                                 <div>
                                     <label className="block text-[11px] text-muted-foreground mb-1">Resultado</label>
                                     <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls}>
-                                        <option value="pending">Pendiente</option><option value="won">Ganada</option><option value="lost">Perdida</option><option value="void">Anulada</option>
+                                        <option value="pending">Pendiente</option><option value="won">Ganada</option>
+                                        <option value="lost">Perdida</option><option value="void">Anulada</option>
                                     </select>
                                 </div>
                             </div>
@@ -462,10 +760,17 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                                     </div>
                                 )}
                             </div>
-                            {form.odds && form.stake && parseFloat(form.odds) >= 1.01 && parseFloat(form.stake) > 0 && (
+                            {/* Payout preview */}
+                            {!isCombined && form.odds && form.stake && parseFloat(form.odds) >= 1.01 && parseFloat(form.stake) > 0 && (
                                 <p className="text-[11px] text-muted-foreground">
                                     Retorno potencial: <strong className="text-foreground">{form.currency === 'USD' ? '$' : '€'}{(parseFloat(form.stake) * parseFloat(form.odds)).toFixed(2)} {form.currency}</strong>
                                     {' '}· Beneficio: <strong className="text-green-400">+{form.currency === 'USD' ? '$' : '€'}{(parseFloat(form.stake) * (parseFloat(form.odds) - 1)).toFixed(2)} {form.currency}</strong>
+                                </p>
+                            )}
+                            {isCombined && form.stake && parseFloat(form.stake) > 0 && combinedOdds > 1 && (
+                                <p className="text-[11px] text-muted-foreground">
+                                    Retorno potencial: <strong className="text-foreground">{form.currency === 'USD' ? '$' : '€'}{(parseFloat(form.stake) * combinedOdds).toFixed(2)} {form.currency}</strong>
+                                    {' '}· Beneficio: <strong className="text-green-400">+{form.currency === 'USD' ? '$' : '€'}{(parseFloat(form.stake) * (combinedOdds - 1)).toFixed(2)} {form.currency}</strong>
                                 </p>
                             )}
                             {error && <p className="flex items-center gap-1.5 text-sm text-red-400"><AlertCircle className="h-4 w-4 shrink-0" />{error}</p>}

@@ -157,8 +157,6 @@ export function useTodayMatches() {
                 `)
                 .in('league_id', [2, 12])
                 .in('match_date', [yesterdayStr, todayStr, tomorrowStr])
-                .not('home_team_id', 'is', null)
-                .not('away_team_id', 'is', null)
                 .order('kick_off_time', { ascending: true })
 
             if (error) throw error

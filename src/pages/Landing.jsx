@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -7,8 +7,39 @@ import {
     CalendarDays, Globe, Clock, CheckCircle2
 } from 'lucide-react'
 import SEO from '@/components/SEO'
-import { useTodayMatches } from '@/hooks/useMatches'
+import { useTodayMatches, useGroupStandings } from '@/hooks/useMatches'
 import { useTimezone } from '@/context/TimezoneContext'
+
+const WC_KNOCKOUT_ROUND = { 4: 'R32', 5: 'Octavos', 6: 'Cuartos', 7: 'Semis', 8: '3°/4°', 9: 'Final' }
+
+// Predetermined slot labels per R32 match ID (from FIFA draw)
+const WC_R32_SLOTS = {
+    2985: { home: '1° Gr. E', away: '3° Gr. D' },
+    2988: { home: '1° Gr. I', away: '3° Gr. F' },
+    2984: { home: '2° Gr. A', away: '2° Gr. B' },
+    2987: { home: '1° Gr. F', away: '2° Gr. C' },
+    2994: { home: '2° Gr. K', away: '2° Gr. L' },
+    2995: { home: '1° Gr. H', away: '2° Gr. J' },
+    2992: { home: '1° Gr. D', away: '3° Gr. B' },
+    2993: { home: '1° Gr. G', away: '3° Gr. I' },
+    2986: { home: '1° Gr. C', away: '2° Gr. F' },
+    2989: { home: '2° Gr. E', away: '2° Gr. I' },
+    2990: { home: '1° Gr. A', away: '3° Gr. E' },
+    2991: { home: '1° Gr. L', away: '3° Gr. K' },
+    2997: { home: '1° Gr. J', away: '2° Gr. H' },
+    2998: { home: '2° Gr. D', away: '2° Gr. G' },
+    2996: { home: '1° Gr. B', away: '3° Gr. J' },
+    2999: { home: '1° Gr. K', away: '3° Gr. L' },
+}
+
+function resolveSlotTeam(label, groupPositions) {
+    if (!label) return null
+    const m = label.match(/^([123])° Gr\. ([A-L])$/)
+    if (!m) return null
+    const [, pos, group] = m
+    const idx = { '1': 0, '2': 1, '3': 2 }[pos]
+    return groupPositions[group]?.[idx] || null
+}
 
 const wcStructuredData = {
     '@context': 'https://schema.org',
@@ -143,7 +174,7 @@ function CompactMatchCard({ match }) {
                     : { background: 'rgba(188,108,37,0.12)', color: '#bc6c25' }
                 }
             >
-                {isWC ? (match.group_name ? `Gr. ${match.group_name}` : 'WC') : `J${match.matchday}`}
+                {isWC ? (match.group_name ? `Gr. ${match.group_name}` : (WC_KNOCKOUT_ROUND[match.matchday] || 'WC')) : `J${match.matchday}`}
             </span>
 
             {/* Home team */}
@@ -180,28 +211,58 @@ function CompactMatchCard({ match }) {
 
 function TodayMatchesSection() {
     const { data, isLoading } = useTodayMatches()
+    const { data: standingsRaw = [] } = useGroupStandings(12)
 
-    const hasToday     = (data?.today?.length     || 0) > 0
-    const hasYesterday = (data?.yesterday?.length || 0) > 0
-    const hasTomorrow  = (data?.tomorrow?.length  || 0) > 0
+    // Build { 'A': [winner, runner-up, third], ... } from WC standings
+    const groupPositions = useMemo(() => {
+        const map = {}
+        standingsRaw.forEach(r => {
+            if (!r.group_name) return
+            if (!map[r.group_name]) map[r.group_name] = []
+            map[r.group_name].push(r.team)
+        })
+        return map
+    }, [standingsRaw])
+
+    // Resolve null team IDs for WC R32 knockout slots using group standings
+    const resolvedData = useMemo(() => {
+        if (!data) return data
+        function resolve(list) {
+            return list.map(m => {
+                if (m.home_team && m.away_team) return m
+                const slot = WC_R32_SLOTS[m.id]
+                if (!slot) return m
+                return {
+                    ...m,
+                    home_team: m.home_team || resolveSlotTeam(slot.home, groupPositions),
+                    away_team: m.away_team || resolveSlotTeam(slot.away, groupPositions),
+                }
+            })
+        }
+        return { ...data, today: resolve(data.today), yesterday: resolve(data.yesterday), tomorrow: resolve(data.tomorrow) }
+    }, [data, groupPositions])
+
+    const hasToday     = (resolvedData?.today?.length     || 0) > 0
+    const hasYesterday = (resolvedData?.yesterday?.length || 0) > 0
+    const hasTomorrow  = (resolvedData?.tomorrow?.length  || 0) > 0
 
     // null = not yet chosen; set once after first data load so we pick the right default
     const [tab, setTab] = useState(null)
 
     useEffect(() => {
-        if (tab !== null || !data) return
-        if (data.today.length > 0)     setTab('today')
-        else if (data.tomorrow.length > 0) setTab('tomorrow')
-        else if (data.yesterday.length > 0) setTab('yesterday')
+        if (tab !== null || !resolvedData) return
+        if (resolvedData.today.length > 0)     setTab('today')
+        else if (resolvedData.tomorrow.length > 0) setTab('tomorrow')
+        else if (resolvedData.yesterday.length > 0) setTab('yesterday')
         else setTab('today')
-    }, [data, tab])
+    }, [resolvedData, tab])
 
     if (isLoading || tab === null || (!hasToday && !hasYesterday && !hasTomorrow)) return null
 
     const matchesMap = {
-        today:     data?.today     || [],
-        yesterday: data?.yesterday || [],
-        tomorrow:  data?.tomorrow  || [],
+        today:     resolvedData?.today     || [],
+        yesterday: resolvedData?.yesterday || [],
+        tomorrow:  resolvedData?.tomorrow  || [],
     }
     const matches = matchesMap[tab] || []
 
@@ -212,12 +273,12 @@ function TodayMatchesSection() {
     }
 
     const tabs = [
-        { id: 'yesterday', label: 'Ayer',   icon: CheckCircle2, count: data?.yesterday?.length || 0, show: hasYesterday },
-        { id: 'today',     label: 'Hoy',    icon: Clock,        count: data?.today?.length     || 0, show: hasToday     },
-        { id: 'tomorrow',  label: 'Mañana', icon: CalendarDays, count: data?.tomorrow?.length  || 0, show: hasTomorrow  },
+        { id: 'yesterday', label: 'Ayer',   icon: CheckCircle2, count: resolvedData?.yesterday?.length || 0, show: hasYesterday },
+        { id: 'today',     label: 'Hoy',    icon: Clock,        count: resolvedData?.today?.length     || 0, show: hasToday     },
+        { id: 'tomorrow',  label: 'Mañana', icon: CalendarDays, count: resolvedData?.tomorrow?.length  || 0, show: hasTomorrow  },
     ]
 
-    const activeDateStr = { today: data?.todayStr, yesterday: data?.yesterdayStr, tomorrow: data?.tomorrowStr }[tab]
+    const activeDateStr = { today: resolvedData?.todayStr, yesterday: resolvedData?.yesterdayStr, tomorrow: resolvedData?.tomorrowStr }[tab]
 
     return (
         <motion.section

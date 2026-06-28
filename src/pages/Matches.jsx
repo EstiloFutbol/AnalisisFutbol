@@ -4,28 +4,28 @@ import { useMatches, useLeagues, useGroupStandings } from '@/hooks/useMatches'
 import MatchCard from '@/components/matches/MatchCard'
 import { Search, Filter, CalendarDays, Trophy } from 'lucide-react'
 
-// ── WC R32 slot labels (mirrors Dashboard.jsx WC_R32_BRACKET_ORDER / WC_R32_SLOT_LABELS)
+// ── WC R32 slot labels (kept in sync with Dashboard.jsx)
 const WC_R32_BRACKET_ORDER = [
-    2986, 2989, 2984, 2987, 2995, 2994, 2993, 2992,
-    2985, 2988, 2990, 2991, 2998, 2997, 2996, 2999,
+    2985, 2988, 2984, 2987, 2986, 2989, 2990, 2991,
+    2994, 2995, 2992, 2993, 2997, 2998, 2996, 2999,
 ]
 const WC_R32_SLOT_LABELS = [
-    { home: '1° Gr. C', away: '2° Gr. F' },
-    { home: '2° Gr. E', away: '2° Gr. I' },
-    { home: '2° Gr. A', away: '2° Gr. B' },
-    { home: '1° Gr. F', away: '2° Gr. C' },
-    { home: '1° Gr. H', away: '2° Gr. J' },
-    { home: '2° Gr. K', away: '2° Gr. L' },
-    { home: '1° Gr. G', away: 'Mejor 3°' },
-    { home: '1° Gr. D', away: 'Mejor 3°' },
-    { home: '1° Gr. E', away: 'Mejor 3°' },
-    { home: '1° Gr. I', away: 'Mejor 3°' },
-    { home: '1° Gr. A', away: 'Mejor 3°' },
-    { home: '1° Gr. L', away: 'Mejor 3°' },
-    { home: '2° Gr. D', away: '2° Gr. G' },
-    { home: '1° Gr. J', away: '2° Gr. H' },
-    { home: '1° Gr. B', away: 'Mejor 3°' },
-    { home: '1° Gr. K', away: 'Mejor 3°' },
+    { home: '1° Gr. E', away: '3° Gr. D' },  // DB 2985 Match 74 Germany vs Paraguay
+    { home: '1° Gr. I', away: '3° Gr. F' },  // DB 2988 Match 77 France vs Sweden
+    { home: '2° Gr. A', away: '2° Gr. B' },  // DB 2984 Match 73 South Africa vs Canada
+    { home: '1° Gr. F', away: '2° Gr. C' },  // DB 2987 Match 75 Netherlands vs Morocco
+    { home: '1° Gr. C', away: '2° Gr. F' },  // DB 2986 Match 76 Brazil vs Japan
+    { home: '2° Gr. E', away: '2° Gr. I' },  // DB 2989 Match 78 Ivory Coast vs Norway
+    { home: '1° Gr. A', away: '3° Gr. E' },  // DB 2990 Match 79 Mexico vs Ecuador
+    { home: '1° Gr. L', away: '3° Gr. K' },  // DB 2991 Match 80 England vs DR Congo
+    { home: '2° Gr. K', away: '2° Gr. L' },  // DB 2994 Match 83 Portugal vs Croatia
+    { home: '1° Gr. H', away: '2° Gr. J' },  // DB 2995 Match 84 Spain vs Austria
+    { home: '1° Gr. D', away: '3° Gr. B' },  // DB 2992 Match 81 USA vs Bosnia
+    { home: '1° Gr. G', away: '3° Gr. I' },  // DB 2993 Match 82 Belgium vs Senegal
+    { home: '1° Gr. J', away: '2° Gr. H' },  // DB 2997 Match 86 Argentina vs Cape Verde
+    { home: '2° Gr. D', away: '2° Gr. G' },  // DB 2998 Match 88 Australia vs Egypt
+    { home: '1° Gr. B', away: '3° Gr. J' },  // DB 2996 Match 85 Switzerland vs Algeria
+    { home: '1° Gr. K', away: '3° Gr. L' },  // DB 2999 Match 87 Colombia vs Ghana
 ]
 
 // ── World Cup round labels ────────────────────────────────────────────────────
@@ -84,23 +84,24 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
     // WC group standings — used to resolve slot labels to confirmed team names
     const { data: standingsRaw = [] } = useGroupStandings(isWC ? activeLeagueId : null)
 
-    const { groupWinners, groupRunnerUps, completedGroups } = useMemo(() => {
+    const { groupWinners, groupRunnerUps, groupThirds, completedGroups } = useMemo(() => {
         const byGroup = {}
         standingsRaw.forEach(r => {
             if (!r.group_name) return
             if (!byGroup[r.group_name]) byGroup[r.group_name] = []
             byGroup[r.group_name].push(r)
         })
-        const winners = {}, runners = {}
+        const winners = {}, runners = {}, thirds = {}
         Object.entries(byGroup).forEach(([g, rows]) => {
             if (rows[0]) winners[g] = rows[0]
             if (rows[1]) runners[g] = rows[1]
+            if (rows[2]) thirds[g]  = rows[2]
         })
         const done = new Set()
         Object.entries(byGroup).forEach(([g, rows]) => {
             if (rows.length >= 4 && rows.every(r => (r.played || 0) >= 3)) done.add(g)
         })
-        return { groupWinners: winners, groupRunnerUps: runners, completedGroups: done }
+        return { groupWinners: winners, groupRunnerUps: runners, groupThirds: thirds, completedGroups: done }
     }, [standingsRaw])
 
     // Calculate available matchdays from the fetched matches
@@ -188,8 +189,17 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
 
         function resolveEntry(label) {
             if (!label) return { name: label, logo: null }
+            // "3° Gr. X" — specific group's 3rd-place finisher
+            const m3 = label.match(/^3° Gr\. ([A-L])$/)
+            if (m3) {
+                const [, group] = m3
+                if (!completedGroups.has(group)) return { name: label, logo: null }
+                const row = groupThirds[group]
+                return { name: row?.team?.name || label, logo: row?.team?.logo_url || null }
+            }
+            // "1° Gr. X" or "2° Gr. X"
             const mm = label.match(/^([12])° Gr\. ([A-L])$/)
-            if (!mm) return { name: label, logo: null } // "Mejor 3°" or unknown
+            if (!mm) return { name: label, logo: null }
             const [, pos, group] = mm
             if (!completedGroups.has(group)) return { name: label, logo: null }
             const row = pos === '1' ? groupWinners[group] : groupRunnerUps[group]
@@ -204,7 +214,7 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
             map[id] = { home: h.name, homeLogo: h.logo, away: a.name, awayLogo: a.logo }
         })
         return map
-    }, [isWC, completedGroups, groupWinners, groupRunnerUps])
+    }, [isWC, completedGroups, groupWinners, groupRunnerUps, groupThirds])
 
     return (
         <div className="space-y-6 animate-fade-in">

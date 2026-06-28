@@ -69,6 +69,23 @@ export function useBettorBets(profileId) {
     })
 }
 
+/** Virtual leaderboard — users ranked by coin balance */
+export function useVirtualLeaderboard() {
+    return useQuery({
+        queryKey: ['virtual-leaderboard'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('user_profiles')
+                .select('id, display_name, balance')
+                .order('balance', { ascending: false })
+                .limit(25)
+            if (error) throw error
+            return data || []
+        },
+        staleTime: 2 * 60_000,
+    })
+}
+
 /** Combined leaderboard via SQL function (bypasses RLS for aggregate stats) */
 export function useLeaderboard() {
     return useQuery({

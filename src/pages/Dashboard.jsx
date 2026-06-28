@@ -737,6 +737,7 @@ function computeWCQualifiers(standings, groupMatches = []) {
 
     const groupWinners = {}
     const groupRunnerUps = {}
+    const groupThirds = {}
     const allThirds = []
 
     Object.keys(byGroup).sort().forEach(g => {
@@ -752,7 +753,7 @@ function computeWCQualifiers(standings, groupMatches = []) {
         }
         groupWinners[g] = sorted[0]
         groupRunnerUps[g] = sorted[1]
-        if (sorted[2]) allThirds.push({ ...sorted[2], _group: g })
+        if (sorted[2]) { groupThirds[g] = sorted[2]; allThirds.push({ ...sorted[2], _group: g }) }
     })
 
     // 3rd-place cross-group ranking: points → overall GD → overall GF (no H2H between groups)
@@ -765,7 +766,7 @@ function computeWCQualifiers(standings, groupMatches = []) {
         return (b.goals_for || 0) - (a.goals_for || 0)
     })
 
-    return { groupWinners, groupRunnerUps, allThirds }
+    return { groupWinners, groupRunnerUps, groupThirds, allThirds }
 }
 
 function simulateStandings(standings, unplayed, simScores) {
@@ -988,36 +989,37 @@ function ThirdPlaceTracker({ allThirds, simMode }) {
 // ─── Classic visual bracket ──────────────────────────────────────────────────
 
 // WC 2026 R32 bracket position order: DB match IDs sorted by official bracket position
-// (derived from consecutive football-data.org API IDs 537415–537430; consecutive pairs → same R16)
+// Consecutive pairs feed into the same R16 match (verified against Wikipedia knockout stage)
 const WC_R32_BRACKET_ORDER = [
-    2986, 2989,  // bracket pair 1 → R16: Match 76 (1C vs 2F) + Match 78 (2E vs 2I)
-    2984, 2987,  // bracket pair 2 → R16: Match 73 (2A vs 2B) + Match 75 (1F vs 2C)
-    2995, 2994,  // bracket pair 3 → R16: Match 84 (1H vs 2J) + Match 83 (2K vs 2L)
-    2993, 2992,  // bracket pair 4 → R16: Match 82 (1G vs best3) + Match 81 (1D vs best3)
-    2985, 2988,  // bracket pair 5 → R16: Match 74 (1E vs best3) + Match 77 (1I vs best3)
-    2990, 2991,  // bracket pair 6 → R16: Match 79 (1A vs best3) + Match 80 (1L vs best3)
-    2998, 2997,  // bracket pair 7 → R16: Match 88 (2D vs 2G) + Match 86 (1J vs 2H)
-    2996, 2999,  // bracket pair 8 → R16: Match 85 (1B vs best3) + Match 87 (1K vs best3)
+    2985, 2988,  // pair 1 → R16 Match 89: Match 74 (1E vs 3D) + Match 77 (1I vs 3F)
+    2984, 2987,  // pair 2 → R16 Match 90: Match 73 (2A vs 2B) + Match 75 (1F vs 2C)
+    2986, 2989,  // pair 3 → R16 Match 91: Match 76 (1C vs 2F) + Match 78 (2E vs 2I)
+    2990, 2991,  // pair 4 → R16 Match 92: Match 79 (1A vs 3E) + Match 80 (1L vs 3K)
+    2994, 2995,  // pair 5 → R16 Match 93: Match 83 (2K vs 2L) + Match 84 (1H vs 2J)
+    2992, 2993,  // pair 6 → R16 Match 94: Match 81 (1D vs 3B) + Match 82 (1G vs 3I)
+    2997, 2998,  // pair 7 → R16 Match 95: Match 86 (1J vs 2H) + Match 88 (2D vs 2G)
+    2996, 2999,  // pair 8 → R16 Match 96: Match 85 (1B vs 3J) + Match 87 (1K vs 3L)
 ]
 
 // Group-position labels for each R32 slot (shown when team_id is not yet set)
+// "3° Gr. X" = best 3rd-place finisher from group X (predetermined by FIFA draw)
 const WC_R32_SLOT_LABELS = [
-    { home: '1° Gr. C', away: '2° Gr. F' },  // bracket pos 0
-    { home: '2° Gr. E', away: '2° Gr. I' },  // bracket pos 1
-    { home: '2° Gr. A', away: '2° Gr. B' },  // bracket pos 2
-    { home: '1° Gr. F', away: '2° Gr. C' },  // bracket pos 3
-    { home: '1° Gr. H', away: '2° Gr. J' },  // bracket pos 4
-    { home: '2° Gr. K', away: '2° Gr. L' },  // bracket pos 5
-    { home: '1° Gr. G', away: 'Mejor 3°' },  // bracket pos 6
-    { home: '1° Gr. D', away: 'Mejor 3°' },  // bracket pos 7
-    { home: '1° Gr. E', away: 'Mejor 3°' },  // bracket pos 8
-    { home: '1° Gr. I', away: 'Mejor 3°' },  // bracket pos 9
-    { home: '1° Gr. A', away: 'Mejor 3°' },  // bracket pos 10
-    { home: '1° Gr. L', away: 'Mejor 3°' },  // bracket pos 11
-    { home: '2° Gr. D', away: '2° Gr. G' },  // bracket pos 12
-    { home: '1° Gr. J', away: '2° Gr. H' },  // bracket pos 13
-    { home: '1° Gr. B', away: 'Mejor 3°' },  // bracket pos 14
-    { home: '1° Gr. K', away: 'Mejor 3°' },  // bracket pos 15
+    { home: '1° Gr. E', away: '3° Gr. D' },  // pos 0: DB 2985 Match 74 Germany vs Paraguay
+    { home: '1° Gr. I', away: '3° Gr. F' },  // pos 1: DB 2988 Match 77 France vs Sweden
+    { home: '2° Gr. A', away: '2° Gr. B' },  // pos 2: DB 2984 Match 73 South Africa vs Canada
+    { home: '1° Gr. F', away: '2° Gr. C' },  // pos 3: DB 2987 Match 75 Netherlands vs Morocco
+    { home: '1° Gr. C', away: '2° Gr. F' },  // pos 4: DB 2986 Match 76 Brazil vs Japan
+    { home: '2° Gr. E', away: '2° Gr. I' },  // pos 5: DB 2989 Match 78 Ivory Coast vs Norway
+    { home: '1° Gr. A', away: '3° Gr. E' },  // pos 6: DB 2990 Match 79 Mexico vs Ecuador
+    { home: '1° Gr. L', away: '3° Gr. K' },  // pos 7: DB 2991 Match 80 England vs DR Congo
+    { home: '2° Gr. K', away: '2° Gr. L' },  // pos 8: DB 2994 Match 83 Portugal vs Croatia
+    { home: '1° Gr. H', away: '2° Gr. J' },  // pos 9: DB 2995 Match 84 Spain vs Austria
+    { home: '1° Gr. D', away: '3° Gr. B' },  // pos 10: DB 2992 Match 81 USA vs Bosnia
+    { home: '1° Gr. G', away: '3° Gr. I' },  // pos 11: DB 2993 Match 82 Belgium vs Senegal
+    { home: '1° Gr. J', away: '2° Gr. H' },  // pos 12: DB 2997 Match 86 Argentina vs Cape Verde
+    { home: '2° Gr. D', away: '2° Gr. G' },  // pos 13: DB 2998 Match 88 Australia vs Egypt
+    { home: '1° Gr. B', away: '3° Gr. J' },  // pos 14: DB 2996 Match 85 Switzerland vs Algeria
+    { home: '1° Gr. K', away: '3° Gr. L' },  // pos 15: DB 2999 Match 87 Colombia vs Ghana
 ]
 
 
@@ -1046,7 +1048,7 @@ const BK_ROUNDS = [
 ]
 
 function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode = false, simKnockout = {}, onKoSelect = null }) {
-    const { groupWinners, groupRunnerUps, allThirds } = useMemo(
+    const { groupWinners, groupRunnerUps, groupThirds, allThirds } = useMemo(
         () => computeWCQualifiers(standings, groupMatches),
         [standings, groupMatches]
     )
@@ -1115,25 +1117,18 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
 
     const totalWidth = BK_ROUNDS.length * BK_COL_W + (BK_ROUNDS.length - 1) * BK_COL_GAP
 
-    // Map allThirds[0..7] to the 8 "Mejor 3°" slots in bracket position order
-    const thirdsMap = useMemo(() => {
-        if (!simMode) return {}
-        const map = {}
-        let ti = 0
-        ;(byRound[4] || []).forEach(match => {
-            const bPos = WC_R32_BRACKET_ORDER.indexOf(match.id)
-            const labels = bPos >= 0 ? WC_R32_SLOT_LABELS[bPos] : {}
-            if (labels.home === 'Mejor 3°') map[`${match.id}_home`] = allThirds[ti++]?.team || null
-            if (labels.away === 'Mejor 3°') map[`${match.id}_away`] = allThirds[ti++]?.team || null
-        })
-        return map
-    }, [byRound, allThirds, simMode])
-
     // Full bracket tree: propagate winners from round to round through simKnockout
     const bracketNodes = useMemo(() => {
-        function resolveTeam(label, matchId, side) {
+        function resolveTeam(label) {
             if (!label) return null
-            if (label === 'Mejor 3°') return thirdsMap[`${matchId}_${side}`] || null
+            // "3° Gr. X" — specific group's 3rd-place finisher
+            const m3 = label.match(/^3° Gr\. ([A-L])$/)
+            if (m3) {
+                const [, group] = m3
+                if (!simMode && !completedGroups.has(group)) return null
+                return groupThirds[group]?.team || null
+            }
+            // "1° Gr. X" or "2° Gr. X"
             const m = label.match(/^([12])° Gr\. ([A-L])$/)
             if (!m) return null
             const [, pos, group] = m
@@ -1156,8 +1151,8 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
                     const labels = bPos >= 0 ? WC_R32_SLOT_LABELS[bPos] : {}
                     homeLabel = labels.home || ''
                     awayLabel = labels.away || ''
-                    if (!homeTeam) { homeTeam = resolveTeam(homeLabel, match.id, 'home'); homeIsProj = !!homeTeam }
-                    if (!awayTeam) { awayTeam = resolveTeam(awayLabel, match.id, 'away'); awayIsProj = !!awayTeam }
+                    if (!homeTeam) { homeTeam = resolveTeam(homeLabel); homeIsProj = !!homeTeam }
+                    if (!awayTeam) { awayTeam = resolveTeam(awayLabel); awayIsProj = !!awayTeam }
                 } else {
                     const nodeA = nodes[ri - 1][mi * 2]
                     const nodeB = nodes[ri - 1][mi * 2 + 1]
@@ -1178,7 +1173,7 @@ function WCBracket({ knockoutMatches, standings = [], groupMatches = [], simMode
             })
         })
         return nodes
-    }, [byRound, groupWinners, groupRunnerUps, completedGroups, simMode, simKnockout, thirdsMap])
+    }, [byRound, groupWinners, groupRunnerUps, groupThirds, completedGroups, simMode, simKnockout])
 
     return (
         <div className="space-y-3">

@@ -988,34 +988,38 @@ function ThirdPlaceTracker({ allThirds, simMode }) {
 
 // ─── Classic visual bracket ──────────────────────────────────────────────────
 
-// WC 2026 R32 bracket position order: DB match IDs sorted by official bracket position
-// Consecutive pairs feed into the same R16 match (verified against Wikipedia knockout stage)
+// WC 2026 R32 bracket position order
+// Bracket halves (verified against Wikipedia QF/SF structure):
+//   SF-101 half (pos 0-7):  QF-97 {R16-89, R16-90} + QF-98 {R16-93, R16-94}
+//   SF-102 half (pos 8-15): QF-99 {R16-91, R16-92} + QF-100 {R16-95, R16-96}
+// France (R16-89) and Spain (R16-93) → same SF half → meet in SF-101 ✓
+// Argentina (R16-95) → other SF half → only meets Spain/France in Final ✓
 const WC_R32_BRACKET_ORDER = [
-    2985, 2988,  // pair 1 → R16 Match 89: Match 74 (1E vs 3D) + Match 77 (1I vs 3F)
-    2984, 2987,  // pair 2 → R16 Match 90: Match 73 (2A vs 2B) + Match 75 (1F vs 2C)
-    2986, 2989,  // pair 3 → R16 Match 91: Match 76 (1C vs 2F) + Match 78 (2E vs 2I)
-    2990, 2991,  // pair 4 → R16 Match 92: Match 79 (1A vs 3E) + Match 80 (1L vs 3K)
-    2994, 2995,  // pair 5 → R16 Match 93: Match 83 (2K vs 2L) + Match 84 (1H vs 2J)
-    2992, 2993,  // pair 6 → R16 Match 94: Match 81 (1D vs 3B) + Match 82 (1G vs 3I)
-    2997, 2998,  // pair 7 → R16 Match 95: Match 86 (1J vs 2H) + Match 88 (2D vs 2G)
-    2996, 2999,  // pair 8 → R16 Match 96: Match 85 (1B vs 3J) + Match 87 (1K vs 3L)
+    2985, 2988,  // R16-89 → QF-97 → SF-101: Match 74 (1E vs 3D) + Match 77 (1I vs 3F)
+    2984, 2987,  // R16-90 → QF-97 → SF-101: Match 73 (2A vs 2B) + Match 75 (1F vs 2C)
+    2994, 2995,  // R16-93 → QF-98 → SF-101: Match 83 (2K vs 2L) + Match 84 (1H vs 2J)
+    2992, 2993,  // R16-94 → QF-98 → SF-101: Match 81 (1D vs 3B) + Match 82 (1G vs 3I)
+    2986, 2989,  // R16-91 → QF-99 → SF-102: Match 76 (1C vs 2F) + Match 78 (2E vs 2I)
+    2990, 2991,  // R16-92 → QF-99 → SF-102: Match 79 (1A vs 3E) + Match 80 (1L vs 3K)
+    2997, 2998,  // R16-95 → QF-100 → SF-102: Match 86 (1J vs 2H) + Match 88 (2D vs 2G)
+    2996, 2999,  // R16-96 → QF-100 → SF-102: Match 85 (1B vs 3J) + Match 87 (1K vs 3L)
 ]
 
 // Group-position labels for each R32 slot (shown when team_id is not yet set)
-// "3° Gr. X" = best 3rd-place finisher from group X (predetermined by FIFA draw)
+// "3° Gr. X" = 3rd-place finisher from group X (predetermined by FIFA draw)
 const WC_R32_SLOT_LABELS = [
-    { home: '1° Gr. E', away: '3° Gr. D' },  // pos 0: DB 2985 Match 74 Germany vs Paraguay
-    { home: '1° Gr. I', away: '3° Gr. F' },  // pos 1: DB 2988 Match 77 France vs Sweden
-    { home: '2° Gr. A', away: '2° Gr. B' },  // pos 2: DB 2984 Match 73 South Africa vs Canada
-    { home: '1° Gr. F', away: '2° Gr. C' },  // pos 3: DB 2987 Match 75 Netherlands vs Morocco
-    { home: '1° Gr. C', away: '2° Gr. F' },  // pos 4: DB 2986 Match 76 Brazil vs Japan
-    { home: '2° Gr. E', away: '2° Gr. I' },  // pos 5: DB 2989 Match 78 Ivory Coast vs Norway
-    { home: '1° Gr. A', away: '3° Gr. E' },  // pos 6: DB 2990 Match 79 Mexico vs Ecuador
-    { home: '1° Gr. L', away: '3° Gr. K' },  // pos 7: DB 2991 Match 80 England vs DR Congo
-    { home: '2° Gr. K', away: '2° Gr. L' },  // pos 8: DB 2994 Match 83 Portugal vs Croatia
-    { home: '1° Gr. H', away: '2° Gr. J' },  // pos 9: DB 2995 Match 84 Spain vs Austria
-    { home: '1° Gr. D', away: '3° Gr. B' },  // pos 10: DB 2992 Match 81 USA vs Bosnia
-    { home: '1° Gr. G', away: '3° Gr. I' },  // pos 11: DB 2993 Match 82 Belgium vs Senegal
+    { home: '1° Gr. E', away: '3° Gr. D' },  // pos 0:  DB 2985 Match 74 Germany vs Paraguay
+    { home: '1° Gr. I', away: '3° Gr. F' },  // pos 1:  DB 2988 Match 77 France vs Sweden
+    { home: '2° Gr. A', away: '2° Gr. B' },  // pos 2:  DB 2984 Match 73 South Africa vs Canada
+    { home: '1° Gr. F', away: '2° Gr. C' },  // pos 3:  DB 2987 Match 75 Netherlands vs Morocco
+    { home: '2° Gr. K', away: '2° Gr. L' },  // pos 4:  DB 2994 Match 83 Portugal vs Croatia
+    { home: '1° Gr. H', away: '2° Gr. J' },  // pos 5:  DB 2995 Match 84 Spain vs Austria
+    { home: '1° Gr. D', away: '3° Gr. B' },  // pos 6:  DB 2992 Match 81 USA vs Bosnia
+    { home: '1° Gr. G', away: '3° Gr. I' },  // pos 7:  DB 2993 Match 82 Belgium vs Senegal
+    { home: '1° Gr. C', away: '2° Gr. F' },  // pos 8:  DB 2986 Match 76 Brazil vs Japan
+    { home: '2° Gr. E', away: '2° Gr. I' },  // pos 9:  DB 2989 Match 78 Ivory Coast vs Norway
+    { home: '1° Gr. A', away: '3° Gr. E' },  // pos 10: DB 2990 Match 79 Mexico vs Ecuador
+    { home: '1° Gr. L', away: '3° Gr. K' },  // pos 11: DB 2991 Match 80 England vs DR Congo
     { home: '1° Gr. J', away: '2° Gr. H' },  // pos 12: DB 2997 Match 86 Argentina vs Cape Verde
     { home: '2° Gr. D', away: '2° Gr. G' },  // pos 13: DB 2998 Match 88 Australia vs Egypt
     { home: '1° Gr. B', away: '3° Gr. J' },  // pos 14: DB 2996 Match 85 Switzerland vs Algeria

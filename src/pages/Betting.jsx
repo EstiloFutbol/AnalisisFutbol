@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext'
 import {
     useBettableMatches, useUserBets, usePlaceBet,
     useRealBets, useAddRealBet, useSettleRealBet, useUpdateRealBet,
-    useSeasons, useMatchesByJornada, useMatchesBySeason,
+    useSeasonsByCode, useMatchesByJornada, useMatchesBySeason,
 } from '@/hooks/useBetting'
 import { useLeagues } from '@/hooks/useMatches'
 import {
@@ -32,6 +32,8 @@ function formatDate(dateStr) {
     return new Date(dateStr).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+const CODE_LABELS = { PD: 'La Liga', WC: 'FIFA World Cup 2026' }
+
 const BET_TYPES = [
     'Combinada',
     '1X2', 'Más/Menos Goles', 'BTTS', 'Córners', 'Tarjetas',
@@ -42,7 +44,7 @@ const SINGLE_BET_TYPES = BET_TYPES.filter(t => t !== 'Combinada')
 const BOOKMAKERS = ['Bet365', 'William Hill', 'Betway', 'Codere', 'Marca Apuestas', 'Bwin', 'Betfair', 'Sportium', '888sport', 'Unibet', 'Winamax', 'Betclic', 'Pinnacle', 'Otro']
 
 const EMPTY_FORM = {
-    league_id: '', season: '', matchday: '', match_id: '',
+    league_code: '', league_id: '', season: '', matchday: '', match_id: '',
     match_info: '', league_name: '', match_date: '',
     home_team_name: '', away_team_name: '',
     bet_type: '1X2',
@@ -53,7 +55,7 @@ const EMPTY_FORM = {
     currency: 'EUR', status: 'pending',
 }
 const EMPTY_LEG = {
-    league_id: '', season: '', matchday: '', match_id: '',
+    league_code: '', league_id: '', season: '', matchday: '', match_id: '',
     match_info: '', league_name: '', match_date: '',
     home_team_name: '', away_team_name: '',
     bet_type: '1X2',
@@ -212,8 +214,8 @@ function TabBar({ tabs, active, onChange, layoutId }) {
 
 // Leg row for Combinada — each instance owns its own hooks (no conditional hook rule)
 function LegPickerRow({ leg, onChange, leagues, idx, onRemove, canRemove, inputCls }) {
-    const isWC = leagues.find(l => String(l.id) === String(leg.league_id))?.code === 'WC'
-    const { data: seasons       = [] } = useSeasons(leg.league_id || null)
+    const isWC = leg.league_code === 'WC'
+    const { data: seasons       = [] } = useSeasonsByCode(leg.league_code || null, leagues)
     const { data: wcMatches     = [] } = useMatchesBySeason(
         isWC && leg.season ? leg.league_id : null,
         isWC && leg.season ? leg.season    : null,
@@ -223,11 +225,21 @@ function LegPickerRow({ leg, onChange, leagues, idx, onRemove, canRemove, inputC
     )
     const matches   = isWC ? wcMatches : jornMatches
     const showPicker = (isWC && leg.season) || (!isWC && leg.matchday)
+    const uniqueLeagues = useMemo(() => {
+        const seen = new Set()
+        return leagues.filter(l => { if (seen.has(l.code)) return false; seen.add(l.code); return true })
+    }, [leagues])
 
     const patch = (k, v) => {
         let next = { ...leg, [k]: v }
-        if (k === 'league_id') { next = { ...next, season: '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
-        if (k === 'season')    { next = { ...next, matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'league_code') {
+            const lg = leagues.find(x => x.code === v)
+            next = { ...next, league_name: CODE_LABELS[v] || lg?.name || '', league_id: '', season: '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' }
+        }
+        if (k === 'season') {
+            const lg = leagues.find(x => x.code === leg.league_code && x.season === v)
+            next = { ...next, league_id: lg?.id || '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' }
+        }
         if (k === 'matchday')  { next = { ...next, match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
         if (k === 'match_id')  {
             const m = matches.find(x => String(x.id) === String(v))
@@ -248,11 +260,11 @@ function LegPickerRow({ leg, onChange, leagues, idx, onRemove, canRemove, inputC
                 )}
             </div>
             <div className="grid gap-1.5 grid-cols-2 sm:grid-cols-3">
-                <select value={leg.league_id} onChange={e => patch('league_id', e.target.value)} className={inputCls}>
+                <select value={leg.league_code} onChange={e => patch('league_code', e.target.value)} className={inputCls}>
                     <option value="">Liga…</option>
-                    {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    {uniqueLeagues.map(l => <option key={l.code} value={l.code}>{CODE_LABELS[l.code] || l.name}</option>)}
                 </select>
-                {leg.league_id && (
+                {leg.league_code && (
                     <select value={leg.season} onChange={e => patch('season', e.target.value)} className={inputCls}>
                         <option value="">Temporada…</option>
                         {seasons.map(s => <option key={s} value={s}>{s}</option>)}
@@ -467,13 +479,15 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
     const { mutate: addBet, isPending: adding } = useAddRealBet()
     const { mutate: settleBet }                 = useSettleRealBet()
     const { data: leagues = [] }                = useLeagues()
-    const { data: seasons = [] }                = useSeasons(form.league_id || null)
+    const { data: seasons = [] }                = useSeasonsByCode(form.league_code || null, leagues)
 
     const isCombined = form.bet_type === 'Combinada'
-    const isWCLeague = useMemo(() => {
-        const lg = leagues.find(l => String(l.id) === String(form.league_id))
-        return lg?.code === 'WC'
-    }, [leagues, form.league_id])
+    const isWCLeague = form.league_code === 'WC'
+
+    const uniqueLeagues = useMemo(() => {
+        const seen = new Set()
+        return leagues.filter(l => { if (seen.has(l.code)) return false; seen.add(l.code); return true })
+    }, [leagues])
 
     const { data: wcMatches   = [] } = useMatchesBySeason(isWCLeague && form.season ? form.league_id : null, isWCLeague && form.season ? form.season : null)
     const { data: jornMatches = [] } = useMatchesByJornada(!isWCLeague && form.matchday ? form.league_id : null, form.season, form.matchday)
@@ -482,11 +496,14 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
 
     const set = (k, v) => setForm(f => {
         let next = { ...f, [k]: v }
-        if (k === 'league_id') {
-            const lg = leagues.find(x => String(x.id) === String(v))
-            next = { ...next, league_name: lg?.name || '', season: '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' }
+        if (k === 'league_code') {
+            const lg = leagues.find(x => x.code === v)
+            next = { ...next, league_name: CODE_LABELS[v] || lg?.name || '', league_id: '', season: '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' }
         }
-        if (k === 'season')   { next = { ...next, matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
+        if (k === 'season') {
+            const lg = leagues.find(x => x.code === f.league_code && x.season === v)
+            next = { ...next, league_id: lg?.id || '', matchday: '', match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' }
+        }
         if (k === 'matchday') { next = { ...next, match_id: '', match_info: '', match_date: '', home_team_name: '', away_team_name: '' } }
         if (k === 'match_id') {
             const m = activeMatches.find(x => String(x.id) === String(v))
@@ -664,12 +681,12 @@ function RealHistoryTab({ realBets, isLoading, preferredCurrency = 'EUR' }) {
                                     <div className="grid gap-3 sm:grid-cols-3">
                                         <div>
                                             <label className="block text-[11px] text-muted-foreground mb-1">Liga</label>
-                                            <select value={form.league_id} onChange={e => set('league_id', e.target.value)} className={inputCls}>
+                                            <select value={form.league_code} onChange={e => set('league_code', e.target.value)} className={inputCls}>
                                                 <option value="">Selecciona liga…</option>
-                                                {leagues.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                                {uniqueLeagues.map(l => <option key={l.code} value={l.code}>{CODE_LABELS[l.code] || l.name}</option>)}
                                             </select>
                                         </div>
-                                        {form.league_id && (
+                                        {form.league_code && (
                                             <div>
                                                 <label className="block text-[11px] text-muted-foreground mb-1">Temporada</label>
                                                 <select value={form.season} onChange={e => set('season', e.target.value)} className={inputCls}>

@@ -102,6 +102,24 @@ export function useSeasons(leagueId) {
     })
 }
 
+/** Seasons across all league IDs that share the same code (e.g. all La Liga seasons) */
+export function useSeasonsByCode(leagueCode, leagues = []) {
+    const leagueIds = (leagues || []).filter(l => l.code === leagueCode).map(l => l.id)
+    return useQuery({
+        queryKey: ['seasons-by-code', leagueCode],
+        enabled: !!leagueCode && leagueIds.length > 0,
+        staleTime: 5 * 60_000,
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('matches')
+                .select('season')
+                .in('league_id', leagueIds)
+            if (error) throw error
+            return [...new Set((data || []).map(m => m.season).filter(Boolean))].sort().reverse()
+        },
+    })
+}
+
 /** All matches for a league + season (used for WC where matchday is not meaningful) */
 export function useMatchesBySeason(leagueId, season) {
     return useQuery({

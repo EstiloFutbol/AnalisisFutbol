@@ -189,6 +189,31 @@ export function useAddBettorBet() {
     })
 }
 
+export function useUpdateBettorBet() {
+    const qc = useQueryClient()
+    return useMutation({
+        mutationFn: async ({ id, bettor_profile_id, stake, odds, status, ...rest }) => {
+            const stakeNum = parseFloat(stake)
+            const oddsNum  = parseFloat(odds)
+            const payload  = { ...rest, status }
+            if (!isNaN(stakeNum) && !isNaN(oddsNum)) {
+                payload.stake            = stakeNum
+                payload.odds             = oddsNum
+                payload.potential_payout = Math.round(stakeNum * oddsNum * 100) / 100
+            }
+            payload.settled_at = status && status !== 'pending' ? new Date().toISOString() : null
+            const { data, error } = await supabase
+                .from('real_bets').update(payload).eq('id', id).select().single()
+            if (error) throw new Error(error.message)
+            return { ...data, bettor_profile_id }
+        },
+        onSuccess: (data) => {
+            qc.invalidateQueries({ queryKey: ['bettor-bets', data.bettor_profile_id] })
+            qc.invalidateQueries({ queryKey: ['leaderboard'] })
+        },
+    })
+}
+
 export function useDeleteBettorBet() {
     const qc = useQueryClient()
     return useMutation({

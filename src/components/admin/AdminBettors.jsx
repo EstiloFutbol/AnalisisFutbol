@@ -8,6 +8,7 @@ import {
     useUpdateBettorProfile,
     useDeactivateBettorProfile,
     useAddBettorBet,
+    useUpdateBettorBet,
     useDeleteBettorBet,
     useBettorBets,
 } from '@/hooks/useBettorProfiles'
@@ -212,7 +213,7 @@ function AdaptiveFields({ form, set, inputCls }) {
                         <option value="Visitante">{awayTeam}</option>
                     </select>
                     <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-20`}>
-                        {['-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3'].map(v => <option key={v}>{v}</option>)}
+                        {['-5','-4.5','-4','-3.5','-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3','+3.5','+4','+4.5','+5'].map(v => <option key={v}>{v}</option>)}
                     </select>
                 </div>
             )
@@ -384,35 +385,140 @@ function CombinedLegsForm({ legs, setLegs, leagues, inputCls }) {
     )
 }
 
+// ─── Inline edit form for a single bet ───────────────────────────────────────
+
+function EditBetRow({ bet, profileId, onClose }) {
+    const [ef, setEf] = useState({
+        bet_type:   bet.bet_type,
+        selection:  bet.selection,
+        odds:       String(bet.odds),
+        stake:      String(bet.stake),
+        currency:   bet.currency || 'EUR',
+        bookmaker:  bet.bookmaker || '',
+        bet_timing: bet.bet_timing || 'pre',
+        bet_minute: bet.bet_minute != null ? String(bet.bet_minute) : '',
+        status:     bet.status,
+    })
+    const { mutate: update, isPending } = useUpdateBettorBet()
+    const inputCls = 'w-full rounded-lg border border-border bg-background py-1.5 px-2.5 text-xs text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary'
+
+    const handleSave = () => {
+        update({ id: bet.id, bettor_profile_id: profileId, ...ef }, { onSuccess: () => onClose() })
+    }
+
+    return (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2 text-xs">
+            <div className="grid gap-2 sm:grid-cols-2">
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Tipo</label>
+                    <select value={ef.bet_type} onChange={e => setEf(f => ({ ...f, bet_type: e.target.value }))} className={inputCls}>
+                        {SINGLE_BET_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Selección</label>
+                    <input value={ef.selection} onChange={e => setEf(f => ({ ...f, selection: e.target.value }))} className={inputCls} />
+                </div>
+            </div>
+            <div className="grid gap-2 grid-cols-4">
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Cuota</label>
+                    <input type="number" step="0.01" min="1.01" value={ef.odds} onChange={e => setEf(f => ({ ...f, odds: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Stake</label>
+                    <input type="number" step="0.01" min="0.01" value={ef.stake} onChange={e => setEf(f => ({ ...f, stake: e.target.value }))} className={inputCls} />
+                </div>
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Divisa</label>
+                    <select value={ef.currency} onChange={e => setEf(f => ({ ...f, currency: e.target.value }))} className={inputCls}>
+                        <option value="EUR">EUR</option><option value="USD">USD</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Resultado</label>
+                    <select value={ef.status} onChange={e => setEf(f => ({ ...f, status: e.target.value }))} className={inputCls}>
+                        <option value="won">Ganada</option><option value="lost">Perdida</option>
+                        <option value="void">Anulada</option><option value="pending">Pendiente</option>
+                    </select>
+                </div>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Casa</label>
+                    <select value={ef.bookmaker} onChange={e => setEf(f => ({ ...f, bookmaker: e.target.value }))} className={inputCls}>
+                        <option value="">Sin especificar</option>
+                        {BOOKMAKERS.map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-[10px] text-muted-foreground mb-1">Timing</label>
+                    <select value={ef.bet_timing} onChange={e => setEf(f => ({ ...f, bet_timing: e.target.value }))} className={inputCls}>
+                        <option value="pre">Pre-partido</option><option value="live">En vivo</option>
+                    </select>
+                </div>
+                {ef.bet_timing === 'live' && (
+                    <div>
+                        <label className="block text-[10px] text-muted-foreground mb-1">Minuto</label>
+                        <input type="number" min="1" max="120" value={ef.bet_minute} onChange={e => setEf(f => ({ ...f, bet_minute: e.target.value }))} className={inputCls} />
+                    </div>
+                )}
+            </div>
+            <div className="flex gap-2 pt-1">
+                <button onClick={handleSave} disabled={isPending}
+                    className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity">
+                    {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />} Guardar
+                </button>
+                <button onClick={onClose}
+                    className="rounded-lg border border-border/50 px-3 py-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    )
+}
+
 // ─── Bet list for a profile ───────────────────────────────────────────────────
 
 function BettorBetList({ profileId }) {
     const { data: bets = [], isLoading } = useBettorBets(profileId)
     const { mutate: deleteBet, isPending: deleting } = useDeleteBettorBet()
+    const [editingId, setEditingId] = useState(null)
 
     if (isLoading) return <div className="py-4 text-center"><Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" /></div>
     if (!bets.length) return <p className="py-4 text-sm text-muted-foreground text-center">Sin picks registrados.</p>
 
     return (
-        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+        <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {bets.map(bet => (
-                <div key={bet.id} className="flex items-center gap-3 rounded-lg border border-border/30 bg-background/60 p-2.5 text-xs">
-                    <div className="flex-1 min-w-0">
-                        <span className="font-semibold text-foreground/90 truncate block">{bet.match_info}</span>
-                        <span className="text-muted-foreground line-clamp-1">
-                            {bet.bet_type} · {bet.selection} · @{Number(bet.odds).toFixed(2)} · {bet.currency}{Number(bet.stake).toFixed(2)}
-                            {bet.match_date && ` · ${formatDate(bet.match_date)}`}
-                        </span>
-                    </div>
-                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLES[bet.status]}`}>
-                        {STATUS_LABELS[bet.status]}
-                    </span>
-                    <button
-                        onClick={() => deleteBet({ id: bet.id, bettor_profile_id: profileId })}
-                        disabled={deleting}
-                        className="shrink-0 rounded p-1 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                <div key={bet.id}>
+                    {editingId === bet.id ? (
+                        <EditBetRow bet={bet} profileId={profileId} onClose={() => setEditingId(null)} />
+                    ) : (
+                        <div className="flex items-center gap-3 rounded-lg border border-border/30 bg-background/60 p-2.5 text-xs">
+                            <div className="flex-1 min-w-0">
+                                <span className="font-semibold text-foreground/90 truncate block">{bet.match_info}</span>
+                                <span className="text-muted-foreground line-clamp-1">
+                                    {bet.bet_type} · {bet.selection} · @{Number(bet.odds).toFixed(2)} · {bet.currency}{Number(bet.stake).toFixed(2)}
+                                    {bet.match_date && ` · ${formatDate(bet.match_date)}`}
+                                </span>
+                            </div>
+                            <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${STATUS_STYLES[bet.status]}`}>
+                                {STATUS_LABELS[bet.status]}
+                            </span>
+                            <button onClick={() => setEditingId(bet.id)}
+                                className="shrink-0 rounded p-1 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                                title="Editar pick">
+                                <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                                onClick={() => deleteBet({ id: bet.id, bettor_profile_id: profileId })}
+                                disabled={deleting}
+                                className="shrink-0 rounded p-1 text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             ))}
         </div>

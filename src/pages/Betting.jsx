@@ -140,8 +140,8 @@ function AdaptiveFields({ form, set, inputCls }) {
                         <option value="Local">{home}</option>
                         <option value="Visitante">{away}</option>
                     </select>
-                    <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-28`}>
-                        {['-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3'].map(v => <option key={v}>{v}</option>)}
+                    <select value={form.hand_value} onChange={e => set('hand_value', e.target.value)} className={`${inputCls} w-24`}>
+                        {['-5','-4.5','-4','-3.5','-3','-2.5','-2','-1.5','-1','-0.5','0','+0.5','+1','+1.5','+2','+2.5','+3','+3.5','+4','+4.5','+5'].map(v => <option key={v}>{v}</option>)}
                     </select>
                 </div>
             )
@@ -290,15 +290,17 @@ function LegPickerRow({ leg, onChange, leagues, idx, onRemove, canRemove, inputC
             )}
             {leg.match_info && <p className="text-[11px] text-green-400 font-medium">✓ {leg.match_info}</p>}
             {leg.match_id && (
-                <div className="grid grid-cols-3 gap-1.5">
-                    <select value={leg.bet_type} onChange={e => patch('bet_type', e.target.value)} className={inputCls}>
-                        {SINGLE_BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                <>
+                    <div className="grid grid-cols-2 gap-1.5">
+                        <select value={leg.bet_type} onChange={e => patch('bet_type', e.target.value)} className={inputCls}>
+                            {SINGLE_BET_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <input type="number" step="0.01" min="1.01" value={leg.odds}
+                            onChange={e => patch('odds', e.target.value)}
+                            placeholder="Cuota" className={inputCls} />
+                    </div>
                     <AdaptiveFields form={leg} set={(k, v) => patch(k, v)} inputCls={inputCls} />
-                    <input type="number" step="0.01" min="1.01" value={leg.odds}
-                        onChange={e => patch('odds', e.target.value)}
-                        placeholder="Cuota" className={inputCls} />
-                </div>
+                </>
             )}
         </div>
     )

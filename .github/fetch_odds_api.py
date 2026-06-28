@@ -25,7 +25,7 @@ Usage:
 """
 
 import io, os, re, sys, argparse, unicodedata
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 import requests
 from supabase import create_client
@@ -418,6 +418,23 @@ def main():
         if r["home_team_id"] and r["away_team_id"]
     }
 
+    # WC knockout slots whose team IDs are still null — keyed by (local_date, "HH:MM")
+    # These are fallback targets when the primary (home_id, away_id) lookup misses.
+    # Spain uses CEST (UTC+2) during the WC, used to convert API commence_time.
+    null_knockout = {}   # (match_date, kick_off_hhmm_or_None) → row
+    null_repairs  = {}   # match_id → {"home_team_id": x, "away_team_id": y}
+    if mode == "wc":
+        nq = (sb.from_("matches")
+               .select("id, matchday, match_date, kick_off_time")
+               .eq("league_id", league_id)
+               .gte("matchday", 4)
+               .is_("home_team_id", "null")
+               .is_("home_goals", "null"))
+        for r in nq.execute().data:
+            t = (r["kick_off_time"] or "")[:5] or None
+            null_knockout[(r["match_date"], t)] = r
+        print(f"[DB] {len(null_knockout)} unassigned WC knockout slots")
+
     print(f"[DB] {len(db_teams)} teams  |  {len(unplayed)} unplayed matches\n")
 
     # ── Fetch from The Odds API ───────────────────────────────────────────────
@@ -479,6 +496,21 @@ def main():
             continue
 
         match = unplayed.get((home_id, away_id))
+        if not match and null_knockout:
+            # Fallback: match by commence_time → Spain local date+time (CEST = UTC+2)
+            commence = ev.get("commence_time", "")
+            if commence:
+                try:
+                    utc_dt    = datetime.fromisoformat(commence.replace("Z", "+00:00"))
+                    local_dt  = utc_dt + timedelta(hours=2)
+                    local_date = local_dt.strftime("%Y-%m-%d")
+                    local_time = local_dt.strftime("%H:%M")
+                    match = (null_knockout.get((local_date, local_time))
+                          or null_knockout.get((local_date, None)))
+                except Exception:
+                    pass
+            if match:
+                null_repairs[match["id"]] = {"home_team_id": home_id, "away_team_id": away_id}
         if not match:
             odds_skipped.append(f"  Not in unplayed DB: {db_home} vs {db_away}")
             continue
@@ -551,6 +583,11 @@ def main():
             on_conflict="match_id,bookmaker_key,market,outcome"
         ).execute()
     print(f"  [OK] {len(bk_rows_queue)} bookmaker rows upserted")
+
+    for match_id, ids in null_repairs.items():
+        sb.from_("matches").update(ids).eq("id", match_id).execute()
+    if null_repairs:
+        print(f"  [OK] {len(null_repairs)} WC knockout team IDs repaired")
 
     for s in score_updates:
         sb.from_("matches").update({"home_goals": s["home_goals"], "away_goals": s["away_goals"]}

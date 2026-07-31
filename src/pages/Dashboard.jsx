@@ -124,19 +124,28 @@ export default function Dashboard() {
     const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
     const activeLeagueId = selectedLeagueIds[0] || null
     const allSeasons = [...new Set(leagues.map(l => l.season).filter(Boolean))].sort().reverse()
-    const leagueOptions = useMemo(
-        () => [...leagues].sort((a, b) => `${b.season || ''}-${b.name || ''}`.localeCompare(`${a.season || ''}-${a.name || ''}`)),
-        [leagues]
-    )
+    const competitionOptions = useMemo(() => {
+        const byName = new Map()
+        leagues.forEach(league => {
+            if (!byName.has(league.name)) byName.set(league.name, [])
+            byName.get(league.name).push(String(league.id))
+        })
+        return [...byName.entries()]
+            .map(([name, ids]) => ({ name, ids }))
+            .sort((a, b) => a.name.localeCompare(b.name))
+    }, [leagues])
+    const selectedCompetitionNames = competitionOptions
+        .filter(competition => competition.ids.some(id => selectedLeagueIds.includes(id)))
+        .map(competition => competition.name)
     const selectedLeagueLabel = selectedLeagueIds.length === 0
         ? 'Todas las competiciones'
-        : selectedLeagueIds.length === 1
-            ? (leagueOptions.find(l => String(l.id) === selectedLeagueIds[0])?.name || '1 competición')
-            : `${selectedLeagueIds.length} competiciones`
+        : selectedCompetitionNames.length === 1
+            ? selectedCompetitionNames[0]
+            : `${selectedCompetitionNames.length} competiciones`
     const selectedSeasonLabel = selectedSeasons.length === 0
         ? 'Todas las temporadas'
         : selectedSeasons.length === 1 ? selectedSeasons[0] : `${selectedSeasons.length} temporadas`
-
+    const [filtersOpen, setFiltersOpen] = useState(false)
     const handleSelections = (key, values) => {
         setSearchParams(prev => {
             if (values.length) prev.set(key, values.join(','))
@@ -150,6 +159,11 @@ export default function Dashboard() {
     const toggleSelection = (key, value) => {
         const current = key === 'leagues' ? selectedLeagueIds : selectedSeasons
         handleSelections(key, current.includes(value) ? current.filter(item => item !== value) : [...current, value])
+    }
+
+    const toggleCompetition = (ids) => {
+        const isSelected = ids.some(id => selectedLeagueIds.includes(id))
+        handleSelections('leagues', isSelected ? selectedLeagueIds.filter(id => !ids.includes(id)) : [...new Set([...selectedLeagueIds, ...ids])])
     }
 
     useEffect(() => {
@@ -315,7 +329,7 @@ export default function Dashboard() {
                     </p>
                 </div>
                 {leagues.length > 0 && (
-                    <details className="w-full sm:w-auto rounded-xl border border-border bg-card/50 px-3 py-2.5 text-sm">
+                    <details open={filtersOpen} onToggle={event => setFiltersOpen(event.currentTarget.open)} className="w-full sm:w-auto rounded-xl border border-border bg-card/50 px-3 py-2.5 text-sm">
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold text-foreground [&::-webkit-details-marker]:hidden">
                             <span className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" />{selectedLeagueLabel}</span>
                             <span className="text-xs font-medium text-muted-foreground">{selectedSeasonLabel}</span>
@@ -327,14 +341,12 @@ export default function Dashboard() {
                                     <button type="button" onClick={() => handleSelections('leagues', [])} className="text-[10px] font-bold text-primary hover:underline">Todas</button>
                                 </div>
                                 <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
-                                    {leagueOptions.map(league => {
-                                        const id = String(league.id)
-                                        const checked = selectedLeagueIds.includes(id)
+                                    {competitionOptions.map(competition => {
+                                        const checked = competition.ids.some(id => selectedLeagueIds.includes(id))
                                         return (
-                                            <label key={id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-primary/10">
-                                                <input type="checkbox" checked={checked} onChange={() => toggleSelection('leagues', id)} className="h-3.5 w-3.5 accent-primary" />
-                                                <span className="flex-1 truncate font-medium text-foreground">{league.name}</span>
-                                                <span className="text-muted-foreground">{league.season}</span>
+                                            <label key={competition.name} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-primary/10">
+                                                <input type="checkbox" checked={checked} onChange={() => toggleCompetition(competition.ids)} className="h-3.5 w-3.5 accent-primary" />
+                                                <span className="flex-1 truncate font-medium text-foreground">{competition.name}</span>
                                             </label>
                                         )
                                     })}

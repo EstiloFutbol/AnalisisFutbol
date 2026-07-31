@@ -7,17 +7,17 @@ import {
 import SEO from '@/components/SEO'
 
 const europeanCompetitions = [
-    { name: 'Champions League', shortName: 'UCL', description: 'La élite europea, jornada a jornada.', accent: '#2f5bd3', glow: 'rgba(47, 91, 211, 0.22)', icon: Trophy },
-    { name: 'Europa League', shortName: 'UEL', description: 'Análisis de la competición que nunca baja el ritmo.', accent: '#e56620', glow: 'rgba(229, 102, 32, 0.22)', icon: Goal },
-    { name: 'Conference League', shortName: 'UECL', description: 'Más clubes, más historias, más datos que descubrir.', accent: '#27a76d', glow: 'rgba(39, 167, 109, 0.22)', icon: Sparkles },
+    { code: '__CL__', name: 'Champions League', shortName: 'UCL', description: 'La élite europea, jornada a jornada.', accent: '#2f5bd3', glow: 'rgba(47, 91, 211, 0.22)', icon: Trophy },
+    { code: '__EL__', name: 'Europa League', shortName: 'UEL', description: 'Análisis de la competición que nunca baja el ritmo.', accent: '#e56620', glow: 'rgba(229, 102, 32, 0.22)', icon: Goal },
+    { code: '__ECL__', name: 'Conference League', shortName: 'UECL', description: 'Más clubes, más historias, más datos que descubrir.', accent: '#27a76d', glow: 'rgba(39, 167, 109, 0.22)', icon: Sparkles },
 ]
 
 const leagues = [
     { country: 'España', competition: 'LaLiga', mark: 'ES', accent: '#ef3340' },
-    { country: 'Inglaterra', competition: 'Premier League', mark: 'EN', accent: '#7b1fa2' },
-    { country: 'Italia', competition: 'Serie A', mark: 'IT', accent: '#1677c8' },
-    { country: 'Alemania', competition: 'Bundesliga', mark: 'DE', accent: '#e32219' },
-    { country: 'Francia', competition: 'Ligue 1', mark: 'FR', accent: '#123f86' },
+    { leagueId: 17, country: 'Inglaterra', competition: 'Premier League', mark: 'EN', accent: '#7b1fa2' },
+    { leagueId: 18, country: 'Italia', competition: 'Serie A', mark: 'IT', accent: '#1677c8' },
+    { leagueId: 19, country: 'Alemania', competition: 'Bundesliga', mark: 'DE', accent: '#e32219' },
+    { leagueId: 20, country: 'Francia', competition: 'Ligue 1', mark: 'FR', accent: '#123f86' },
 ]
 
 const platformFeatures = [
@@ -83,15 +83,15 @@ export default function Landing() {
                 <section>
                     <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                         <div><p className="text-xs font-black uppercase tracking-[0.16em] text-[#bc6c25]">Noches europeas</p><h2 className="mt-2 text-3xl font-black tracking-tight text-foreground sm:text-4xl">Las competiciones que mueven Europa</h2></div>
-                        <Link to="/dashboard?tab=partidos" className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">Ver todos los partidos <ChevronRight className="h-4 w-4" /></Link>
+                        <Link to="/dashboard?tab=partidos&league=all" className="inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline">Ver todos los partidos <ChevronRight className="h-4 w-4" /></Link>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-3">
-                        {europeanCompetitions.map(({ name, shortName, description, accent, glow, icon: Icon }, index) => (
+                        {europeanCompetitions.map(({ code, name, shortName, description, accent, glow, icon: Icon }, index) => (
                             <motion.article key={name} initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ delay: index * 0.08 }} className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card p-6 transition-all hover:-translate-y-1 hover:shadow-xl">
                                 <div aria-hidden className="absolute -right-10 -top-10 h-36 w-36 rounded-full blur-2xl" style={{ background: glow }} />
                                 <div className="relative flex items-start justify-between gap-4"><div><span className="text-xs font-black tracking-[0.18em]" style={{ color: accent }}>{shortName}</span><h3 className="mt-3 text-xl font-black text-foreground">{name}</h3></div><div className="rounded-xl p-3" style={{ background: glow, color: accent }}><Icon className="h-5 w-5" /></div></div>
                                 <p className="relative mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">{description}</p>
-                                <Link to="/dashboard" className="relative mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-foreground transition-colors group-hover:text-primary">Descubrir datos <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
+                                <Link to={`/dashboard?league=${code}`} className="relative mt-6 inline-flex items-center gap-1.5 text-sm font-bold text-foreground transition-colors group-hover:text-primary">Descubrir datos <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
                             </motion.article>
                         ))}
                     </div>
@@ -100,8 +100,8 @@ export default function Landing() {
                 <section className="rounded-3xl border border-border/60 bg-muted/35 p-6 sm:p-10">
                     <div className="max-w-2xl"><p className="text-xs font-black uppercase tracking-[0.16em] text-[#bc6c25]">La élite doméstica</p><h2 className="mt-2 text-3xl font-black tracking-tight text-foreground sm:text-4xl">Las cinco grandes ligas, conectadas</h2><p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">Sigue el pulso de cada campeonato y pon sus tendencias en perspectiva europea.</p></div>
                     <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                        {leagues.map(({ country, competition, mark, accent }) => (
-                            <Link key={competition} to="/dashboard" className="group rounded-2xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black text-white" style={{ background: accent }}>{mark}</span><span className="min-w-0"><span className="block truncate text-sm font-black text-foreground">{competition}</span><span className="block text-xs text-muted-foreground">{country}</span></span></div></Link>
+                        {leagues.map(({ leagueId, country, competition, mark, accent }) => (
+                            <Link key={competition} to={`/dashboard?league=${leagueId}`} className="group rounded-2xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black text-white" style={{ background: accent }}>{mark}</span><span className="min-w-0"><span className="block truncate text-sm font-black text-foreground">{competition}</span><span className="block text-xs text-muted-foreground">{country}</span></span></div></Link>
                         ))}
                     </div>
                 </section>

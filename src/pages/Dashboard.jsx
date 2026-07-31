@@ -390,10 +390,20 @@ export default function Dashboard() {
             </div>
 
             {/* ── Tab Content ── */}
-            {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} leagueObj={activeLeagueObj} />}
-            {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
-            {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
-            {activeTab === 'clasificacion' && <TeamsTab matches={matches} leagueObj={activeLeagueObj} activeLeagueId={activeLeagueId} />}
+            {isVirtualCompetition ? (
+                <section className="rounded-2xl border border-border/60 bg-card px-6 py-14 text-center sm:px-10">
+                    <Trophy className="mx-auto h-9 w-9 text-primary" />
+                    <h2 className="mt-4 text-xl font-black text-foreground">{virtualCompetitionName}</h2>
+                    <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">La competici?n ya est? disponible como filtro. Mostraremos sus datos cuando conectemos la fuente europea.</p>
+                </section>
+            ) : (
+                <>
+                    {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} leagueObj={activeLeagueObj} />}
+                    {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
+                    {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
+                    {activeTab === 'clasificacion' && <TeamsTab matches={matches} leagueObj={activeLeagueObj} activeLeagueId={activeLeagueId} />}
+                </>
+            )}
         </div>
     )
 }

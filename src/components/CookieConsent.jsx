@@ -90,11 +90,11 @@ export default function CookieConsent({ onConsent }) {
     if (!showBanner) return null
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6">
+        <div className="fixed bottom-3 left-0 right-0 z-50 px-3 sm:bottom-4 sm:px-6">
             {!showSettings ? (
                 // Main consent banner
-                <div className="mx-auto max-w-4xl rounded-2xl bg-card border border-border p-6 shadow-2xl animate-in slide-in-from-bottom-4">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="mx-auto max-w-7xl rounded-2xl bg-card border border-border px-5 py-4 sm:px-6 sm:py-5 shadow-2xl animate-in slide-in-from-bottom-4">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div className="flex gap-4">
                             <div className="hidden shrink-0 sm:flex">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -105,7 +105,7 @@ export default function CookieConsent({ onConsent }) {
                                 <h2 className="text-xl font-bold text-foreground">
                                     🍪 Política de Cookies
                                 </h2>
-                                <p className="text-sm text-muted-foreground max-w-2xl">
+                                <p className="text-sm text-muted-foreground max-w-4xl">
                                     Utilizamos cookies propias y de terceros para mejorar tu experiencia de navegación, 
                                     mostrarte contenido personalizado, analizar nuestro tráfico y proporcionar funciones de redes sociales. 
                                     Según el RGPD y la LOPDGDD, necesitamos tu consentimiento explícito para usar cookies no esenciales.
@@ -116,23 +116,23 @@ export default function CookieConsent({ onConsent }) {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 sm:flex-row">
+                        <div className="flex shrink-0 flex-nowrap gap-2">
                             <button
                                 onClick={() => setShowSettings(true)}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background whitespace-nowrap px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                             >
                                 <Settings className="h-4 w-4" />
                                 Personalizar
                             </button>
                             <button
                                 onClick={rejectAll}
-                                className="inline-flex items-center justify-center rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                                className="inline-flex items-center justify-center rounded-lg border border-border bg-background whitespace-nowrap px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                             >
                                 Rechazar
                             </button>
                             <button
                                 onClick={acceptAll}
-                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary whitespace-nowrap px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                             >
                                 <Shield className="h-4 w-4" />
                                 Aceptar todo
@@ -141,7 +141,7 @@ export default function CookieConsent({ onConsent }) {
                     </div>
 
                     {/* Cookie categories preview */}
-                    <div className="mt-4 flex flex-wrap gap-2 pt-4 border-t border-border">
+                    <div className="hidden">
                         {Object.entries(COOKIE_CATEGORIES).map(([key, category]) => (
                             <span
                                 key={key}
@@ -215,13 +215,13 @@ export default function CookieConsent({ onConsent }) {
                     <div className="mt-6 flex gap-3">
                         <button
                             onClick={() => setShowSettings(false)}
-                            className="flex-1 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                            className="flex-1 rounded-lg border border-border bg-background whitespace-nowrap px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                         >
                             Cancelar
                         </button>
                         <button
                             onClick={handleSaveSettings}
-                            className="flex-1 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                            className="flex-1 rounded-lg bg-primary whitespace-nowrap px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                         >
                             Guardar preferencias
                         </button>

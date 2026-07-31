@@ -118,6 +118,9 @@ export default function Dashboard() {
     const activeTab = searchParams.get('tab') || 'mercados'
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
+    const isVirtualCompetition = typeof activeLeagueId === 'string' && activeLeagueId.startsWith('__')
+    const isAllCompetitions = activeLeagueId === 'all'
+    const selectedSeason = searchParams.get('season') || (activeLeagueObj?.season || 'all')
 
     // Derive the active league object to split name + season for the two dropdowns
     const activeLeagueObj = leagues.find(l => String(l.id) === activeLeagueId) || null
@@ -133,21 +136,26 @@ export default function Dashboard() {
     }, [leagues])
 
     // Seasons available for the currently selected league name
-    const selectedLeagueName = activeLeagueObj?.name || uniqueLeagueNames[0] || ''
+    const selectedLeagueName = isAllCompetitions ? '__all__' : (isVirtualCompetition ? activeLeagueId : (activeLeagueObj?.name || uniqueLeagueNames[0] || ''))
     const seasonsForName = useMemo(
         () => leagues.filter(l => l.name === selectedLeagueName).map(l => l.season),
         [leagues, selectedLeagueName]
     )
 
     const handleLeagueNameChange = (name) => {
-        // Pick the first league entry that matches the new name
-        const match = leagues.find(l => l.name === name)
-        if (match) {
-            setSearchParams(prev => { prev.set('league', String(match.id)); return prev })
+        if (name === '__all__' || name.startsWith('__')) {
+            setSearchParams(prev => { prev.set('league', name === '__all__' ? 'all' : name); return prev })
+            return
         }
+        const match = leagues.find(l => l.name === name)
+        if (match) setSearchParams(prev => { prev.set('league', String(match.id)); return prev })
     }
 
     const handleSeasonChange = (season) => {
+        if (isAllCompetitions || isVirtualCompetition || season === 'all') {
+            setSearchParams(prev => { prev.set('season', season); return prev })
+            return
+        }
         // Find the league entry with the current name + new season
         const match = leagues.find(l => l.name === selectedLeagueName && l.season === season)
         if (match) {
@@ -166,10 +174,10 @@ export default function Dashboard() {
 
     // Sync active league to global context so other pages (Analisis) remember it
     useEffect(() => {
-        if (activeLeagueId) setGlobalLeagueId(parseInt(activeLeagueId, 10))
-    }, [activeLeagueId, setGlobalLeagueId])
+        if (activeLeagueObj) setGlobalLeagueId(activeLeagueObj.id)
+    }, [activeLeagueObj, setGlobalLeagueId])
 
-    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados' })
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados', season: selectedSeason })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
     const handleTabChange = (tabId) => {
@@ -327,6 +335,10 @@ export default function Dashboard() {
                                 onChange={e => handleLeagueNameChange(e.target.value)}
                                 className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >
+                                <option value="__all__">Todas las competiciones</option>
+                                <option value="__CL__">Champions League</option>
+                                <option value="__EL__">Europa League</option>
+                                <option value="__ECL__">Conference League</option>
                                 {uniqueLeagueNames.map(name => (
                                     <option key={name} value={name}>{name}</option>
                                 ))}
@@ -336,7 +348,7 @@ export default function Dashboard() {
                         {/* Season selector — only shows seasons for the selected league */}
                         <div className="relative inline-block">
                             <select
-                                value={activeLeagueObj?.season || ''}
+                                value={selectedSeason}
                                 onChange={e => handleSeasonChange(e.target.value)}
                                 className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >

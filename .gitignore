@@ -65,3 +65,6 @@ src/frontend/assets/Logos_teams
 src/match_files/*.xlsx
 src/match_files/*.xls
 src/match_files/processed/
+# Codex agent configuration (local only)
+AGENTS.md
+.codex/

@@ -121,10 +121,9 @@ export default function Dashboard() {
     const isVirtualCompetition = typeof activeLeagueId === 'string' && activeLeagueId.startsWith('__')
     const isAllCompetitions = activeLeagueId === 'all'
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[activeLeagueId]
-    const selectedSeason = searchParams.get('season') || (activeLeagueObj?.season || 'all')
-
     // Derive the active league object to split name + season for the two dropdowns
     const activeLeagueObj = leagues.find(l => String(l.id) === activeLeagueId) || null
+    const selectedSeason = searchParams.get('season') || (activeLeagueObj?.season || 'all')
 
     // Unique league names in the order they first appear
     const uniqueLeagueNames = useMemo(() => {

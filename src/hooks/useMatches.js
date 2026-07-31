@@ -17,9 +17,9 @@ export function useLeagues() {
     })
 }
 
-export function useMatches(leagueId, { playedOnly = false, season = null } = {}) {
+export function useMatches(leagueId, { playedOnly = false, season = null, leagueIds = [], seasons = [] } = {}) {
     return useQuery({
-        queryKey: ['matches', leagueId, playedOnly, season],
+        queryKey: ['matches', leagueId, playedOnly, season, leagueIds, seasons],
         queryFn: async () => {
             if (typeof leagueId === 'string' && leagueId.startsWith('__')) return []
             let query = supabase

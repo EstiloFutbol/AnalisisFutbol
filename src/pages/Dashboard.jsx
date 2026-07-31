@@ -117,14 +117,13 @@ export default function Dashboard() {
     const selectedLeagueId = searchParams.get('league')
     const activeTab = searchParams.get('tab') || 'mercados'
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
-    const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
-    const isVirtualCompetition = typeof activeLeagueId === 'string' && activeLeagueId.startsWith('__')
-    const isAllCompetitions = activeLeagueId === 'all'
-    const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[activeLeagueId]
-    // Derive the active league object to split name + season for the two dropdowns
-    const activeLeagueObj = leagues.find(l => String(l.id) === activeLeagueId) || null
-    const selectedSeason = searchParams.get('season') || (activeLeagueObj?.season || 'all')
-
+    const selectedLeagueIds = (searchParams.get('leagues') || (selectedLeagueId && !selectedLeagueId.startsWith('__') && selectedLeagueId !== 'all' ? selectedLeagueId : String(defaultLeague?.id || ''))).split(',').filter(Boolean)
+    const selectedSeasons = (searchParams.get('seasons') || '').split(',').filter(Boolean)
+    const isVirtualCompetition = typeof selectedLeagueId === 'string' && selectedLeagueId.startsWith('__')
+    const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
+    const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
+    const activeLeagueId = selectedLeagueIds[0] || null
+    const isAllCompetitions = selectedLeagueIds.length !== 1
     // Unique league names in the order they first appear
     const uniqueLeagueNames = useMemo(() => {
         const seen = new Set()
@@ -141,6 +140,15 @@ export default function Dashboard() {
         () => leagues.filter(l => l.name === selectedLeagueName).map(l => l.season),
         [leagues, selectedLeagueName]
     )
+
+    const handleSelections = (key, values) => {
+        setSearchParams(prev => {
+            if (values.length) prev.set(key, values.join(','))
+            else prev.delete(key)
+            prev.delete('league')
+            return prev
+        })
+    }
 
     const handleLeagueNameChange = (name) => {
         if (name === '__all__' || name.startsWith('__')) {
@@ -177,7 +185,7 @@ export default function Dashboard() {
         if (activeLeagueObj) setGlobalLeagueId(activeLeagueObj.id)
     }, [activeLeagueObj, setGlobalLeagueId])
 
-    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados', season: selectedSeason })
+    const { data: matches = [], isLoading } = useMatches(null, { playedOnly: activeTab === 'mercados', leagueIds: selectedLeagueIds, seasons: selectedSeasons })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
     const handleTabChange = (tabId) => {

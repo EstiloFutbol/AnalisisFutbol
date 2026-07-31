@@ -352,7 +352,8 @@ export default function Dashboard() {
                                 onChange={e => handleSeasonChange(e.target.value)}
                                 className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >
-                                {seasonsForName.map(season => (
+                                <option value="all">Todas las temporadas</option>
+                                {(isAllCompetitions ? allSeasons : seasonsForName).map(season => (
                                     <option key={season} value={season}>{season}</option>
                                 ))}
                             </select>

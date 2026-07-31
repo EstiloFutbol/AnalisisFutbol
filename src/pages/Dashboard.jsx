@@ -120,6 +120,7 @@ export default function Dashboard() {
     const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
     const isVirtualCompetition = typeof activeLeagueId === 'string' && activeLeagueId.startsWith('__')
     const isAllCompetitions = activeLeagueId === 'all'
+    const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[activeLeagueId]
     const selectedSeason = searchParams.get('season') || (activeLeagueObj?.season || 'all')
 
     // Derive the active league object to split name + season for the two dropdowns

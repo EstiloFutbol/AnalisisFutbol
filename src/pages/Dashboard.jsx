@@ -125,6 +125,7 @@ export default function Dashboard() {
     const activeLeagueId = selectedLeagueIds[0] || null
     const isAllCompetitions = selectedLeagueIds.length !== 1
     const selectedSeason = selectedSeasons[0] || activeLeagueObj?.season || 'all'
+    const allSeasons = [...new Set(leagues.map(l => l.season).filter(Boolean))].sort().reverse()
     // Unique league names in the order they first appear
     const uniqueLeagueNames = useMemo(() => {
         const seen = new Set()

@@ -17,9 +17,9 @@ export function useLeagues() {
     })
 }
 
-export function useMatches(leagueId, { playedOnly = false } = {}) {
+export function useMatches(leagueId, { playedOnly = false, season = null } = {}) {
     return useQuery({
-        queryKey: ['matches', leagueId, playedOnly],
+        queryKey: ['matches', leagueId, playedOnly, season],
         queryFn: async () => {
             if (typeof leagueId === 'string' && leagueId.startsWith('__')) return []
             let query = supabase
@@ -36,6 +36,7 @@ export function useMatches(leagueId, { playedOnly = false } = {}) {
             if (leagueId && leagueId !== 'all') {
                 query = query.eq('league_id', leagueId)
             }
+            if (season && season !== 'all') query = query.eq('season', season)
             // Exclude fixture rows: played matches always have a score
             if (playedOnly) {
                 query = query.not('home_goals', 'is', null)

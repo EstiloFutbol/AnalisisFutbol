@@ -93,7 +93,7 @@ export default function CookieConsent({ onConsent }) {
         <div className="fixed bottom-3 left-0 right-0 z-50 px-3 sm:bottom-4 sm:px-6">
             {!showSettings ? (
                 // Main consent banner
-                <div className="mx-auto max-w-6xl rounded-2xl bg-card border border-border px-5 py-4 sm:px-6 sm:py-5 shadow-2xl animate-in slide-in-from-bottom-4">
+                <div className="mx-auto max-w-7xl rounded-2xl bg-card border border-border px-5 py-4 sm:px-6 sm:py-5 shadow-2xl animate-in slide-in-from-bottom-4">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                         <div className="flex gap-4">
                             <div className="hidden shrink-0 sm:flex">
@@ -116,7 +116,7 @@ export default function CookieConsent({ onConsent }) {
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex shrink-0 flex-nowrap gap-2">
                             <button
                                 onClick={() => setShowSettings(true)}
                                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background whitespace-nowrap px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"

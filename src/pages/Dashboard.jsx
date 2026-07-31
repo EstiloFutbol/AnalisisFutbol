@@ -120,6 +120,7 @@ export default function Dashboard() {
     const activeLeagueId = selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
     const isVirtualCompetition = typeof activeLeagueId === 'string' && activeLeagueId.startsWith('__')
     const isAllCompetitions = activeLeagueId === 'all'
+    const selectedSeason = searchParams.get('season') || (activeLeagueObj?.season || 'all')
 
     // Derive the active league object to split name + season for the two dropdowns
     const activeLeagueObj = leagues.find(l => String(l.id) === activeLeagueId) || null
@@ -151,6 +152,10 @@ export default function Dashboard() {
     }
 
     const handleSeasonChange = (season) => {
+        if (isAllCompetitions || isVirtualCompetition || season === 'all') {
+            setSearchParams(prev => { prev.set('season', season); return prev })
+            return
+        }
         // Find the league entry with the current name + new season
         const match = leagues.find(l => l.name === selectedLeagueName && l.season === season)
         if (match) {
@@ -172,7 +177,7 @@ export default function Dashboard() {
         if (activeLeagueObj) setGlobalLeagueId(activeLeagueObj.id)
     }, [activeLeagueObj, setGlobalLeagueId])
 
-    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados' })
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { playedOnly: activeTab === 'mercados', season: selectedSeason })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
     const handleTabChange = (tabId) => {
@@ -341,9 +346,9 @@ export default function Dashboard() {
                             <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         </div>
                         {/* Season selector — only shows seasons for the selected league */}
-                        {!isVirtualCompetition && !isAllCompetitions && <div className="relative inline-block">
+                        <div className="relative inline-block">
                             <select
-                                value={activeLeagueObj?.season || ''}
+                                value={selectedSeason}
                                 onChange={e => handleSeasonChange(e.target.value)}
                                 className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                             >
@@ -352,7 +357,7 @@ export default function Dashboard() {
                                 ))}
                             </select>
                             <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                        </div>}
+                        </div>
                     </div>
                 )}
             </div>

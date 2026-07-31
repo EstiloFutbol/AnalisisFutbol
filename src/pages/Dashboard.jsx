@@ -123,65 +123,43 @@ export default function Dashboard() {
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
     const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
     const activeLeagueId = selectedLeagueIds[0] || null
-    const isAllCompetitions = selectedLeagueIds.length !== 1
-    const selectedSeason = selectedSeasons[0] || activeLeagueObj?.season || 'all'
     const allSeasons = [...new Set(leagues.map(l => l.season).filter(Boolean))].sort().reverse()
-    // Unique league names in the order they first appear
-    const uniqueLeagueNames = useMemo(() => {
-        const seen = new Set()
-        return leagues.filter(l => {
-            if (seen.has(l.name)) return false
-            seen.add(l.name)
-            return true
-        }).map(l => l.name)
-    }, [leagues])
-
-    // Seasons available for the currently selected league name
-    const selectedLeagueName = isAllCompetitions ? '__all__' : (isVirtualCompetition ? activeLeagueId : (activeLeagueObj?.name || uniqueLeagueNames[0] || ''))
-    const seasonsForName = useMemo(
-        () => leagues.filter(l => l.name === selectedLeagueName).map(l => l.season),
-        [leagues, selectedLeagueName]
+    const leagueOptions = useMemo(
+        () => [...leagues].sort((a, b) => `${b.season || ''}-${b.name || ''}`.localeCompare(`${a.season || ''}-${a.name || ''}`)),
+        [leagues]
     )
+    const selectedLeagueLabel = selectedLeagueIds.length === 0
+        ? 'Todas las competiciones'
+        : selectedLeagueIds.length === 1
+            ? (leagueOptions.find(l => String(l.id) === selectedLeagueIds[0])?.name || '1 competición')
+            : `${selectedLeagueIds.length} competiciones`
+    const selectedSeasonLabel = selectedSeasons.length === 0
+        ? 'Todas las temporadas'
+        : selectedSeasons.length === 1 ? selectedSeasons[0] : `${selectedSeasons.length} temporadas`
 
     const handleSelections = (key, values) => {
         setSearchParams(prev => {
             if (values.length) prev.set(key, values.join(','))
             else prev.delete(key)
-            prev.delete('league')
+            if (key === 'leagues') prev.delete('league')
+            if (key === 'seasons') prev.delete('season')
             return prev
         })
     }
 
-    const handleLeagueNameChange = (name) => {
-        if (name === '__all__' || name.startsWith('__')) {
-            setSearchParams(prev => { prev.set('league', name === '__all__' ? 'all' : name); return prev })
-            return
-        }
-        const match = leagues.find(l => l.name === name)
-        if (match) setSearchParams(prev => { prev.set('league', String(match.id)); return prev })
-    }
-
-    const handleSeasonChange = (season) => {
-        if (isAllCompetitions || isVirtualCompetition || season === 'all') {
-            setSearchParams(prev => { prev.set('season', season); return prev })
-            return
-        }
-        // Find the league entry with the current name + new season
-        const match = leagues.find(l => l.name === selectedLeagueName && l.season === season)
-        if (match) {
-            setSearchParams(prev => { prev.set('league', String(match.id)); return prev })
-        }
+    const toggleSelection = (key, value) => {
+        const current = key === 'leagues' ? selectedLeagueIds : selectedSeasons
+        handleSelections(key, current.includes(value) ? current.filter(item => item !== value) : [...current, value])
     }
 
     useEffect(() => {
-        if (!selectedLeagueId && defaultLeague) {
+        if (!searchParams.get('leagues') && !selectedLeagueId && defaultLeague) {
             setSearchParams(prev => {
-                prev.set('league', String(defaultLeague.id))
+                prev.set('leagues', String(defaultLeague.id))
                 return prev
             }, { replace: true })
         }
-    }, [selectedLeagueId, defaultLeague, setSearchParams])
-
+    }, [selectedLeagueId, defaultLeague, searchParams, setSearchParams])
     // Sync active league to global context so other pages (Analisis) remember it
     useEffect(() => {
         if (activeLeagueObj) setGlobalLeagueId(activeLeagueObj.id)
@@ -337,39 +315,48 @@ export default function Dashboard() {
                     </p>
                 </div>
                 {leagues.length > 0 && (
-                    <div className="flex items-center gap-2">
-                        {/* League name selector */}
-                        <div className="relative inline-block">
-                            <select
-                                value={selectedLeagueName}
-                                onChange={e => handleLeagueNameChange(e.target.value)}
-                                className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            >
-                                <option value="__all__">Todas las competiciones</option>
-                                <option value="__CL__">Champions League</option>
-                                <option value="__EL__">Europa League</option>
-                                <option value="__ECL__">Conference League</option>
-                                {uniqueLeagueNames.map(name => (
-                                    <option key={name} value={name}>{name}</option>
-                                ))}
-                            </select>
-                            <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                    <details className="w-full sm:w-auto rounded-xl border border-border bg-card/50 px-3 py-2.5 text-sm">
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold text-foreground [&::-webkit-details-marker]:hidden">
+                            <span className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" />{selectedLeagueLabel}</span>
+                            <span className="text-xs font-medium text-muted-foreground">{selectedSeasonLabel}</span>
+                        </summary>
+                        <div className="mt-3 grid gap-4 border-t border-border/60 pt-3 sm:grid-cols-2">
+                            <fieldset className="min-w-0">
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                    <legend className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Competiciones</legend>
+                                    <button type="button" onClick={() => handleSelections('leagues', [])} className="text-[10px] font-bold text-primary hover:underline">Todas</button>
+                                </div>
+                                <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+                                    {leagueOptions.map(league => {
+                                        const id = String(league.id)
+                                        const checked = selectedLeagueIds.includes(id)
+                                        return (
+                                            <label key={id} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-primary/10">
+                                                <input type="checkbox" checked={checked} onChange={() => toggleSelection('leagues', id)} className="h-3.5 w-3.5 accent-primary" />
+                                                <span className="flex-1 truncate font-medium text-foreground">{league.name}</span>
+                                                <span className="text-muted-foreground">{league.season}</span>
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </fieldset>
+                            <fieldset className="min-w-0">
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                    <legend className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Temporadas</legend>
+                                    <button type="button" onClick={() => handleSelections('seasons', [])} className="text-[10px] font-bold text-primary hover:underline">Todas</button>
+                                </div>
+                                <div className="space-y-1">
+                                    {allSeasons.map(season => (
+                                        <label key={season} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-primary/10">
+                                            <input type="checkbox" checked={selectedSeasons.includes(season)} onChange={() => toggleSelection('seasons', season)} className="h-3.5 w-3.5 accent-primary" />
+                                            <span className="font-medium text-foreground">{season}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                <p className="mt-2 text-[10px] text-muted-foreground">Sin marcar temporadas, se analizan todas.</p>
+                            </fieldset>
                         </div>
-                        {/* Season selector — only shows seasons for the selected league */}
-                        <div className="relative inline-block">
-                            <select
-                                value={selectedSeason}
-                                onChange={e => handleSeasonChange(e.target.value)}
-                                className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            >
-                                <option value="all">Todas las temporadas</option>
-                                {(isAllCompetitions ? allSeasons : seasonsForName).map(season => (
-                                    <option key={season} value={season}>{season}</option>
-                                ))}
-                            </select>
-                            <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                        </div>
-                    </div>
+                    </details>
                 )}
             </div>
 

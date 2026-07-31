@@ -33,10 +33,13 @@ export function useMatches(leagueId, { playedOnly = false, season = null, league
                 .order('match_date', { ascending: false })
                 .order('kick_off_time', { ascending: true })
 
-            if (leagueId && leagueId !== 'all') {
+            if (leagueIds.length) {
+                query = query.in('league_id', leagueIds)
+            } else if (leagueId && leagueId !== 'all') {
                 query = query.eq('league_id', leagueId)
             }
-            if (season && season !== 'all') query = query.eq('season', season)
+            if (seasons.length) query = query.in('season', seasons)
+            else if (season && season !== 'all') query = query.eq('season', season)
             // Exclude fixture rows: played matches always have a score
             if (playedOnly) {
                 query = query.not('home_goals', 'is', null)

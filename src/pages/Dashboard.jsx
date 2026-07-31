@@ -126,6 +126,8 @@ export default function Dashboard() {
     const isAllCompetitions = selectedLeagueIds.length !== 1
     const selectedSeason = selectedSeasons[0] || activeLeagueObj?.season || 'all'
     const allSeasons = [...new Set(leagues.map(l => l.season).filter(Boolean))].sort().reverse()
+    const leagueOptions = [...leagues].sort((a, b) => a.name.localeCompare(b.name) || b.season.localeCompare(a.season))
+    const displayedSeasons = selectedSeasons.length ? selectedSeasons : ['all']
     // Unique league names in the order they first appear
     const uniqueLeagueNames = useMemo(() => {
         const seen = new Set()
@@ -338,40 +340,15 @@ export default function Dashboard() {
                 </div>
                 {leagues.length > 0 && (
                     <div className="flex items-center gap-2">
-                        {/* League name selector */}
-                        <div className="relative inline-block">
-                            <select
-                                value={selectedLeagueName}
-                                onChange={e => handleLeagueNameChange(e.target.value)}
-                                className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            >
-                                <option value="__all__">Todas las competiciones</option>
-                                <option value="__CL__">Champions League</option>
-                                <option value="__EL__">Europa League</option>
-                                <option value="__ECL__">Conference League</option>
-                                {uniqueLeagueNames.map(name => (
-                                    <option key={name} value={name}>{name}</option>
-                                ))}
-                            </select>
-                            <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                        </div>
-                        {/* Season selector — only shows seasons for the selected league */}
-                        <div className="relative inline-block">
-                            <select
-                                value={selectedSeason}
-                                onChange={e => handleSeasonChange(e.target.value)}
-                                className="appearance-none rounded-xl border border-border bg-card/50 px-4 py-3 pr-9 text-sm font-bold text-foreground transition-all hover:bg-card hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            >
-                                <option value="all">Todas las temporadas</option>
-                                {(isAllCompetitions ? allSeasons : seasonsForName).map(season => (
-                                    <option key={season} value={season}>{season}</option>
-                                ))}
-                            </select>
-                            <Clock className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                        {
+                        <div className="grid w-full gap-3 sm:grid-cols-2">
+                            <label className="block text-xs font-bold text-muted-foreground">Competiciones <span className="ml-1 text-primary">({selectedLeagueIds.length})</span><select multiple size="5" value={selectedLeagueIds} onChange={e => handleSelections('leagues', [...e.target.selectedOptions].map(option => option.value))} className="mt-1.5 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground">{leagueOptions.map(league => <option key={league.id} value={league.id}>{league.name} ? {league.season}</option>)}</select></label>
+                            <label className="block text-xs font-bold text-muted-foreground">Temporadas <span className="ml-1 text-primary">({selectedSeasons.length || 'todas'})</span><select multiple size="5" value={displayedSeasons} onChange={e => { const values = [...e.target.selectedOptions].map(option => option.value); handleSelections('seasons', values.includes('all') ? [] : values) }} className="mt-1.5 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground"><option value="all">Todas las temporadas</option>{allSeasons.map(season => <option key={season} value={season}>{season}</option>)}</select></label>
                         </div>
                     </div>
                 )}
             </div>
+
 
             {/* ── Sub-tabs ── */}
             <div className="flex gap-1 overflow-x-auto rounded-xl border border-border/50 bg-card/50 p-1">

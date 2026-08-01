@@ -123,17 +123,17 @@ export default function Dashboard() {
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
     const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
     const activeLeagueId = selectedLeagueIds[0] || null
-    const allSeasons = [...new Set(leagues.map(l => l.season).filter(Boolean))].sort().reverse()
+    const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\\d{4}-\\d{2}$/.test(season || '')))].sort().reverse()
     const competitionOptions = useMemo(() => {
         const byName = new Map()
-        leagues.forEach(league => {
+        scopedLeagues.forEach(league => {
             if (!byName.has(league.name)) byName.set(league.name, [])
             byName.get(league.name).push(String(league.id))
         })
         return [...byName.entries()]
             .map(([name, ids]) => ({ name, ids }))
             .sort((a, b) => a.name.localeCompare(b.name))
-    }, [leagues])
+    }, [scopedLeagues])
     const selectedCompetitionNames = competitionOptions
         .filter(competition => competition.ids.some(id => selectedLeagueIds.includes(id)))
         .map(competition => competition.name)
@@ -145,7 +145,12 @@ export default function Dashboard() {
     const selectedSeasonLabel = selectedSeasons.length === 0
         ? 'Todas las temporadas'
         : selectedSeasons.length === 1 ? selectedSeasons[0] : `${selectedSeasons.length} temporadas`
+    const leagueLabels = useMemo(() => Object.fromEntries(leagues.map(league => [String(league.id), league.name])), [leagues])
     const [filtersOpen, setFiltersOpen] = useState(false)
+    const handleScopeChange = (scope) => {
+        setSearchParams(prev => { prev.set('scope', scope); prev.delete('leagues'); prev.delete('league'); prev.delete('seasons'); prev.delete('season'); return prev })
+    }
+
     const handleSelections = (key, values) => {
         setSearchParams(prev => {
             if (values.length) prev.set(key, values.join(','))
@@ -328,7 +333,11 @@ export default function Dashboard() {
                         Análisis completo de La Liga · Temporada 2025-2026
                     </p>
                 </div>
-                {leagues.length > 0 && (
+<div className="flex rounded-xl border border-border/60 bg-card/50 p-1 text-xs font-bold">
+                    <button onClick={() => handleScopeChange('club')} className={`rounded-lg px-3 py-2 ${competitionScope === 'club' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Clubes</button>
+                    <button onClick={() => handleScopeChange('national')} className={`rounded-lg px-3 py-2 ${competitionScope === 'national' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Selecciones</button>
+                </div>
+                {scopedLeagues.length > 0 && (
                     <details open={filtersOpen} onToggle={event => setFiltersOpen(event.currentTarget.open)} className="w-full sm:w-auto rounded-xl border border-border bg-card/50 px-3 py-2.5 text-sm">
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold text-foreground [&::-webkit-details-marker]:hidden">
                             <span className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" />{selectedLeagueLabel}</span>
@@ -407,9 +416,9 @@ export default function Dashboard() {
                 </section>
             ) : (
                 <>
-                    {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} leagueObj={activeLeagueObj} />}
-                    {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} />}
-                    {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} />}
+                    {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} leagueObj={activeLeagueObj} leagueLabels={leagueLabels} />}
+                    {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} leagueIds={selectedLeagueIds} seasons={selectedSeasons} />}
+                    {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} leagueIds={selectedLeagueIds} seasons={selectedSeasons} />}
                     {activeTab === 'clasificacion' && <TeamsTab matches={matches} leagueObj={activeLeagueObj} activeLeagueId={activeLeagueId} />}
                 </>
             )}
@@ -477,7 +486,7 @@ const MARKET_TABS = [
     { id: 'especiales', label: 'Especiales' },
 ]
 
-function MercadosContent({ s, matches, leagueObj }) {
+function MercadosContent({ s, matches, leagueObj, leagueLabels }) {
     const [activeMarket, setActiveMarket] = useState('resultado')
     const isWC = leagueObj?.code === 'WC'
 
@@ -566,7 +575,7 @@ function MercadosContent({ s, matches, leagueObj }) {
 
                             {/* Goal time chart */}
                             <div className="px-4 py-4 border-t border-border/30">
-                                <GoalTimeChart matches={matches} isWC={isWC} />
+                                <GoalTimeChart matches={matches} isWC={isWC} leagueLabels={leagueLabels} />
                             </div>
                         </div>
                     )}

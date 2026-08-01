@@ -128,7 +128,7 @@ function PlayerRow({ player, rank, tab, delay }) {
     )
 }
 
-export default function Players({ hideLeagueSelector = false, leagueId = null }) {
+export default function Players({ hideLeagueSelector = false, leagueId = null, leagueIds = [], seasons = [] }) {
     const { data: leagues = [] } = useLeagues()
     const [selectedLeagueId, setSelectedLeagueId] = useState(null)
     const [activeTab, setActiveTab] = useState('goals')
@@ -138,7 +138,7 @@ export default function Players({ hideLeagueSelector = false, leagueId = null })
     const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
     // When a parent passes leagueId, use it directly; otherwise fall back to internal selection
     const activeLeagueId = leagueId || selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
-    const { data: players = [], isLoading } = usePlayerLeaderboard(activeLeagueId)
+    const { data: players = [], isLoading } = usePlayerLeaderboard(activeLeagueId, { leagueIds, seasons })
 
     const currentTab = TABS.find(t => t.id === activeTab) || TABS[0]
 

@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function GoalTimeChart({ matches, isWC = false }) {
+export default function GoalTimeChart({ matches, isWC = false, leagueLabels = {} }) {
     const data = useMemo(() => {
         if (!matches) return []
 
@@ -63,6 +63,18 @@ export default function GoalTimeChart({ matches, isWC = false }) {
         return Object.entries(intervals).map(([range, count]) => ({ range, count }))
     }, [matches])
 
+const leagueContribution = useMemo(() => {
+        const totals = {}
+        matches?.forEach(match => {
+            const id = String(match.league_id || '')
+            if (!id) return
+            if (!totals[id]) totals[id] = { id, matches: 0, goals: 0 }
+            totals[id].matches += 1
+            totals[id].goals += (match.home_goals || 0) + (match.away_goals || 0)
+        })
+        return Object.values(totals).sort((a, b) => b.matches - a.matches)
+    }, [matches])
+
     // Minute 23 → bucket "20-25", minute 45 → "40-45" (last 1H bar), minute 67 → "65-70"
     const htBucket = '40-45'
     const hyd1Bucket = '20-25'
@@ -92,6 +104,16 @@ export default function GoalTimeChart({ matches, isWC = false }) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
+{leagueContribution.length > 1 && (
+                    <div className="mb-4 grid gap-2 sm:grid-cols-2">
+                        {leagueContribution.map((item, index) => (
+                            <div key={item.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-xs">
+                                <span className="flex items-center gap-2 font-semibold text-foreground"><span className={`h-2.5 w-2.5 rounded-full ${['bg-blue-500', 'bg-amber-500', 'bg-emerald-500', 'bg-violet-500', 'bg-rose-500'][index % 5]}`} />{leagueLabels[item.id] || `Competición ${item.id}`}</span>
+                                <span className="text-muted-foreground">{item.matches} partidos · {item.goals} goles</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
                 <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 20 }}>

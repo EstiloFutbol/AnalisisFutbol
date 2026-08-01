@@ -54,7 +54,7 @@ const WC_CHIP_LABELS = {
     9: 'Final',
 }
 
-export default function Matches({ hideLeagueSelector = false, leagueId = null }) {
+export default function Matches({ hideLeagueSelector = false, leagueId = null, leagueIds = [], seasons = [] }) {
     const [searchParams, setSearchParams] = useSearchParams()
     const { data: leagues = [] } = useLeagues()
 
@@ -80,7 +80,7 @@ export default function Matches({ hideLeagueSelector = false, leagueId = null })
         }
     }, [leagueId, selectedLeagueId, defaultLeague, setSearchParams])
 
-    const { data: matches = [], isLoading } = useMatches(activeLeagueId)
+    const { data: matches = [], isLoading } = useMatches(activeLeagueId, { leagueIds, seasons })
 
     // WC group standings — used to resolve slot labels to confirmed team names
     const { data: standingsRaw = [] } = useGroupStandings(isWC ? activeLeagueId : null)

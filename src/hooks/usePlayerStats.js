@@ -21,19 +21,19 @@ export function useMatchPlayerStats(matchId) {
 }
 
 /** Aggregated player stats across all matches in a league */
-export function usePlayerLeaderboard(leagueId) {
+export function usePlayerLeaderboard(leagueId, { leagueIds = [], seasons = [] } = {}) {
     return useQuery({
-        queryKey: ['player_leaderboard', leagueId],
+        queryKey: ['player_leaderboard', leagueId, leagueIds, seasons],
         queryFn: async () => {
             // Get total count first to parallelize requests
             let countQuery = supabase
                 .from('match_player_stats')
-                .select('id, match:matches!inner(id, league_id, home_goals)', { count: 'exact', head: true })
+                .select('id, match:matches!inner(id, league_id, season, home_goals)', { count: 'exact', head: true })
                 .not('match.home_goals', 'is', null)
 
-            if (leagueId) {
-                countQuery = countQuery.eq('match.league_id', leagueId)
-            }
+            if (leagueIds.length) countQuery = countQuery.in('match.league_id', leagueIds)
+            else if (leagueId) countQuery = countQuery.eq('match.league_id', leagueId)
+            if (seasons.length) countQuery = countQuery.in('match.season', seasons)
 
             const { count, error: countError } = await countQuery
             if (countError) throw countError
@@ -61,14 +61,14 @@ export function usePlayerLeaderboard(leagueId) {
                         gk_shots_faced,
                         gk_save_pct,
                         team:teams(id, name, short_name, logo_url),
-                        match:matches!inner(id, league_id, home_goals)
+                        match:matches!inner(id, league_id, season, home_goals)
                     `)
                     .not('match.home_goals', 'is', null)
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
-                if (leagueId) {
-                    query = query.eq('match.league_id', leagueId)
-                }
+                if (leagueIds.length) query = query.in('match.league_id', leagueIds)
+                else if (leagueId) query = query.eq('match.league_id', leagueId)
+                if (seasons.length) query = query.in('match.season', seasons)
 
                 fetchPromises.push(query.then(res => {
                     if (res.error) throw res.error

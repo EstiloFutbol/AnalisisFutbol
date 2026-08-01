@@ -126,7 +126,7 @@ export default function Dashboard() {
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
     const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
     const activeLeagueId = selectedLeagueIds[0] || null
-    const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\\d{4}-\\d{2}$/.test(season || '')))].sort().reverse()
+    const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\d{4}-\d{2}$/.test(season || '')))].sort().reverse()
     const competitionOptions = useMemo(() => {
         const byName = new Map()
         scopedLeagues.forEach(league => {
@@ -336,7 +336,7 @@ export default function Dashboard() {
                         Análisis completo de La Liga · Temporada 2025-2026
                     </p>
                 </div>
-<div className="flex rounded-xl border border-border/60 bg-card/50 p-1 text-xs font-bold">
+<div className="flex w-52 shrink-0 rounded-xl border border-border/60 bg-card/50 p-1 text-xs font-bold">
                     <button onClick={() => handleScopeChange('club')} className={`rounded-lg px-3 py-2 ${competitionScope === 'club' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Clubes</button>
                     <button onClick={() => handleScopeChange('national')} className={`rounded-lg px-3 py-2 ${competitionScope === 'national' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Selecciones</button>
                 </div>

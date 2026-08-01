@@ -126,7 +126,7 @@ export default function Dashboard() {
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
     const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
     const activeLeagueId = selectedLeagueIds[0] || null
-    const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\d{4}-\d{2}$/.test(season || '')))].sort().reverse()
+    const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\d{4}-\d{4}$/.test(season || '')))].sort().reverse()
     const competitionOptions = useMemo(() => {
         const byName = new Map()
         scopedLeagues.forEach(league => {
@@ -341,7 +341,7 @@ export default function Dashboard() {
                     <button onClick={() => handleScopeChange('national')} className={`rounded-lg px-3 py-2 ${competitionScope === 'national' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Selecciones</button>
                 </div>
                 {scopedLeagues.length > 0 && (
-                    <details open={filtersOpen} onToggle={event => setFiltersOpen(event.currentTarget.open)} className="w-full sm:w-auto rounded-xl border border-border bg-card/50 px-3 py-2.5 text-sm">
+                    <details open={filtersOpen} onToggle={event => setFiltersOpen(event.currentTarget.open)} className="w-full sm:w-[24rem] rounded-xl border border-border bg-card/50 px-3 py-2.5 text-sm">
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-bold text-foreground [&::-webkit-details-marker]:hidden">
                             <span className="flex items-center gap-2"><Activity className="h-4 w-4 text-primary" />{selectedLeagueLabel}</span>
                             <span className="text-xs font-medium text-muted-foreground">{selectedSeasonLabel}</span>

@@ -114,11 +114,13 @@ export default function Dashboard() {
     const { setActiveLeagueId: setGlobalLeagueId } = useLeagueContext()
     const { data: leagues = [] } = useLeagues()
 
-    const selectedLeagueId = searchParams.get('league')
+    const rawLeagueId = searchParams.get('league')
+    const selectedLeagueId = rawLeagueId?.replace(/^\*\*(CL|EL|ECL)\*\*$/, '__$1__') || rawLeagueId
     const activeTab = searchParams.get('tab') || 'mercados'
-    const defaultLeague = leagues.find(l => l.is_default) || leagues[0]
-    const selectedLeagueIds = (searchParams.get('leagues') || (selectedLeagueId && !selectedLeagueId.startsWith('__') && selectedLeagueId !== 'all' ? selectedLeagueId : String(defaultLeague?.id || ''))).split(',').filter(Boolean)
-    const selectedSeasons = (searchParams.get('seasons') || '').split(',').filter(Boolean)
+    const competitionScope = searchParams.get('scope') || (selectedLeagueId?.startsWith('__') ? 'national' : 'club')
+    const scopedLeagues = leagues.filter(league => competitionScope === 'national' ? league.code === 'WC' : league.code !== 'WC')
+    const defaultLeague = scopedLeagues.find(l => l.is_default) || scopedLeagues[0]
+    const selectedLeagueIds = (searchParams.get('leagues') || (selectedLeagueId && !selectedLeagueId.startsWith('__') && selectedLeagueId !== 'all' ? selectedLeagueId : String(defaultLeague?.id || ''))).split(',').filter(Boolean)    const selectedSeasons = (searchParams.get('seasons') || '').split(',').filter(Boolean)
     const isVirtualCompetition = typeof selectedLeagueId === 'string' && selectedLeagueId.startsWith('__')
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
     const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null

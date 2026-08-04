@@ -129,3 +129,18 @@ export function usePlayerLeaderboard(leagueId, { leagueIds = [], seasons = [] } 
         enabled: true,
     })
 }
+
+export function useSeasonRosters(leagueIds = [], seasons = []) {
+    return useQuery({
+        queryKey: ['season_rosters', leagueIds, seasons],
+        queryFn: async () => {
+            let query = supabase.from('season_rosters').select('player_name, position, nationality, date_of_birth, photo_url, team:teams(id, name, short_name, logo_url)')
+            if (leagueIds.length) query = query.in('league_id', leagueIds)
+            if (seasons.length) query = query.in('season', seasons)
+            const { data, error } = await query
+            if (error) throw error
+            return data || []
+        },
+        enabled: leagueIds.length > 0,
+    })
+}

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLeagues } from '@/hooks/useMatches'
-import { usePlayerLeaderboard } from '@/hooks/usePlayerStats'
+import { usePlayerLeaderboard, useSeasonRosters } from '@/hooks/usePlayerStats'
 import { Target, Trophy, Zap, Shield, AlertTriangle, Activity, ChevronUp, ChevronDown } from 'lucide-react'
 
 const TABS = [
@@ -139,6 +139,16 @@ export default function Players({ hideLeagueSelector = false, leagueId = null, l
     // When a parent passes leagueId, use it directly; otherwise fall back to internal selection
     const activeLeagueId = leagueId || selectedLeagueId || (defaultLeague ? String(defaultLeague.id) : null)
     const { data: players = [], isLoading } = usePlayerLeaderboard(activeLeagueId, { leagueIds, seasons })
+    const { data: rosterPlayers = [] } = useSeasonRosters(leagueIds, seasons)
+    const mergedPlayers = useMemo(() => {
+        const byKey = new Map(players.map(player => [player.player_name + "__" + (player.team?.id || ""), player]))
+        rosterPlayers.forEach(player => {
+            const team = Array.isArray(player.team) ? player.team[0] : player.team
+            const key = player.player_name + "__" + (team?.id || "")
+            if (!byKey.has(key)) byKey.set(key, { ...player, team, appearances: 0, minutes: 0, goals: 0, assists: 0, shots: 0, shots_on_target: 0, shots_on_target_per_90: 0, yellow_cards: 0, red_cards: 0, fouls_committed: 0, gk_saves: 0, gk_shots_faced: 0 })
+        })
+        return [...byKey.values()]
+    }, [players, rosterPlayers])
 
     const currentTab = TABS.find(t => t.id === activeTab) || TABS[0]
 
@@ -147,7 +157,7 @@ export default function Players({ hideLeagueSelector = false, leagueId = null, l
     }
 
     const filtered = useMemo(() => {
-        let list = [...players]
+        let list = [...mergedPlayers]
 
         // Filter by tab (GK tab shows only goalkeepers)
         if (activeTab === 'gk') {
@@ -173,7 +183,7 @@ export default function Players({ hideLeagueSelector = false, leagueId = null, l
         })
 
         return list
-    }, [players, activeTab, sort, search, currentTab])
+    }, [mergedPlayers, activeTab, sort, search, currentTab, hideLeagueSelector])
 
     return (
         <div className="space-y-6 animate-fade-in">

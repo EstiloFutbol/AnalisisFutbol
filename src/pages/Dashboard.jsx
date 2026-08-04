@@ -190,7 +190,7 @@ const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season =>
         if (activeLeagueObj) setGlobalLeagueId(activeLeagueObj.id)
     }, [activeLeagueObj, setGlobalLeagueId])
 
-    const { data: matches = [], isLoading } = useMatches(null, { playedOnly: activeTab === 'mercados', leagueIds: effectiveLeagueIds, seasons: selectedSeasons })
+    const { data: matches = [], isLoading } = useMatches(null, { playedOnly: false, leagueIds: effectiveLeagueIds, seasons: selectedSeasons })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
     const handleTabChange = (tabId) => {

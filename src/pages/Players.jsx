@@ -162,7 +162,7 @@ export default function Players({ hideLeagueSelector = false, leagueId = null, l
         // Filter by tab (GK tab shows only goalkeepers)
         if (activeTab === 'gk') {
             list = list.filter(p => p.position === 'GK' || p.gk_shots_faced > 0)
-        } else if (activeTab !== 'discipline') {
+        } else if (activeTab !== 'discipline' && !hideLeagueSelector) {
             list = list.filter(p => p[currentTab.sortKey] > 0)
         }
 

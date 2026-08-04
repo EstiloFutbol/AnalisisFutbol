@@ -124,8 +124,6 @@ export default function Dashboard() {
     const selectedSeasons = (searchParams.get('seasons') || '').split(',').filter(Boolean)
     const isVirtualCompetition = typeof selectedLeagueId === 'string' && selectedLeagueId.startsWith('__')
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
-    const activeLeagueObj = effectiveLeagueIds.length === 1 ? leagues.find(l => String(l.id) === effectiveLeagueIds[0]) || null : null
-    const activeLeagueId = effectiveLeagueIds[0] || null
 const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\d{4}-\d{4}$/.test(season || '')))].sort().reverse()
     const effectiveLeagueIds = selectedSeasons.length
         ? selectedLeagueIds.filter(id => selectedSeasons.includes(leagues.find(league => String(league.id) === id)?.season))

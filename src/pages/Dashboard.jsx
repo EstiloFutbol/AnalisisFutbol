@@ -130,6 +130,8 @@ const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season =>
     const effectiveLeagueIds = selectedSeasons.length
         ? selectedLeagueIds.filter(id => selectedSeasons.includes(leagues.find(league => String(league.id) === id)?.season))
         : selectedLeagueIds
+    const activeLeagueObj = effectiveLeagueIds.length === 1 ? leagues.find(l => String(l.id) === effectiveLeagueIds[0]) || null : null
+    const activeLeagueId = effectiveLeagueIds[0] || null
     const competitionOptions = useMemo(() => {
         const byName = new Map()
         scopedLeagues.forEach(league => {

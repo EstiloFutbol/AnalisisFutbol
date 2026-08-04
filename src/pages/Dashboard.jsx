@@ -124,9 +124,12 @@ export default function Dashboard() {
     const selectedSeasons = (searchParams.get('seasons') || '').split(',').filter(Boolean)
     const isVirtualCompetition = typeof selectedLeagueId === 'string' && selectedLeagueId.startsWith('__')
     const virtualCompetitionName = { __CL__: 'Champions League', __EL__: 'Europa League', __ECL__: 'Conference League' }[selectedLeagueId]
-    const activeLeagueObj = selectedLeagueIds.length === 1 ? leagues.find(l => String(l.id) === selectedLeagueIds[0]) || null : null
-    const activeLeagueId = selectedLeagueIds[0] || null
-    const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\d{4}-\d{4}$/.test(season || '')))].sort().reverse()
+    const activeLeagueObj = effectiveLeagueIds.length === 1 ? leagues.find(l => String(l.id) === effectiveLeagueIds[0]) || null : null
+    const activeLeagueId = effectiveLeagueIds[0] || null
+const allSeasons = [...new Set(scopedLeagues.map(l => l.season).filter(season => /^\d{4}-\d{4}$/.test(season || '')))].sort().reverse()
+    const effectiveLeagueIds = selectedSeasons.length
+        ? selectedLeagueIds.filter(id => selectedSeasons.includes(leagues.find(league => String(league.id) === id)?.season))
+        : selectedLeagueIds
     const competitionOptions = useMemo(() => {
         const byName = new Map()
         scopedLeagues.forEach(league => {
@@ -187,7 +190,7 @@ export default function Dashboard() {
         if (activeLeagueObj) setGlobalLeagueId(activeLeagueObj.id)
     }, [activeLeagueObj, setGlobalLeagueId])
 
-    const { data: matches = [], isLoading } = useMatches(null, { playedOnly: activeTab === 'mercados', leagueIds: selectedLeagueIds, seasons: selectedSeasons })
+    const { data: matches = [], isLoading } = useMatches(null, { playedOnly: activeTab === 'mercados', leagueIds: effectiveLeagueIds, seasons: selectedSeasons })
     const { data: players = [] } = usePlayerLeaderboard(activeLeagueId)
 
     const handleTabChange = (tabId) => {
@@ -209,7 +212,7 @@ export default function Dashboard() {
     const s = useMemo(() => {
         if (!matches.length || activeTab !== 'mercados') return null
         const playedMatches = matches.filter(m => m.home_goals != null)
-        if (!playedMatches.length) return null
+        // Upcoming fixtures intentionally produce a zero-value dashboard.
         const n = playedMatches.length
 
         // Goals
@@ -350,7 +353,7 @@ export default function Dashboard() {
                             <fieldset className="min-w-0">
                                 <div className="mb-2 flex items-center justify-between gap-2">
                                     <legend className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Competiciones</legend>
-                                    <button type="button" onClick={() => handleSelections('leagues', [])} className="text-[10px] font-bold text-primary hover:underline">Todas</button>
+                                    <button type="button" onClick={() => handleSelections('leagues', scopedLeagues.map(league => String(league.id)))} className="text-[10px] font-bold text-primary hover:underline">Todas</button>
                                 </div>
                                 <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
                                     {competitionOptions.map(competition => {
@@ -420,8 +423,8 @@ export default function Dashboard() {
             ) : (
                 <>
                     {activeTab === 'mercados' && <MercadosContent s={s} matches={s?.playedMatches || matches} leagueObj={activeLeagueObj} leagueLabels={leagueLabels} />}
-                    {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} leagueIds={selectedLeagueIds} seasons={selectedSeasons} />}
-                    {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} leagueIds={selectedLeagueIds} seasons={selectedSeasons} />}
+                    {activeTab === 'jugadores' && <PlayersTab hideLeagueSelector leagueId={activeLeagueId} leagueIds={effectiveLeagueIds} seasons={selectedSeasons} />}
+                    {activeTab === 'partidos' && <MatchesTab hideLeagueSelector leagueId={activeLeagueId} leagueIds={effectiveLeagueIds} seasons={selectedSeasons} />}
                     {activeTab === 'clasificacion' && <TeamsTab matches={matches} leagueObj={activeLeagueObj} activeLeagueId={activeLeagueId} />}
                 </>
             )}

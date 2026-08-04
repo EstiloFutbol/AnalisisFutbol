@@ -1601,11 +1601,9 @@ function WCGruposView({ leagueId }) {
 // Regular league: compute standings from match results
 function LeagueStandingsTable({ matches = [] }) {
     const teamStats = useMemo(() => {
-        const played = matches.filter(m => m.home_goals != null)
-        if (!played.length) return []
         const stats = {}
 
-        played.forEach(m => {
+        matches.forEach(m => {
             const hName = m.home_team?.name
             const aName = m.away_team?.name
             if (!hName || !aName) return
@@ -1613,6 +1611,7 @@ function LeagueStandingsTable({ matches = [] }) {
             if (!stats[hName]) stats[hName] = { name: hName, logo: m.home_team?.logo_url, short: m.home_team?.short_name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0 }
             if (!stats[aName]) stats[aName] = { name: aName, logo: m.away_team?.logo_url, short: m.away_team?.short_name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, pts: 0 }
 
+            if (m.home_goals == null || m.away_goals == null) return
             const hg = m.home_goals || 0
             const ag = m.away_goals || 0
 

@@ -34,3 +34,5 @@ On this Windows machine, use `http://127.0.0.1:5173/`, not `localhost`; see `doc
 ## Security
 
 Keep credentials only in `.env.local`. Browser code may use the Supabase anon key; service-role credentials are for trusted local tools and server-side work only.
+
+Gestionado con el centro de mando.

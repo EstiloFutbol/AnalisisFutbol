@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Calculator, TrendingUp, Target, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
+import { Calculator, TrendingUp, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // Bet types with their historical win condition checker

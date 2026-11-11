@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import AdminMatches from '@/components/admin/AdminMatches'
@@ -10,7 +9,7 @@ import AdminLeagues from '@/components/admin/AdminLeagues'
 import AdminReferees from '@/components/admin/AdminReferees'
 import AdminCoaches from '@/components/admin/AdminCoaches'
 import AdminBettors from '@/components/admin/AdminBettors'
-import { Shield, Database, Users, Calendar, Settings, Gavel, UserCheck } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
 export default function Admin() {
     const { session, loading } = useAuth()

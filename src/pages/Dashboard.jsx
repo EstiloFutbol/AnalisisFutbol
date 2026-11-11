@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, lazy, Suspense } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useLeagueContext } from '@/context/LeagueContext'
 import { motion } from 'framer-motion'
@@ -6,13 +6,11 @@ import { useMatches, useLeagues, useGroupStandings, useWCKnockoutMatches, useWCG
 import { usePlayerLeaderboard } from '@/hooks/usePlayerStats'
 import {
     Trophy, Goal, Target, TrendingUp, Activity,
-    BarChart3, Clock, Shield, CreditCard,
-    AlertTriangle, Zap, Info, Users, Crosshair,
-    ArrowUpRight, Minus, ArrowDownRight, Star, Timer,
+    BarChart3, Users,
+    ArrowUpRight, Minus, ArrowDownRight,
     CalendarDays, ShieldCheck, Calculator, Swords, RotateCcw
 } from 'lucide-react'
 import GoalTimeChart from '@/components/charts/GoalTimeChart'
-import StatDistributionChart from '@/components/charts/StatDistributionChart'
 import SEO from '@/components/SEO'
 
 // Lazy-load the sub-tab content

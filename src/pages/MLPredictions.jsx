@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-    Brain, TrendingUp, Target, Database, ChevronDown, ChevronUp,
-    AlertCircle, CalendarDays, Zap, BarChart2, Info, CheckCircle2,
+    Brain, TrendingUp, Database, ChevronDown, ChevronUp,
+    AlertCircle, CalendarDays, Zap, BarChart2, Info,
     FlaskConical, ShieldCheck,
 } from 'lucide-react'
 import { useLeagues } from '@/hooks/useMatches'

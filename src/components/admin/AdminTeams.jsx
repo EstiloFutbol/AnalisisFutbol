@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Plus, Save, X } from 'lucide-react'
+import { Loader2, Plus, Save } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 
 export default function AdminTeams() {

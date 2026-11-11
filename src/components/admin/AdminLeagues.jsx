@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Plus, Save, X, Trash2, Star, Trophy } from 'lucide-react'
+import { Loader2, Plus, Save, Trash2, Star, Trophy } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useLeagues } from '@/hooks/useMatches'
 

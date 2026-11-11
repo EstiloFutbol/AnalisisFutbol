@@ -4,7 +4,7 @@ import { useLeagueContext } from '@/context/LeagueContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Brain, TrendingUp, TrendingDown, Target, Database, ChevronDown, ChevronUp,
-    AlertCircle, CalendarDays, Zap, BarChart2, Info, CheckCircle, CheckCircle2,
+    AlertCircle, CalendarDays, Zap, BarChart2, Info, CheckCircle,
     FlaskConical, ShieldCheck, Wallet, Trophy, Minus, Clock, Sparkles,
     ExternalLink, BarChart3, LineChart as LineIcon, PieChart, Activity,
     Filter, Settings2, TriangleAlert, Loader2,

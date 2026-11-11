@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useMatches, useLeagues, useTeams } from '@/hooks/useMatches'
 import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    ScatterChart, Scatter, AreaChart, Area, ComposedChart
+    ScatterChart, Scatter, AreaChart, Area
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Filter, Settings2, BarChart3, LineChart as LineIcon, PieChart, Activity } from 'lucide-react'

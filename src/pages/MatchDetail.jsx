@@ -19,7 +19,7 @@ import { matchStructuredData } from '@/components/SEO'
 import {
     ArrowLeft, Calendar, MapPin, User, Users, Edit, BarChart2, UserCheck,
     Bot, CheckCircle, XCircle, MessageSquare, ShieldCheck, Flag, Trash2,
-    Ban, Send, Loader2, AlertTriangle, Star, ChevronDown, ChevronUp,
+    Ban, Send, Loader2, AlertTriangle,
     Sparkles, BookOpen
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
